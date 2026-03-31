@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediPlan Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8fafc;
+            color: #0f172a;
+            margin: 0;
+            padding: 2rem;
+        }
+
+        main {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .summary {
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .ok {
+            color: #166534;
+        }
+
+        .fail {
+            color: #991b1b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f8fafc;
+        }
+    </style>
+    <script src="app.js"></script>
+</head>
+<body>
+    <main>
+        <h1>MediPlan Testlauf</h1>
+        <p class="summary" id="summary">Tests werden ausgeführt...</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Test</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody id="results"></tbody>
+        </table>
+    </main>
+
+    <script>
+        function assertEqual(actual, expected, label) {
+            if (actual !== expected) {
+                throw new Error(`${label}: erwartet "${expected}", erhalten "${actual}"`);
+            }
+        }
+
+        function assertTrue(value, label) {
+            if (!value) {
+                throw new Error(`${label}: Bedingung ist nicht erfüllt`);
+            }
+        }
+
+        function runTests() {
+            const api = window.MediPlanTestApi;
+            const tests = [
+                {
+                    name: "Ostersonntag 2026",
+                    fn() {
+                        const easter = api.getEasterSunday(2026);
+                        assertEqual(easter.toISOString().slice(0, 10), "2026-04-05", "Ostersonntag");
+                    }
+                },
+                {
+                    name: "Ostermontag ist Feiertag",
+                    fn() {
+                        const holiday = api.getHolidayName(new Date(2026, 3, 6), false);
+                        assertEqual(holiday, "Ostermontag", "Feiertag");
+                    }
+                },
+                {
+                    name: "Kalenderwochen März 2026",
+                    fn() {
+                        const weeks = api.getWeeksInMonth(2026, 3);
+                        assertEqual(weeks.length, 6, "Anzahl Wochen");
+                        assertEqual(weeks[0].mondayDateStr, "23.02.26", "Erste KW");
+                    }
+                },
+                {
+                    name: "ICS-Zeit an Feiertagen",
+                    fn() {
+                        const time = api.getICSStartTime("2026-04-06", "AA", false);
+                        assertEqual(time, "090000", "Startzeit");
+                    }
+                },
+                {
+                    name: "Validierung findet fehlende OA-Besetzung",
+                    fn() {
+                        const issues = api.getValidationIssues("2026-04", {
+                            staff: [{ name: "Anna", id: "100", role: "AA", work: 100 }],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "", VISITE: "" }
+                            },
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+                        assertTrue(issues.some((issue) => issue.message.includes("Hintergrund")), "OA-Lücke");
+                    }
+                },
+                {
+                    name: "Validierung findet fehlende Atoss-ID",
+                    fn() {
+                        const issues = api.getValidationIssues("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "", role: "AA", work: 100 },
+                                { name: "OA Müller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "OA Müller", VISITE: "" }
+                            },
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+                        assertTrue(issues.some((issue) => issue.message.includes("Atoss-ID")), "Atoss-ID");
+                    }
+                }
+            ];
+
+            const resultsEl = document.getElementById("results");
+            const summaryEl = document.getElementById("summary");
+            let passed = 0;
+
+            resultsEl.innerHTML = tests.map((test) => {
+                try {
+                    test.fn();
+                    passed += 1;
+                    return `<tr><td>${test.name}</td><td class="ok">OK</td><td>Bestanden</td></tr>`;
+                } catch (error) {
+                    return `<tr><td>${test.name}</td><td class="fail">Fehler</td><td>${error.message}</td></tr>`;
+                }
+            }).join("");
+
+            const failed = tests.length - passed;
+            summaryEl.className = `summary ${failed ? "fail" : "ok"}`;
+            summaryEl.textContent = failed
+                ? `${passed}/${tests.length} Tests bestanden`
+                : `Alle ${tests.length} Tests bestanden`;
+        }
+
+        window.addEventListener("DOMContentLoaded", runTests);
+    </script>
+</body>
+</html>
