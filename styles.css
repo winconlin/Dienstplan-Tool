@@ -1,0 +1,185 @@
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 0.3cm;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: white;
+        padding: 0;
+        margin: 0;
+    }
+
+    table {
+        width: 100% !important;
+        table-layout: fixed !important;
+        font-size: 7.5pt !important;
+        border-collapse: collapse;
+    }
+
+    th,
+    td {
+        border: 0.5pt solid #000 !important;
+        padding: 2px !important;
+        overflow: hidden;
+    }
+
+    .holiday-bg {
+        background-color: #d1d5db !important;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .col-date {
+        width: 35px;
+    }
+
+    .col-day {
+        width: 40px;
+    }
+
+    select {
+        appearance: none;
+        border: none;
+        background: transparent;
+        width: 100%;
+        font-weight: bold;
+    }
+
+    .print-only-stations #section-plan {
+        display: none !important;
+    }
+
+    .print-only-stations #section-stats {
+        display: none !important;
+    }
+
+    .print-only-stations #section-validation {
+        display: none !important;
+    }
+
+    .print-only-stations #section-personal {
+        display: none !important;
+    }
+
+    .print-only-stations #section-wishes {
+        display: none !important;
+    }
+
+    .print-only-stations #section-stations {
+        display: block !important;
+    }
+}
+
+.wish-conflict {
+    background-color: #fef08a !important;
+    color: #b45309;
+}
+
+.conflict-red {
+    background-color: #fca5a5 !important;
+    color: #7f1d1d;
+}
+
+.validation-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1rem;
+}
+
+.validation-card strong {
+    display: block;
+    font-size: 1.75rem;
+    line-height: 1;
+    margin-bottom: 0.35rem;
+}
+
+.validation-card-error {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.validation-card-warning {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.validation-card-ok {
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.validation-empty {
+    border: 1px dashed #86efac;
+    border-radius: 0.75rem;
+    background: #f0fdf4;
+    color: #166534;
+    padding: 1rem;
+    font-weight: 600;
+}
+
+.validation-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.validation-table th,
+.validation-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    vertical-align: top;
+}
+
+.validation-table th {
+    background: #f8fafc;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #475569;
+}
+
+.validation-row-error td:first-child {
+    border-left: 4px solid #dc2626;
+}
+
+.validation-row-warning td:first-child {
+    border-left: 4px solid #d97706;
+}
+
+.validation-row-info td:first-child {
+    border-left: 4px solid #2563eb;
+}
+
+.validation-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.validation-badge-error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.validation-badge-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.validation-badge-info {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.validation-meta {
+    color: #64748b;
+    font-size: 0.8rem;
+}
