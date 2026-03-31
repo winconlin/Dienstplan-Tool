@@ -121,7 +121,7 @@
                 <div class="bg-white p-6 rounded shadow border text-center">
                     <h3 class="font-bold border-b mb-4 pb-2 text-red-600 uppercase italic">Konfiguration & Backup</h3>
                     <label class="flex items-center gap-2 font-bold text-xs cursor-pointer mb-6 bg-red-50 p-3 rounded border border-red-100">
-                        <input type="checkbox" id="holidaySeasonMode" onchange="renderCalendar(); renderStationPlan();" class="w-5 h-5">
+                        <input type="checkbox" id="holidaySeasonMode" onchange="saveHolidaySeasonMode(); renderCalendar(); renderStationPlan();" class="w-5 h-5">
                         <span>Weihnachts-Sonderregelung<br><small class="text-gray-500">(Sa vor 24.12. bis So nach 06.01.)</small></span>
                     </label>
                     <button onclick="backupExport()" class="w-full bg-slate-100 border p-2 mb-2 rounded font-bold">💾 Alles sichern (Backup)</button>
@@ -141,16 +141,74 @@
     </main>
 
     <script>
-        let staff = JSON.parse(localStorage.getItem('mp_staff')) || [];
-        let plan = JSON.parse(localStorage.getItem('mp_plan')) || {};
-        let wishes = JSON.parse(localStorage.getItem('mp_wishes')) || {};
-        let stationPlan = JSON.parse(localStorage.getItem('mp_station')) || {};
+        function readStorage(key, fallback) {
+            try {
+                const raw = localStorage.getItem(key);
+                return raw ? JSON.parse(raw) : fallback;
+            } catch {
+                return fallback;
+            }
+        }
+
+        let staff = readStorage('mp_staff', []);
+        let plan = readStorage('mp_plan', {});
+        let wishes = readStorage('mp_wishes', {});
+        let stationPlan = readStorage('mp_station', {});
+        let holidaySeasonMode = readStorage('mp_holiday_mode', false);
 
         function save() {
             localStorage.setItem('mp_staff', JSON.stringify(staff));
             localStorage.setItem('mp_plan', JSON.stringify(plan));
             localStorage.setItem('mp_wishes', JSON.stringify(wishes));
             localStorage.setItem('mp_station', JSON.stringify(stationPlan));
+            localStorage.setItem('mp_holiday_mode', JSON.stringify(holidaySeasonMode));
+        }
+
+        function saveHolidaySeasonMode() {
+            holidaySeasonMode = document.getElementById('holidaySeasonMode').checked;
+            save();
+        }
+
+        function matchesRole(person, role) {
+            if (role === 'OA') return person.role === 'OA' || person.role === 'OA-EPU';
+            if (role === 'EPU') return person.role === 'OA-EPU';
+            return person.role === 'AA';
+        }
+
+        function getWorkPercent(person) {
+            const parsed = Number(person.work);
+            return parsed > 0 ? parsed : 100;
+        }
+
+        function getMonthDayKeys(monthValue) {
+            if (!monthValue) return [];
+            const [y, m] = monthValue.split('-').map(Number);
+            const daysInMonth = new Date(y, m, 0).getDate();
+            return Array.from({ length: daysInMonth }, (_, index) => {
+                return `${y}-${String(m).padStart(2, '0')}-${String(index + 1).padStart(2, '0')}`;
+            });
+        }
+
+        function getDateFromKey(dateKey) {
+            const [y, m, d] = dateKey.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+
+        function isWeekendOrHoliday(date) {
+            return date.getDay() === 0 || date.getDay() === 6 || Boolean(isHoliday(date));
+        }
+
+        function getICSStartTime(dateKey, role) {
+            if (role === 'VISITE') return '090000';
+            return isWeekendOrHoliday(getDateFromKey(dateKey)) ? '090000' : '150000';
+        }
+
+        function escapeICSText(value) {
+            return String(value)
+                .replace(/\\/g, '\\\\')
+                .replace(/\n/g, '\\n')
+                .replace(/,/g, '\\,')
+                .replace(/;/g, '\\;');
         }
 
         // --- FEIERTAGS-LOGIK BAYERN ---
@@ -169,7 +227,7 @@
             const y = date.getFullYear(), m = date.getMonth() + 1, d = date.getDate();
             const fixes = {"1.1":"Neujahr","6.1":"Hl. 3 Könige","1.5":"Tag d. Arbeit","15.8":"Mariä Himmelfahrt","3.10":"Tag d. Dt. Einheit","1.11":"Allerheiligen","25.12":"1. Weihnachtstag","26.12":"2. Weihnachtstag"};
             
-            if (document.getElementById('holidaySeasonMode').checked) {
+            if (holidaySeasonMode) {
                 let start = new Date(y, 11, 24); 
                 while(start.getDay() !== 6) start.setDate(start.getDate() - 1);
                 let end = (m === 1 && d <= 15) ? new Date(y, 0, 6) : new Date(y + 1, 0, 6);
@@ -205,6 +263,12 @@
             }
             save(); renderCalendar();
         }
+        function clearWishes() {
+            const val = document.getElementById('monthPicker').value; if(!val) return;
+            if(!confirm("Möchten Sie alle Wünsche und Sperren für diesen Monat löschen?")) return;
+            getMonthDayKeys(val).forEach(dayKey => delete wishes[dayKey]);
+            save(); renderCalendar();
+        }
         function autoPlan() {
             const val = document.getElementById('monthPicker').value; if(!val) return;
             if(!confirm("Möchten Sie den Autoplaner wirklich ausführen? Alle bestehenden Dienste für diesen Monat werden überschrieben!")) return;
@@ -217,8 +281,8 @@
             let counters = {}; staff.forEach(p => counters[p.name] = 0);
 
             const getBest = (role, dk, excl = []) => {
-                return staff.filter(p => (role === 'OA' ? p.role === 'OA' : p.role === 'AA') && !excl.includes(p.name) && !(wishes[dk]?.includes(p.name)))
-                    .sort((a, b) => (counters[a.name] / (a.work || 100)) - (counters[b.name] / (b.work || 100)))[0];
+                return staff.filter(p => matchesRole(p, role) && !excl.includes(p.name) && !(wishes[dk]?.includes(p.name)))
+                    .sort((a, b) => (counters[a.name] / getWorkPercent(a)) - (counters[b.name] / getWorkPercent(b)))[0];
             };
 
             for(let d=1; d<=daysInMonth; d++) {
@@ -294,8 +358,8 @@
             { id: "oa_6", name: "Oberärzte", category: "Oberärzte" },
             { id: "epu_1", name: "EPU", category: "EPU" },
             { id: "epu_2", name: "EPU", category: "EPU" },
-            { id: "da_1", name: "Dienstärzte", category: "Dienstärzte" },
-            { id: "da_2", name: "Dienstärzte", category: "Dienstärzte" },
+            { id: "da_1", name: "Mo, Mi, Fr", category: "Dienstärzte" },
+            { id: "da_2", name: "So, Di, Do", category: "Dienstärzte" },
             { id: "u1", name: "Urlaub / Zeitausgleich", category: "Urlaub / Zeitausgleich" },
             { id: "u2", name: "Urlaub / Zeitausgleich", category: "Urlaub / Zeitausgleich" },
             { id: "u3", name: "Urlaub / Zeitausgleich", category: "Urlaub / Zeitausgleich" },
@@ -324,9 +388,8 @@
 
                 let splitAA_Mo = plan[moKey] ? plan[moKey].AA : null;
                 let splitAA_So = plan[soKey] ? plan[soKey].AA : null;
-
-                const d1Row = stationLayout.find(r => r.category === "Dienstärzte" && (r.name && r.name.includes("Mo, Mi")));
-                const d2Row = stationLayout.find(r => r.category === "Dienstärzte" && (r.name && r.name.includes("So, Di")));
+                const d1Row = stationLayout.find(r => r.id === "da_1");
+                const d2Row = stationLayout.find(r => r.id === "da_2");
                 
                 // Exclude urlaub doctors from auto assignment
                 let urlaubDocs = new Set();
@@ -489,7 +552,8 @@
         }
 
         function saveStationPlan(key, val) {
-            stationPlan[key] = val;
+            if (val) stationPlan[key] = val;
+            else delete stationPlan[key];
             save();
         }
 
@@ -535,7 +599,7 @@
             const val = document.getElementById('monthPicker').value; if(!val) return;
             const [y, m] = val.split('-').map(Number); 
             ['AA', 'OA'].forEach(role => {
-                let data = staff.filter(p => p.role === role).map(p => {
+                let data = staff.filter(p => matchesRole(p, role)).map(p => {
                     let mD=0, mV=0, sD=0, sV=0;
                     for(let i=0; i<6; i++) {
                         let curM = `${new Date(y, m-1-i, 1).getFullYear()}-${String(new Date(y, m-1-i, 1).getMonth()+1).padStart(2,'0')}`;
@@ -543,6 +607,10 @@
                     }
                     return { name: p.name, mD, mV, sD, sV };
                 });
+                if (!data.length) {
+                    document.getElementById('statsTable'+role).innerHTML = '<p class="text-sm text-slate-500">Keine Mitarbeiter in dieser Rolle angelegt.</p>';
+                    return;
+                }
                 const ex = (k) => ({ max: Math.max(...data.map(d=>d[k]),1), min: Math.min(...data.map(d=>d[k])) });
                 const exMD=ex('mD'), exMV=ex('mV'), exSD=ex('sD'), exSV=ex('sV');
                 let h = `<table class="w-full border-collapse border text-xs text-center"><thead><tr class="bg-slate-100"><th class="p-2 border text-left">Arzt</th><th class="p-2 border">24h (M)</th><th class="p-2 border">Visite (M)</th><th class="p-2 border">24h (6M)</th><th class="p-2 border">Visite (6M)</th></tr></thead><tbody>`;
@@ -552,19 +620,191 @@
         }
 
         // Hilfsfunktionen (Select, Save, Backup, Staff)
-        function createSelect(dK, role) { const curr = plan[dK]?.[role] || ''; let opt = `<option value="">-</option>`; staff.filter(p => (role === 'OA' ? p.role === 'OA' : p.role === 'AA')).forEach(p => { const isWarn = wishes[dK]?.includes(p.name); const label = p.name + (isWarn ? ' (!)' : ''); opt += `<option value="${p.name}" ${curr === p.name ? 'selected' : ''}>${label}</option>`; }); return `<select onchange="savePlan('${dK}', '${role}', this.value)" class="w-full bg-transparent p-1 outline-none text-[10px] print:font-bold">${opt}</select>`; }
+        function createSelect(dK, role) {
+            const curr = plan[dK]?.[role] || '';
+            let opt = `<option value="">-</option>`;
+            staff.filter(p => matchesRole(p, role)).forEach(p => {
+                const isWarn = wishes[dK]?.includes(p.name);
+                const label = p.name + (isWarn ? ' (!)' : '');
+                opt += `<option value="${p.name}" ${curr === p.name ? 'selected' : ''}>${label}</option>`;
+            });
+            return `<select onchange="savePlan('${dK}', '${role}', this.value)" class="w-full bg-transparent p-1 outline-none text-[10px] print:font-bold">${opt}</select>`;
+        }
         function savePlan(k, r, v) { if(!plan[k]) plan[k]={}; plan[k][r]=v; save(); renderCalendar(); }
         function showSection(id) { document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden')); document.getElementById('section-' + id).classList.remove('hidden'); document.querySelectorAll('header nav button').forEach(b => { b.classList.remove('text-blue-300', 'border-b-2', 'border-blue-300'); if(b.getAttribute('onclick').includes(`'${id}'`)) b.classList.add('text-blue-300', 'border-b-2', 'border-blue-300'); }); if(id === 'personal') renderStaff(); }
-        function savePerson() { const n = document.getElementById('pName').value; if(!n) return; staff.push({ name: n, id: document.getElementById('pId').value, role: document.getElementById('pRole').value, work: document.getElementById('pWork').value || 100 }); save(); renderStaff(); renderCalendar(); renderStationPlan(); document.getElementById('pName').value = ''; document.getElementById('pId').value = ''; document.getElementById('pWork').value = ''; }
-        function renderStaff() { document.getElementById('staffList').innerHTML = staff.map((p, i) => `<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1"><span>${p.name} (${p.id})</span><button onclick="staff.splice(${i},1); save(); renderStaff(); renderCalendar(); renderStationPlan();" class="text-red-500 font-bold px-2">X</button></div>`).join(''); }
+        function savePerson() {
+            const name = document.getElementById('pName').value.trim();
+            const id = document.getElementById('pId').value.trim();
+            const role = document.getElementById('pRole').value;
+            const workInput = Number(document.getElementById('pWork').value);
+            const work = workInput > 0 ? Math.min(workInput, 100) : 100;
+
+            if(!name) {
+                alert("Bitte einen Namen eingeben.");
+                return;
+            }
+            if(staff.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+                alert("Dieser Name ist bereits angelegt.");
+                return;
+            }
+
+            staff.push({ name, id, role, work });
+            save(); renderStaff(); renderCalendar(); renderStationPlan();
+            document.getElementById('pName').value = '';
+            document.getElementById('pId').value = '';
+            document.getElementById('pWork').value = '';
+        }
+        function removePerson(index) {
+            const person = staff[index];
+            if (!person) return;
+            if (!confirm(`Soll ${person.name} wirklich entfernt werden? Zugeordnete Dienste, Sperren und Stationsfelder werden ebenfalls geleert.`)) return;
+
+            staff.splice(index, 1);
+            Object.keys(plan).forEach(dateKey => {
+                ['AA', 'VISITE', 'OA'].forEach(role => {
+                    if (plan[dateKey]?.[role] === person.name) plan[dateKey][role] = '';
+                });
+            });
+            Object.keys(wishes).forEach(dateKey => {
+                wishes[dateKey] = (wishes[dateKey] || []).filter(name => name !== person.name);
+                if (!wishes[dateKey].length) delete wishes[dateKey];
+            });
+            Object.keys(stationPlan).forEach(key => {
+                if (stationPlan[key] === person.name) delete stationPlan[key];
+            });
+
+            save(); renderStaff(); renderCalendar(); renderStationPlan();
+        }
+        function renderStaff() {
+            document.getElementById('staffList').innerHTML = staff.map((p, i) => {
+                const details = [p.role, `${getWorkPercent(p)}%`];
+                if (p.id) details.unshift(p.id);
+                return `<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1"><span><span class="font-bold">${p.name}</span> <span class="text-slate-500">(${details.join(' | ')})</span></span><button onclick="removePerson(${i})" class="text-red-500 font-bold px-2">X</button></div>`;
+            }).join('');
+        }
         function renderWishMatrix() { const val = document.getElementById('monthPicker').value; if(!val) return; const [y, m] = val.split('-').map(Number);  const days = new Date(y, m, 0).getDate(); let head = `<tr><th class="border p-1 bg-slate-100">Tag</th>`; staff.forEach(p => head += `<th class="border p-1 text-[8px] h-24 align-bottom" style="writing-mode: vertical-rl;">${p.name}</th>`); let body = ''; for(let d=1; d<=days; d++) { const dk = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; let row = `<tr><td class="p-1 border bg-slate-50 text-center font-bold text-[10px]">${d}</td>`; staff.forEach(p => { const isSet = wishes[dk]?.includes(p.name); row += `<td class="border text-center cursor-pointer ${isSet ? 'bg-purple-500 text-white' : ''}" onclick="toggleWish('${dk}', '${p.name}')">${isSet ? 'X' : ''}</td>`; }); body += row + `</tr>`; } document.getElementById('wishTableContainer').innerHTML = `<h2 class="text-xl font-bold mb-4 text-purple-700 uppercase">Wünsche / Sperren</h2><table class="w-full text-xs border-collapse">${head + `</tr>` + body}</table>`; }
         function toggleWish(k, n) { if(!wishes[k]) wishes[k] = []; wishes[k] = wishes[k].includes(n) ? wishes[k].filter(i => i !== n) : [...wishes[k], n]; save(); renderCalendar(); }
-        function backupExport() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ staff, plan, wishes, stationPlan })], { type: 'application/json' })); a.download = `MediPlan_Backup.json`; a.click(); }
-        function backupImport(e) { const r = new FileReader(); r.onload = (f) => { const d = JSON.parse(f.target.result); staff = d.staff || []; plan = d.plan || {}; wishes = d.wishes || {}; stationPlan = d.stationPlan || {}; save(); renderCalendar(); renderStationPlan(); renderStaff(); alert("Daten geladen!"); }; r.readAsText(e.target.files[0]); }
-        function exportAllICS() { const m = document.getElementById('monthPicker').value; staff.forEach(p => { let ics = "BEGIN:VCALENDAR\nVERSION:2.0\n"; Object.keys(plan).forEach(k => { if(k.startsWith(m) && Object.values(plan[k]).includes(p.name)) { const isV = (plan[k].VISITE === p.name); const s = isV ? "090000" : (k.includes("-06") ? "090000" : "150000"); ics += `BEGIN:VEVENT\nSUMMARY:${isV ? 'Visite' : 'Dienst'}\nDTSTART:${k.replace(/-/g,'')}T${s}\nDTEND:${k.replace(/-/g,'')}T235900\nEND:VEVENT\n`; } }); const blob = new Blob([ics + "END:VCALENDAR"], { type: 'text/calendar' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Dienst_${p.name}.ics`; a.click(); }); }
-        function exportAtossCSV() { let csv = "Personalnummer;Datum;Stunden\n"; Object.keys(plan).forEach(k => { ['AA', 'VISITE', 'OA'].forEach(r => { const p = staff.find(x => x.name === plan[k][r]); if(p) csv += `${p.id};${k};${r==='VISITE'?5:17}\n`; }); }); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = "Atoss_Export.csv"; a.click(); }
+        function backupExport() {
+            const payload = JSON.stringify({ staff, plan, wishes, stationPlan, holidaySeasonMode });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
+            a.download = `MediPlan_Backup.json`;
+            a.click();
+        }
+        function backupImport(e) {
+            const file = e.target.files?.[0];
+            if (!file) return;
 
-        const now = new Date(); document.getElementById('monthPicker').value = now.toISOString().substring(0,7); renderStationPlan(); renderCalendar(); showSection('plan');
+            const r = new FileReader();
+            r.onload = (f) => {
+                try {
+                    const d = JSON.parse(f.target.result);
+                    staff = Array.isArray(d.staff) ? d.staff : [];
+                    plan = d.plan && typeof d.plan === 'object' ? d.plan : {};
+                    wishes = d.wishes && typeof d.wishes === 'object' ? d.wishes : {};
+                    stationPlan = d.stationPlan && typeof d.stationPlan === 'object' ? d.stationPlan : {};
+                    holidaySeasonMode = Boolean(d.holidaySeasonMode);
+                    document.getElementById('holidaySeasonMode').checked = holidaySeasonMode;
+                    save(); renderCalendar(); renderStationPlan(); renderStaff();
+                    alert("Daten geladen!");
+                } catch {
+                    alert("Backup konnte nicht gelesen werden.");
+                } finally {
+                    e.target.value = '';
+                }
+            };
+            r.readAsText(file);
+        }
+        function exportAllICS() {
+            const monthValue = document.getElementById('monthPicker').value;
+            if (!monthValue) return;
+
+            const monthEntries = Object.keys(plan).filter(k => k.startsWith(monthValue)).sort();
+            if (!monthEntries.length) {
+                alert("Keine Dienste im gewählten Monat gefunden.");
+                return;
+            }
+
+            const dtStamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+            let exported = 0;
+
+            staff.forEach(p => {
+                const events = [];
+                monthEntries.forEach(dateKey => {
+                    [
+                        ['AA', '24h Dienst'],
+                        ['VISITE', 'Visite'],
+                        ['OA', 'Hintergrund']
+                    ].forEach(([role, label]) => {
+                        if (plan[dateKey]?.[role] !== p.name) return;
+                        const startTime = getICSStartTime(dateKey, role);
+                        const uid = `${dateKey}-${role}-${p.name}`.replace(/\s+/g, '-');
+                        events.push([
+                            'BEGIN:VEVENT',
+                            `UID:${uid}@mediplan`,
+                            `DTSTAMP:${dtStamp}`,
+                            `SUMMARY:${escapeICSText(label)}`,
+                            `DTSTART:${dateKey.replace(/-/g, '')}T${startTime}`,
+                            `DTEND:${dateKey.replace(/-/g, '')}T235900`,
+                            'END:VEVENT'
+                        ].join('\r\n'));
+                    });
+                });
+
+                if (!events.length) return;
+
+                const lines = [
+                    'BEGIN:VCALENDAR',
+                    'VERSION:2.0',
+                    'PRODID:-//MediPlan Pro//Dienstplan//DE',
+                    ...events,
+                    'END:VCALENDAR'
+                ];
+                const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `Dienst_${p.name}.ics`;
+                a.click();
+                exported++;
+            });
+
+            if (!exported) {
+                alert("Für den gewählten Monat gibt es keine exportierbaren Dienste.");
+            }
+        }
+        function exportAtossCSV() {
+            const monthValue = document.getElementById('monthPicker').value;
+            if (!monthValue) return;
+
+            const rows = [];
+            Object.keys(plan).sort().forEach(dateKey => {
+                if (!dateKey.startsWith(monthValue)) return;
+                [
+                    ['AA', 17],
+                    ['VISITE', 5],
+                    ['OA', 17]
+                ].forEach(([role, hours]) => {
+                    const person = staff.find(x => x.name === plan[dateKey]?.[role]);
+                    if (person?.id) rows.push(`${person.id};${dateKey};${hours}`);
+                });
+            });
+
+            if (!rows.length) {
+                alert("Für den gewählten Monat gibt es keine exportierbaren Atoss-Daten.");
+                return;
+            }
+
+            const csv = ["Personalnummer;Datum;Stunden", ...rows].join("\n");
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+            a.download = "Atoss_Export.csv";
+            a.click();
+        }
+
+        const now = new Date();
+        document.getElementById('monthPicker').value = now.toISOString().substring(0,7);
+        document.getElementById('holidaySeasonMode').checked = holidaySeasonMode;
+        renderStationPlan(); renderCalendar(); showSection('plan');
     </script>
 </body>
 </html>
