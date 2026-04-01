@@ -163,7 +163,7 @@ function isHoliday(date) {
 }
 
 function isVisitDay(date, holidayMode = holidaySeasonMode) {
-    return date.getDay() === 6 || Boolean(getHolidayName(date, holidayMode));
+    return date.getDay() === 0 || date.getDay() === 6 || Boolean(getHolidayName(date, holidayMode));
 }
 
 function isWeekendOrHoliday(date, holidayMode = holidaySeasonMode) {
@@ -359,7 +359,7 @@ function autoStationPlan() {
         const getAvailableDoctor = (predicate) => {
             const available = staff.filter((person) => predicate(person) && !usedDocs.has(person.name) && !blockedByVacation.has(person.name));
             if (!available.length) return null;
-            available.sort((a, b) => getWorkPercent(a) - getWorkPercent(b));
+            available.sort((a, b) => getWorkPercent(b) - getWorkPercent(a));
             const picked = available[0].name;
             usedDocs.add(picked);
             return picked;

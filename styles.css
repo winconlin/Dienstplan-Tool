@@ -28,11 +28,6 @@
         overflow: hidden;
     }
 
-    .holiday-bg {
-        background-color: #d1d5db !important;
-        -webkit-print-color-adjust: exact;
-    }
-
     .col-date {
         width: 35px;
     }
@@ -72,6 +67,11 @@
     .print-only-stations #section-stations {
         display: block !important;
     }
+}
+
+.holiday-bg {
+    background-color: #e2e8f0 !important;
+    -webkit-print-color-adjust: exact;
 }
 
 .wish-conflict {
