@@ -63,7 +63,7 @@ function saveHolidaySeasonMode() {
 }
 
 function matchesRole(person, role) {
-    if (role === "OA") return person.role === "OA" || person.role === "OA-EPU";
+    if (role === "OA") return person.role === "OA";
     if (role === "EPU") return person.role === "OA-EPU";
     return person.role === "AA";
 }
@@ -163,7 +163,7 @@ function isHoliday(date) {
 }
 
 function isVisitDay(date, holidayMode = holidaySeasonMode) {
-    return date.getDay() === 6 || Boolean(getHolidayName(date, holidayMode));
+    return date.getDay() === 0 || date.getDay() === 6 || Boolean(getHolidayName(date, holidayMode));
 }
 
 function isWeekendOrHoliday(date, holidayMode = holidaySeasonMode) {
