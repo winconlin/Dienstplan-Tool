@@ -447,6 +447,44 @@ function runAutoPlaner() {
 }
 
 
+        const getAvailableDoctor = (predicate) => {
+            const available = staff.filter((person) => predicate(person) && !usedDocs.has(person.name) && !blockedByVacation.has(person.name));
+            if (!available.length) return null;
+            available.sort((a, b) => getWorkPercent(b) - getWorkPercent(a));
+            const picked = available[0].name;
+            usedDocs.add(picked);
+            return picked;
+        };
+
+        stationLayout.forEach((row) => {
+            if (row.category === "HKL" || row.category === "Echokardiographie" || row.category === "Dienstärzte") return;
+
+            const cellKey = `${week.key}_${row.id}`;
+            if (stationPlan[cellKey]) return;
+
+            let doctor = null;
+            if (row.category === "EPU") doctor = getAvailableDoctor((person) => matchesRole(person, "EPU"));
+            else if (row.category === "Oberärzte") doctor = getAvailableDoctor((person) => matchesRole(person, "OA"));
+            else if (row.category.includes("Station") || row.category === "CPU" || row.category === "Tagesklinik/UKG") {
+                doctor = getAvailableDoctor((person) => matchesRole(person, "AA"));
+            }
+
+            if (doctor) stationPlan[cellKey] = doctor;
+        });
+
+        stationLayout.forEach((row) => {
+            if (row.category !== "HKL" && row.category !== "Echokardiographie") return;
+            const cellKey = `${week.key}_${row.id}`;
+            if (stationPlan[cellKey]) return;
+            const doctor = getAvailableDoctor((person) => matchesRole(person, "AA"));
+            if (doctor) stationPlan[cellKey] = doctor;
+        });
+    });
+
+    save();
+    renderStationPlan();
+    alert("Stationsplan erfolgreich, soweit möglich, generiert.");
+}
 
 function getWeeksInMonth(year, month) {
     const weeks = [];
