@@ -205,20 +205,92 @@ function clearWishes() {
     renderCalendar();
 }
 
-function autoPlan() {
+function runAutoPlaner() {
     const monthValue = document.getElementById("monthPicker")?.value;
     if (!monthValue) return;
-    if (!confirm("Möchten Sie den Autoplaner wirklich ausführen? Alle bestehenden Dienste für diesen Monat werden überschrieben!")) return;
+    if (!confirm("Möchten Sie den kombinierten Autoplaner ausführen? Der Stationsplan und Dienstplan werden (soweit möglich) neu berechnet und bestehende Einträge überschrieben. Urlaub bleibt erhalten.")) return;
 
+    // --- STATION PLAN LOGIC ---
     const [year, month] = monthValue.split("-").map(Number);
+    const planWeeks = getWeeksInMonth(year, month);
+
+    planWeeks.forEach((week) => {
+        const parts = week.mondayDateStr.split(".");
+        const fullYear = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+        const weekStartDate = new Date(Number(fullYear), Number(parts[1]) - 1, Number(parts[0]));
+
+        const monday = new Date(weekStartDate);
+        const sunday = new Date(weekStartDate);
+        sunday.setDate(sunday.getDate() - 1);
+
+        const mondayKey = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+        const sundayKey = `${sunday.getFullYear()}-${String(sunday.getMonth() + 1).padStart(2, "0")}-${String(sunday.getDate()).padStart(2, "0")}`;
+
+        const splitAA_Monday = plan[mondayKey]?.AA || null;
+        const splitAA_Sunday = plan[sundayKey]?.AA || null;
+        const dienstRowA = stationLayout.find((row) => row.id === "da_1");
+        const dienstRowB = stationLayout.find((row) => row.id === "da_2");
+
+        const blockedByVacation = new Set();
+        stationLayout.forEach((row) => {
+            if (!row.category.includes("Urlaub") && !row.category.includes("Zeitausgleich")) return;
+            const value = stationPlan[`${week.key}_${row.id}`];
+            if (value) blockedByVacation.add(value);
+        });
+
+        if (splitAA_Monday && dienstRowA) stationPlan[`${week.key}_${dienstRowA.id}`] = splitAA_Monday;
+        if (splitAA_Sunday && dienstRowB) stationPlan[`${week.key}_${dienstRowB.id}`] = splitAA_Sunday;
+
+        const usedDocs = new Set();
+        stationLayout.forEach((row) => {
+            const value = stationPlan[`${week.key}_${row.id}`];
+            if (value) usedDocs.add(value);
+        });
+
+        const getAvailableDoctor = (predicate) => {
+            const available = staff.filter((person) => predicate(person) && !usedDocs.has(person.name) && !blockedByVacation.has(person.name));
+            if (!available.length) return null;
+            available.sort((a, b) => getWorkPercent(a) - getWorkPercent(b));
+            const picked = available[0].name;
+            usedDocs.add(picked);
+            return picked;
+        };
+
+        stationLayout.forEach((row) => {
+            if (row.category === "HKL" || row.category === "Echokardiographie" || row.category === "Dienstärzte") return;
+
+            const cellKey = `${week.key}_${row.id}`;
+            if (stationPlan[cellKey]) return;
+
+            let doctor = null;
+            if (row.category === "EPU") doctor = getAvailableDoctor((person) => matchesRole(person, "EPU"));
+            else if (row.category === "Oberärzte") doctor = getAvailableDoctor((person) => matchesRole(person, "OA"));
+            else if (row.category.includes("Station") || row.category === "CPU" || row.category === "Tagesklinik/UKG") {
+                doctor = getAvailableDoctor((person) => matchesRole(person, "AA"));
+            }
+
+            if (doctor) stationPlan[cellKey] = doctor;
+        });
+
+        stationLayout.forEach((row) => {
+            if (row.category !== "HKL" && row.category !== "Echokardiographie") return;
+            const cellKey = `${week.key}_${row.id}`;
+            if (stationPlan[cellKey]) return;
+            const doctor = getAvailableDoctor((person) => matchesRole(person, "AA"));
+            if (doctor) stationPlan[cellKey] = doctor;
+        });
+    });
+
+
+    // --- END STATION PLAN LOGIC ---
+
     const daysInMonth = new Date(year, month, 0).getDate();
 
     for (let day = 1; day <= daysInMonth; day += 1) {
         plan[`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`] = { AA: "", VISITE: "", OA: "" };
     }
 
-    const weeks = getWeeksInMonth(year, month);
-    weeks.forEach((week) => {
+    planWeeks.forEach((week) => {
         const dienstA = stationLayout.find((row) => row.id === "da_1");
         const dienstB = stationLayout.find((row) => row.id === "da_2");
         const docA = dienstA ? stationPlan[`${week.key}_${dienstA.id}`] : null;
@@ -367,89 +439,12 @@ function autoPlan() {
     }
 
     save();
-    renderCalendar();
-    alert("Planung nach Split-Wochen-System erstellt!");
-}
-
-function autoStationPlan() {
-    const monthValue = document.getElementById("monthPicker")?.value;
-    if (!monthValue) return;
-    if (!confirm("Möchten Sie den Stationsplan automatisch besetzen? Leere Felder werden, sofern möglich, überschrieben. Urlaub bleibt erhalten.")) return;
-
-    const [year, month] = monthValue.split("-").map(Number);
-    const weeks = getWeeksInMonth(year, month);
-
-    weeks.forEach((week) => {
-        const parts = week.mondayDateStr.split(".");
-        const fullYear = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
-        const weekStartDate = new Date(Number(fullYear), Number(parts[1]) - 1, Number(parts[0]));
-
-        const monday = new Date(weekStartDate);
-        const sunday = new Date(weekStartDate);
-        sunday.setDate(sunday.getDate() - 1);
-
-        const mondayKey = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
-        const sundayKey = `${sunday.getFullYear()}-${String(sunday.getMonth() + 1).padStart(2, "0")}-${String(sunday.getDate()).padStart(2, "0")}`;
-
-        const splitAA_Monday = plan[mondayKey]?.AA || null;
-        const splitAA_Sunday = plan[sundayKey]?.AA || null;
-        const dienstRowA = stationLayout.find((row) => row.id === "da_1");
-        const dienstRowB = stationLayout.find((row) => row.id === "da_2");
-
-        const blockedByVacation = new Set();
-        stationLayout.forEach((row) => {
-            if (!row.category.includes("Urlaub") && !row.category.includes("Zeitausgleich")) return;
-            const value = stationPlan[`${week.key}_${row.id}`];
-            if (value) blockedByVacation.add(value);
-        });
-
-        if (splitAA_Monday && dienstRowA) stationPlan[`${week.key}_${dienstRowA.id}`] = splitAA_Monday;
-        if (splitAA_Sunday && dienstRowB) stationPlan[`${week.key}_${dienstRowB.id}`] = splitAA_Sunday;
-
-        const usedDocs = new Set();
-        stationLayout.forEach((row) => {
-            const value = stationPlan[`${week.key}_${row.id}`];
-            if (value) usedDocs.add(value);
-        });
-
-        const getAvailableDoctor = (predicate) => {
-            const available = staff.filter((person) => predicate(person) && !usedDocs.has(person.name) && !blockedByVacation.has(person.name));
-            if (!available.length) return null;
-            available.sort((a, b) => getWorkPercent(a) - getWorkPercent(b));
-            const picked = available[0].name;
-            usedDocs.add(picked);
-            return picked;
-        };
-
-        stationLayout.forEach((row) => {
-            if (row.category === "HKL" || row.category === "Echokardiographie" || row.category === "Dienstärzte") return;
-
-            const cellKey = `${week.key}_${row.id}`;
-            if (stationPlan[cellKey]) return;
-
-            let doctor = null;
-            if (row.category === "EPU") doctor = getAvailableDoctor((person) => matchesRole(person, "EPU"));
-            else if (row.category === "Oberärzte") doctor = getAvailableDoctor((person) => matchesRole(person, "OA"));
-            else if (row.category.includes("Station") || row.category === "CPU" || row.category === "Tagesklinik/UKG") {
-                doctor = getAvailableDoctor((person) => matchesRole(person, "AA"));
-            }
-
-            if (doctor) stationPlan[cellKey] = doctor;
-        });
-
-        stationLayout.forEach((row) => {
-            if (row.category !== "HKL" && row.category !== "Echokardiographie") return;
-            const cellKey = `${week.key}_${row.id}`;
-            if (stationPlan[cellKey]) return;
-            const doctor = getAvailableDoctor((person) => matchesRole(person, "AA"));
-            if (doctor) stationPlan[cellKey] = doctor;
-        });
-    });
-
-    save();
     renderStationPlan();
-    alert("Stationsplan erfolgreich, soweit möglich, generiert.");
+    renderCalendar();
+    alert("Stations- und Dienstplan erfolgreich generiert!");
 }
+
+
 
 function getWeeksInMonth(year, month) {
     const weeks = [];
