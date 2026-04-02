@@ -63,9 +63,9 @@ function saveHolidaySeasonMode() {
 }
 
 function matchesRole(person, role) {
-    if (role === "OA") return person.role === "OA" || person.role === "OA-EPU";
-    if (role === "EPU") return person.role === "OA-EPU";
-    return person.role === "AA";
+    if (role === "OA") return person.role === "OA" || person.role === "FOA";
+    if (role === "EPU") return person.role === "OA-EPU" || person.role === "FOA-EPU";
+    return person.role === "AA" || person.role === "FOA" || person.role === "FOA-EPU";
 }
 
 function getWorkPercent(person) {
@@ -217,6 +217,34 @@ function autoPlan() {
         plan[`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`] = { AA: "", VISITE: "", OA: "" };
     }
 
+    const weeks = getWeeksInMonth(year, month);
+    weeks.forEach((week) => {
+        const dienstA = stationLayout.find((row) => row.id === "da_1");
+        const dienstB = stationLayout.find((row) => row.id === "da_2");
+        const docA = dienstA ? stationPlan[`${week.key}_${dienstA.id}`] : null;
+        const docB = dienstB ? stationPlan[`${week.key}_${dienstB.id}`] : null;
+
+        const parts = week.mondayDateStr.split(".");
+        const fullYear = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+        const weekStart = new Date(Number(fullYear), Number(parts[1]) - 1, Number(parts[0]));
+
+        for (let offset = 0; offset < 7; offset += 1) {
+            const current = new Date(weekStart);
+            current.setDate(current.getDate() + offset);
+            if (current.getMonth() + 1 !== month) continue;
+
+            const dateKey = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
+            const dayIndex = current.getDay();
+
+            if (docA && (dayIndex === 1 || dayIndex === 3 || dayIndex === 5)) {
+                plan[dateKey].AA = docA;
+            }
+            if (docB && (dayIndex === 0 || dayIndex === 2 || dayIndex === 4)) {
+                plan[dateKey].AA = docB;
+            }
+        }
+    });
+
     const counters = {};
     staff.forEach((person) => {
         counters[person.name] = 0;
@@ -224,8 +252,36 @@ function autoPlan() {
 
     const getBest = (role, dateKey, excludedNames = []) => {
         return staff
-            .filter((person) => matchesRole(person, role) && !excludedNames.includes(person.name) && !(wishes[dateKey] || []).includes(person.name))
-            .sort((a, b) => (counters[a.name] / getWorkPercent(a)) - (counters[b.name] / getWorkPercent(b)))[0];
+            .filter((person) => {
+                if (!matchesRole(person, role) || excludedNames.includes(person.name) || (wishes[dateKey] || []).includes(person.name)) {
+                    return false;
+                }
+
+                // Determine the week of this dateKey to check vacation status in stationPlan
+                const dateObj = getDateFromKey(dateKey);
+                // Adjust date to the start of its ISO week (Monday)
+                const isoDate = new Date(dateObj);
+                isoDate.setHours(0, 0, 0, 0);
+                isoDate.setDate(isoDate.getDate() + 4 - (isoDate.getDay() || 7));
+                const yearStart = new Date(isoDate.getFullYear(), 0, 1);
+                const weekOne = new Date(yearStart);
+                weekOne.setDate(weekOne.getDate() + 4 - (weekOne.getDay() || 7));
+                const weekNumber = 1 + Math.round(((isoDate.getTime() - weekOne.getTime()) / 86400000 - 3 + (weekOne.getDay() + 6) % 7) / 7);
+                const weekKey = `${dateObj.getFullYear()}-KW${String(weekNumber).padStart(2, "0")}`;
+
+                let isOnVacation = false;
+                stationLayout.forEach((row) => {
+                    if (!row.category.includes("Urlaub") && !row.category.includes("Zeitausgleich")) return;
+                    if (stationPlan[`${weekKey}_${row.id}`] === person.name) isOnVacation = true;
+                });
+
+                return !isOnVacation;
+            })
+            .sort((a, b) => {
+                const penaltyA = (role === "AA" && (a.role === "FOA" || a.role === "FOA-EPU")) ? 1000 : 0;
+                const penaltyB = (role === "AA" && (b.role === "FOA" || b.role === "FOA-EPU")) ? 1000 : 0;
+                return ((counters[a.name] / getWorkPercent(a)) + penaltyA) - ((counters[b.name] / getWorkPercent(b)) + penaltyB);
+            })[0];
     };
 
     for (let day = 1; day <= daysInMonth; day += 1) {
@@ -261,7 +317,7 @@ function autoPlan() {
                     const targetDay = day + offset;
                     if (targetDay > daysInMonth) return;
                     const targetKey = `${year}-${String(month).padStart(2, "0")}-${String(targetDay).padStart(2, "0")}`;
-                    if (!(wishes[targetKey] || []).includes(splitDoctorA.name)) {
+                    if (!plan[targetKey].AA && !(wishes[targetKey] || []).includes(splitDoctorA.name)) {
                         plan[targetKey].AA = splitDoctorA.name;
                         counters[splitDoctorA.name] += 1;
                     }
@@ -277,7 +333,7 @@ function autoPlan() {
                     const targetDay = day + offset;
                     if (targetDay > daysInMonth) return;
                     const targetKey = `${year}-${String(month).padStart(2, "0")}-${String(targetDay).padStart(2, "0")}`;
-                    if (!(wishes[targetKey] || []).includes(splitDoctorB.name)) {
+                    if (!plan[targetKey].AA && !(wishes[targetKey] || []).includes(splitDoctorB.name)) {
                         plan[targetKey].AA = splitDoctorB.name;
                         counters[splitDoctorB.name] += 1;
                     }
