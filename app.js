@@ -163,7 +163,7 @@ function isHoliday(date) {
 }
 
 function isVisitDay(date, holidayMode = holidaySeasonMode) {
-    return date.getDay() === 0 || date.getDay() === 6 || Boolean(getHolidayName(date, holidayMode));
+    return date.getDay() === 6 || Boolean(getHolidayName(date, holidayMode));
 }
 
 function isWeekendOrHoliday(date, holidayMode = holidaySeasonMode) {
@@ -211,7 +211,7 @@ function runAutoPlaner() {
     if (!confirm("Möchten Sie den kombinierten Autoplaner ausführen? Der Stationsplan und Dienstplan werden (soweit möglich) neu berechnet und bestehende Einträge überschrieben. Urlaub bleibt erhalten.")) return;
 
     // --- STATION PLAN LOGIC ---
-    const [year, month] = monthValue.split("-").map(Number);
+
     const planWeeks = getWeeksInMonth(year, month);
 
     planWeeks.forEach((week) => {
@@ -284,6 +284,7 @@ function runAutoPlaner() {
 
     // --- END STATION PLAN LOGIC ---
 
+    const [year, month] = monthValue.split("-").map(Number);
     const daysInMonth = new Date(year, month, 0).getDate();
 
     for (let day = 1; day <= daysInMonth; day += 1) {
@@ -316,6 +317,7 @@ function runAutoPlaner() {
             }
         }
     });
+
 
     const counters = {};
     staff.forEach((person) => {
