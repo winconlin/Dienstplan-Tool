@@ -57,7 +57,6 @@
             background: #f8fafc;
         }
     </style>
-    <script src="app.js"></script>
 </head>
 <body>
     <main>
@@ -75,7 +74,10 @@
         </table>
     </main>
 
-    <script>
+    <script type="module">
+        import { getEasterSunday, getHolidayName, getWeeksInMonth, getICSStartTime } from './src/calendar.js';
+        import { getValidationIssues } from './src/validation.js';
+
         function assertEqual(actual, expected, label) {
             if (actual !== expected) {
                 throw new Error(`${label}: erwartet "${expected}", erhalten "${actual}"`);
@@ -89,7 +91,7 @@
         }
 
         function runTests() {
-            const api = window.MediPlanTestApi;
+            const api = { getEasterSunday, getHolidayName, getWeeksInMonth, getICSStartTime, getValidationIssues };
             const tests = [
                 {
                     name: "Ostersonntag 2026",

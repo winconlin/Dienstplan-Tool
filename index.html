@@ -6,140 +6,222 @@
     <title>MediPlan Pro | Split-Aufbau</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css">
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <!-- Configure Tailwind for Dark Mode -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans h-screen flex flex-col">
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans h-screen flex flex-col transition-colors">
 
-    <header class="bg-slate-900 text-white shadow-md p-4 flex justify-between items-center no-print">
-        <h1 class="text-2xl font-black italic tracking-wider text-blue-400">Medi<span class="text-white">Plan</span> <span class="text-sm font-normal text-slate-400">Klinik</span></h1>
-        <nav class="flex gap-4 text-sm font-bold flex-wrap justify-end">
-            <button onclick="showSection('plan')" class="hover:text-blue-300 border-b-2 border-transparent transition text-blue-300 border-blue-300">Planung</button>
-            <button onclick="showSection('stations')" class="hover:text-blue-300 transition">Stationen</button>
-            <button onclick="showSection('stats')" class="hover:text-blue-300 transition">Statistik</button>
-            <button onclick="showSection('validation')" class="hover:text-blue-300 transition">Validierung</button>
-            <button onclick="showSection('wishes')" class="hover:text-blue-300 transition">Wünsche</button>
-            <button onclick="showSection('personal')" class="hover:text-blue-300 transition">System</button>
+    <header class="bg-slate-900 dark:bg-slate-950 text-white shadow-md p-4 flex flex-col md:flex-row justify-between items-center no-print">
+        <h1 class="text-2xl font-black italic tracking-wider text-blue-400 mb-2 md:mb-0">Medi<span class="text-white">Plan</span> <span class="text-sm font-normal text-slate-400">Klinik</span></h1>
+        <nav class="flex gap-4 text-sm font-bold flex-wrap justify-center md:justify-end items-center">
+            <button data-target="plan" class="hover:text-blue-300 border-b-2 border-transparent transition text-blue-300 border-blue-300" id="navPlan">Planung</button>
+            <button data-target="stations" class="hover:text-blue-300 transition" id="navStations">Stationen</button>
+            <button data-target="stats" class="hover:text-blue-300 transition" id="navStats">Statistik</button>
+            <button data-target="validation" class="hover:text-blue-300 transition" id="navValidation">Validierung</button>
+            <button data-target="wishes" class="hover:text-blue-300 transition" id="navWishes">Wünsche</button>
+            <button data-target="personal" class="hover:text-blue-300 transition" id="navSystem">System</button>
+            <!-- Dark Mode Toggle -->
+            <button id="btnDarkMode" class="ml-2 text-slate-300 hover:text-white" title="Dark Mode Toggle">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                </svg>
+            </button>
         </nav>
     </header>
 
     <main class="flex-1 overflow-auto p-4 max-w-7xl mx-auto w-full">
-        <div class="mb-4 flex gap-4 bg-white p-3 rounded shadow items-center border no-print">
-            <input type="month" id="monthPicker" class="border p-2 rounded font-bold shadow-inner" onchange="renderCalendar(); renderStationPlan();">
-            <div class="flex-1 flex gap-2 justify-end">
-                <button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Drucken</button>
+        <div class="mb-4 flex flex-col md:flex-row gap-4 bg-white dark:bg-slate-800 p-3 rounded shadow items-center border dark:border-slate-700 no-print">
+            <input type="month" id="monthPicker" class="border dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 p-2 rounded font-bold shadow-inner">
+            <div class="flex-1 flex gap-2 justify-end w-full md:w-auto">
+                <button onclick="window.print()" class="bg-slate-800 dark:bg-slate-700 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition w-full md:w-auto">Drucken</button>
             </div>
         </div>
 
         <section id="section-plan" class="section-content">
-            <div class="bg-white p-6 rounded shadow border">
-                <div class="flex justify-between items-end mb-4 pb-2 border-b">
-                    <h2 class="text-3xl font-black text-slate-800 uppercase tracking-tight" id="displayMonth">Monat</h2>
-                    <div class="flex gap-2 no-print">
-                        <button onclick="clearMonth()" class="bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Monat leeren</button>
-                        <button onclick="runAutoPlaner()" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded font-bold shadow-lg hover:scale-105 transition">Autoplaner</button>
+            <div class="bg-white dark:bg-slate-800 p-4 md:p-6 rounded shadow border dark:border-slate-700 overflow-x-auto">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-4 pb-2 border-b dark:border-slate-700">
+                    <h2 class="text-2xl md:text-3xl font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight mb-2 md:mb-0" id="displayMonth">Monat</h2>
+                    <div class="flex gap-2 no-print w-full md:w-auto">
+                        <button id="btnClearMonth" class="flex-1 md:flex-none bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Monat leeren</button>
+                        <button id="btnAutoPlaner" class="flex-1 md:flex-none bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded font-bold shadow-lg hover:scale-105 transition flex justify-center items-center gap-2">
+                            <span>Autoplaner</span>
+                            <!-- Spinner Hidden by default -->
+                            <svg id="loadingOverlay" class="hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
-                <h2 id="printHeaderTitle" class="hidden print:block text-2xl font-bold mb-4">Dienstplan</h2>
-                <table class="w-full border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-slate-800 text-white text-left">
-                            <th class="p-2 border border-slate-700 col-day">Tag</th>
-                            <th class="p-2 border border-slate-700 col-date">Dat.</th>
-                            <th class="p-2 border border-slate-700 w-1/4">24h Dienst (AA)</th>
-                            <th class="p-2 border border-slate-700 w-1/4">Visite (WE/FT)</th>
-                            <th class="p-2 border border-slate-700 w-1/4">Hintergrund (OA)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="calendarBody" class="bg-white"></tbody>
-                </table>
+                <h2 id="printHeaderTitle" class="hidden print:block text-2xl font-bold mb-4 text-black">Dienstplan</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse text-sm min-w-[600px]">
+                        <thead>
+                            <tr class="bg-slate-800 dark:bg-slate-900 text-white text-left">
+                                <th class="p-2 border border-slate-700 col-day">Tag</th>
+                                <th class="p-2 border border-slate-700 col-date">Dat.</th>
+                                <th class="p-2 border border-slate-700 w-1/4">24h Dienst (AA)</th>
+                                <th class="p-2 border border-slate-700 w-1/4">Visite (WE/FT)</th>
+                                <th class="p-2 border border-slate-700 w-1/4">Hintergrund (OA)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="calendarBody" class="bg-white dark:bg-slate-800"></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
         <section id="section-stations" class="section-content hidden">
-            <div class="bg-white p-6 rounded shadow border">
-                <div class="flex justify-between items-center mb-6 border-b pb-4">
-                    <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Stationsbesetzung MED I</h2>
-                    <div class="flex gap-2 no-print">
-                        <button onclick="document.body.classList.add('print-only-stations'); window.print(); document.body.classList.remove('print-only-stations');" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Drucken</button>
+            <div class="bg-white dark:bg-slate-800 p-4 md:p-6 rounded shadow border dark:border-slate-700">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b dark:border-slate-700 pb-4">
+                    <h2 class="text-2xl font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight mb-2 md:mb-0 text-center w-full md:text-left md:w-auto">Stationsbesetzung MED I</h2>
+                    <div class="flex gap-2 no-print w-full md:w-auto">
+                        <button id="btnClearStationPlan" class="flex-1 md:flex-none bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Stationen leeren</button>
+                        <button onclick="document.body.classList.add('print-only-stations'); window.print(); document.body.classList.remove('print-only-stations');" class="flex-1 md:flex-none bg-slate-800 dark:bg-slate-700 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-600 transition">Drucken</button>
                     </div>
                 </div>
-                <h2 id="printHeaderStationTitle" class="hidden print:block text-2xl font-bold mb-4">Stationsbesetzung</h2>
-                <table class="w-full border-collapse text-[11px] print:text-[9px]">
-                    <thead id="stationHeader"></thead>
-                    <tbody id="stationBody"></tbody>
-                </table>
+                <h2 id="printHeaderStationTitle" class="hidden print:block text-2xl font-bold mb-4 text-black">Stationsbesetzung</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse text-[11px] print:text-[9px] min-w-[800px]">
+                        <thead id="stationHeader"></thead>
+                        <tbody id="stationBody"></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
         <section id="section-stats" class="section-content hidden no-print">
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-white p-4 rounded shadow border">
-                    <h3 class="font-bold border-b mb-2 text-blue-700 uppercase">Assistenten (AA)</h3>
-                    <div id="statsTableAA"></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white dark:bg-slate-800 p-4 rounded shadow border dark:border-slate-700 overflow-x-auto">
+                    <h3 class="font-bold border-b dark:border-slate-700 mb-2 text-blue-700 dark:text-blue-400 uppercase">Assistenten (AA)</h3>
+                    <div id="statsTableAA" class="min-w-[400px]"></div>
                 </div>
-                <div class="bg-white p-4 rounded shadow border">
-                    <h3 class="font-bold border-b mb-2 text-purple-700 uppercase">Oberärzte (OA)</h3>
-                    <div id="statsTableOA"></div>
+                <div class="bg-white dark:bg-slate-800 p-4 rounded shadow border dark:border-slate-700 overflow-x-auto">
+                    <h3 class="font-bold border-b dark:border-slate-700 mb-2 text-purple-700 dark:text-purple-400 uppercase">Oberärzte (OA)</h3>
+                    <div id="statsTableOA" class="min-w-[400px]"></div>
                 </div>
             </div>
         </section>
 
         <section id="section-validation" class="section-content hidden no-print">
-            <div class="bg-white p-6 rounded shadow border space-y-6">
-                <div class="flex justify-between items-center border-b pb-4">
-                    <div>
-                        <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Validierung</h2>
-                        <p class="text-sm text-slate-500">Prüft unbesetzte Dienste, Doppelbelegungen und exportrelevante Datenlücken.</p>
+            <div class="bg-white dark:bg-slate-800 p-4 md:p-6 rounded shadow border dark:border-slate-700 space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-center border-b dark:border-slate-700 pb-4">
+                    <div class="mb-2 md:mb-0 text-center md:text-left">
+                        <h2 class="text-2xl font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight">Validierung</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Prüft unbesetzte Dienste, Doppelbelegungen und exportrelevante Datenlücken.</p>
                     </div>
-                    <button onclick="renderValidation()" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Neu prüfen</button>
+                    <button id="btnRenderValidation" class="w-full md:w-auto bg-slate-800 dark:bg-slate-700 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-600 transition">Neu prüfen</button>
                 </div>
                 <div id="validationSummary" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-                <div id="validationList"></div>
+                <div id="validationList" class="overflow-x-auto"></div>
             </div>
         </section>
 
         <section id="section-personal" class="section-content hidden no-print">
-            <div class="grid grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded shadow border">
-                    <div class="flex justify-between items-center border-b mb-4 pb-2">
-                        <h3 class="font-bold text-slate-800 uppercase">Mitarbeiter & Matrix</h3>
-                        <button onclick="clearWishes()" class="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600 transition">Wünsche leeren (Monat)</button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white dark:bg-slate-800 p-4 md:p-6 rounded shadow border dark:border-slate-700">
+                    <div class="flex justify-between items-center border-b dark:border-slate-700 mb-4 pb-2">
+                        <h3 class="font-bold text-slate-800 dark:text-slate-200 uppercase">Mitarbeiter & Matrix</h3>
+                        <button id="btnClearWishes" class="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600 transition">Wünsche leeren</button>
                     </div>
-                    <div class="grid grid-cols-4 gap-2 mb-2">
-                        <input type="text" id="pName" placeholder="Name" class="border p-2 rounded text-sm">
-                        <input type="text" id="pId" placeholder="Atoss-Nr." class="border p-2 rounded text-sm">
-                        <select id="pRole" class="border p-2 rounded text-sm">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+                        <input type="text" id="pName" placeholder="Name" class="border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-2 rounded text-sm">
+                        <input type="text" id="pId" placeholder="Atoss-Nr." class="border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-2 rounded text-sm">
+                        <select id="pRole" class="border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-2 rounded text-sm">
                             <option value="AA">Assistent</option>
                             <option value="OA">Oberarzt</option>
                             <option value="OA-EPU">OA-EPU</option>
                             <option value="FOA">Funktionsoberarzt</option>
                             <option value="FOA-EPU">FOA-EPU</option>
                         </select>
-                        <input type="number" id="pWork" placeholder="Stelle %" class="border p-2 rounded text-sm">
+                        <input type="number" id="pWork" placeholder="Stelle %" class="border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-2 rounded text-sm">
                     </div>
-                    <button onclick="savePerson()" class="w-full bg-blue-600 text-white py-2 rounded font-bold shadow hover:bg-blue-700 transition">Arzt hinzufügen</button>
-                    <div id="staffList" class="mt-4 space-y-1 max-h-40 overflow-y-auto"></div>
+                    <div class="flex gap-4 mb-4 text-xs font-bold items-center text-slate-700 dark:text-slate-300">
+                        <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="pRotant" class="w-4 h-4 bg-slate-700"> Rotant</label>
+                        <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="pCanDoShifts" class="w-4 h-4 bg-slate-700" checked> Darf Dienste machen</label>
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="btnSavePerson" class="flex-1 bg-blue-600 text-white py-2 rounded font-bold shadow hover:bg-blue-700 transition">Arzt speichern</button>
+                        <button id="btnClearPersonForm" class="bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2 rounded font-bold shadow hover:bg-slate-400 transition" title="Eingabe leeren">X</button>
+                    </div>
+                    <div id="staffList" class="mt-4 space-y-1 max-h-60 overflow-y-auto pr-2"></div>
                 </div>
-                <div class="bg-white p-6 rounded shadow border text-center">
-                    <h3 class="font-bold border-b mb-4 pb-2 text-red-600 uppercase italic">Konfiguration & Backup</h3>
-                    <label class="flex items-center gap-2 font-bold text-xs cursor-pointer mb-6 bg-red-50 p-3 rounded border border-red-100">
-                        <input type="checkbox" id="holidaySeasonMode" onchange="saveHolidaySeasonMode(); renderCalendar(); renderStationPlan();" class="w-5 h-5">
-                        <span>Weihnachts-Sonderregelung<br><small class="text-gray-500">(Sa vor 24.12. bis So nach 06.01.)</small></span>
-                    </label>
-                    <button onclick="backupExport()" class="w-full bg-slate-100 border p-2 mb-2 rounded font-bold">Alles sichern (Backup)</button>
-                    <label class="block bg-slate-100 border p-2 mb-4 rounded font-bold text-center cursor-pointer">Backup einlesen <input type="file" class="hidden" onchange="backupImport(event)"></label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="exportAllICS()" class="bg-green-600 text-white py-2 rounded font-bold">Alle ICS</button>
-                        <button onclick="exportAtossCSV()" class="bg-slate-800 text-white py-2 rounded font-bold">Atoss CSV</button>
+
+                <div class="flex flex-col gap-6">
+                    <div class="bg-white dark:bg-slate-800 p-4 md:p-6 rounded shadow border dark:border-slate-700 text-center">
+                        <h3 class="font-bold border-b dark:border-slate-700 mb-4 pb-2 text-red-600 dark:text-red-400 uppercase italic">Konfiguration & Backup</h3>
+                        <label class="flex flex-col md:flex-row items-center justify-center gap-2 font-bold text-xs cursor-pointer mb-6 bg-red-50 dark:bg-red-900/30 p-3 rounded border border-red-100 dark:border-red-900">
+                            <input type="checkbox" id="holidaySeasonMode" class="w-5 h-5">
+                            <span>Weihnachts-Sonderregelung<br><small class="text-gray-500 dark:text-gray-400">(Sa vor 24.12. bis So nach 06.01.)</small></span>
+                        </label>
+                        <button id="btnBackupExport" class="w-full bg-slate-100 dark:bg-slate-700 dark:text-white border dark:border-slate-600 p-2 mb-2 rounded font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition">Alles sichern (Backup)</button>
+                        <label class="block bg-slate-100 dark:bg-slate-700 dark:text-white border dark:border-slate-600 p-2 mb-4 rounded font-bold text-center cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+                            Backup einlesen <input type="file" id="backupInput" class="hidden">
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="btnExportICS" class="bg-green-600 text-white py-2 rounded font-bold hover:bg-green-700 transition">Alle ICS</button>
+                            <button id="btnExportCSV" class="bg-slate-800 dark:bg-slate-700 text-white py-2 rounded font-bold hover:bg-slate-600 transition">Atoss CSV</button>
+                        </div>
+                        <button id="btnCleanupOldData" class="mt-4 w-full bg-orange-600 text-white py-2 rounded font-bold hover:bg-orange-700 transition">Daten > 12 Monate archivieren & löschen</button>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 p-4 md:p-6 rounded shadow border dark:border-slate-700 text-center">
+                        <h3 class="font-bold border-b dark:border-slate-700 mb-4 pb-2 text-indigo-600 dark:text-indigo-400 uppercase italic">Stationslayout Editor</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Hier können Stationen für die Besetzungs-Tabelle verwaltet werden.</p>
+                        <div id="stationEditorList" class="space-y-2 mb-4 text-left max-h-40 overflow-y-auto pr-2"></div>
+                        <div class="flex gap-2 flex-col md:flex-row">
+                            <input type="text" id="seId" placeholder="ID (z.B. s1)" class="border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-2 rounded text-sm w-full md:w-1/4">
+                            <input type="text" id="seCategory" placeholder="Kategorie (z.B. Station 1)" class="border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-2 rounded text-sm w-full md:w-2/4">
+                            <input type="text" id="seName" placeholder="Name (Zimmer 1-5)" class="border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-2 rounded text-sm w-full md:w-1/4">
+                        </div>
+                        <button id="btnSaveStationLayout" class="mt-2 w-full bg-indigo-600 text-white py-2 rounded font-bold hover:bg-indigo-700 transition">Station hinzufügen</button>
                     </div>
                 </div>
             </div>
         </section>
 
         <section id="section-wishes" class="section-content hidden no-print">
-            <div class="bg-white p-6 rounded shadow border overflow-x-auto" id="wishTableContainer"></div>
+            <div class="bg-white dark:bg-slate-800 p-4 md:p-6 rounded shadow border dark:border-slate-700 overflow-x-auto" id="wishTableContainer"></div>
         </section>
     </main>
 
-    <script src="app.js"></script>
+    <!-- Toasts Container -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 no-print pointer-events-none"></div>
+
+    <script type="module" src="src/main.js"></script>
+    <script>
+        // Dark mode toggle listener (outside module for immediate exec to prevent flash)
+        const toggleBtn = document.getElementById("btnDarkMode");
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+
+        toggleBtn.addEventListener("click", () => {
+            document.documentElement.classList.toggle("dark");
+            if (document.documentElement.classList.contains("dark")) {
+                localStorage.setItem("theme", "dark");
+            } else {
+                localStorage.setItem("theme", "light");
+            }
+        });
+
+        // PWA SW Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(err => {
+                    console.log('SW registration failed: ', err);
+                });
+            });
+        }
+    </script>
 </body>
 </html>

@@ -21,6 +21,10 @@
         border-collapse: collapse;
     }
 
+    tr {
+        page-break-inside: avoid;
+    }
+
     th,
     td {
         border: 0.5pt solid #000 !important;
@@ -74,20 +78,38 @@
     -webkit-print-color-adjust: exact;
 }
 
+.dark .holiday-bg {
+    background-color: #334155 !important;
+}
+
 .wish-conflict {
     background-color: #fef08a !important;
-    color: #b45309;
+    color: #b45309 !important;
+}
+
+.dark .wish-conflict {
+    background-color: #a16207 !important;
+    color: #fef3c7 !important;
 }
 
 .conflict-red {
     background-color: #fca5a5 !important;
-    color: #7f1d1d;
+    color: #7f1d1d !important;
+}
+
+.dark .conflict-red {
+    background-color: #991b1b !important;
+    color: #fee2e2 !important;
 }
 
 .validation-card {
     border: 1px solid #e2e8f0;
     border-radius: 0.75rem;
     padding: 1rem;
+}
+
+.dark .validation-card {
+    border-color: #475569;
 }
 
 .validation-card strong {
