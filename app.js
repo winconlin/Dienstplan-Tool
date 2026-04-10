@@ -13,6 +13,80 @@ let wishes = readStorage("mp_wishes", {});
 let stationPlan = readStorage("mp_station", {});
 let holidaySeasonMode = readStorage("mp_holiday_mode", false);
 
+function getActiveStaff(monthKey) {
+    if (!monthKey) return staff;
+    return staff.map(person => {
+        if (!person.history) return person;
+        const sortedKeys = Object.keys(person.history).sort();
+        if (sortedKeys.length === 0) return person;
+
+        let bestConfig = person.history[sortedKeys[0]] || {};
+        for (const k of sortedKeys) {
+            if (k <= monthKey) {
+                bestConfig = person.history[k];
+            } else {
+                break;
+            }
+        }
+        return { ...person, ...bestConfig };
+    });
+}
+
+let historyStack = [];
+
+function showToast(message, type = "info") {
+    const container = document.getElementById("toastContainer");
+    if (!container) return;
+    const toast = document.createElement("div");
+    const colors = {
+        info: "bg-blue-600",
+        success: "bg-green-600",
+        warning: "bg-orange-500",
+        error: "bg-red-600"
+    };
+    toast.className = `${colors[type]} text-white px-4 py-2 rounded shadow-lg text-sm transition-opacity duration-300 opacity-0`;
+    toast.innerText = message;
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => toast.classList.remove("opacity-0"));
+
+    setTimeout(() => {
+        toast.classList.add("opacity-0");
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function pushToHistory() {
+    if (historyStack.length >= 20) historyStack.shift();
+    historyStack.push({
+        plan: JSON.stringify(plan),
+        stationPlan: JSON.stringify(stationPlan),
+        wishes: JSON.stringify(wishes)
+    });
+}
+
+function undo() {
+    if (historyStack.length === 0) {
+        showToast("Keine weiteren Aktionen zum Rückgängigmachen.", "warning");
+        return;
+    }
+    const lastState = historyStack.pop();
+    plan = JSON.parse(lastState.plan);
+    stationPlan = JSON.parse(lastState.stationPlan);
+    wishes = JSON.parse(lastState.wishes);
+    save();
+    renderCalendar();
+    renderStationPlan();
+    showToast("Letzte Aktion rückgängig gemacht.", "info");
+}
+
+document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+        undo();
+        e.preventDefault();
+    }
+});
+
 const roleLabels = {
     AA: "24h Dienst (AA)",
     VISITE: "Visite (WE/FT)",
@@ -195,6 +269,22 @@ function clearMonth() {
     renderCalendar();
 }
 
+function clearStationPlan() {
+    const monthValue = document.getElementById("monthPicker")?.value;
+    if (!monthValue) return;
+    if (!confirm("Möchten Sie den Stationsplan für diesen Monat komplett leeren?")) return;
+
+    const [year, month] = monthValue.split("-").map(Number);
+    const weeks = getWeeksInMonth(year, month);
+    weeks.forEach(week => {
+        stationLayout.forEach(row => {
+            delete stationPlan[`${week.key}_${row.id}`];
+        });
+    });
+    save();
+    renderStationPlan();
+}
+
 function clearWishes() {
     const monthValue = document.getElementById("monthPicker")?.value;
     if (!monthValue) return;
@@ -211,6 +301,8 @@ function runAutoPlaner() {
     if (!confirm("Möchten Sie den kombinierten Autoplaner ausführen? Der Stationsplan und Dienstplan werden (soweit möglich) neu berechnet und bestehende Einträge überschrieben. Urlaub bleibt erhalten.")) return;
 
     // --- STATION PLAN LOGIC ---
+
+    const [year, month] = monthValue.split("-").map(Number);
 
     const planWeeks = getWeeksInMonth(year, month);
 
@@ -248,7 +340,8 @@ function runAutoPlaner() {
         });
 
         const getAvailableDoctor = (predicate) => {
-            const available = staff.filter((person) => predicate(person) && !usedDocs.has(person.name) && !blockedByVacation.has(person.name));
+            const activeStaffThisMonth = getActiveStaff(monthValue);
+            const available = activeStaffThisMonth.filter((person) => person.canDoShifts !== false && predicate(person) && !usedDocs.has(person.name) && !blockedByVacation.has(person.name));
             if (!available.length) return null;
             available.sort((a, b) => getWorkPercent(a) - getWorkPercent(b));
             const picked = available[0].name;
@@ -284,11 +377,13 @@ function runAutoPlaner() {
 
     // --- END STATION PLAN LOGIC ---
 
-    const [year, month] = monthValue.split("-").map(Number);
     const daysInMonth = new Date(year, month, 0).getDate();
 
     for (let day = 1; day <= daysInMonth; day += 1) {
-        plan[`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`] = { AA: "", VISITE: "", OA: "" };
+        const key = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        if (!plan[key]) {
+            plan[key] = { AA: "", VISITE: "", OA: "" };
+        }
     }
 
     planWeeks.forEach((week) => {
@@ -310,38 +405,47 @@ function runAutoPlaner() {
             const dayIndex = current.getDay();
 
             if (docA && (dayIndex === 1 || dayIndex === 3 || dayIndex === 5)) {
-                plan[dateKey].AA = docA;
+                if (!plan[dateKey].AA) plan[dateKey].AA = docA;
             }
             if (docB && (dayIndex === 0 || dayIndex === 2 || dayIndex === 4)) {
-                plan[dateKey].AA = docB;
+                if (!plan[dateKey].AA) plan[dateKey].AA = docB;
             }
         }
     });
 
 
     const counters = {};
-    staff.forEach((person) => {
+    const activeStaffThisMonth = getActiveStaff(monthValue);
+    activeStaffThisMonth.forEach((person) => {
         counters[person.name] = 0;
     });
 
+    const weekKeyCache = {};
+    const getWeekKeyForDate = (dateKey) => {
+        if (weekKeyCache[dateKey]) return weekKeyCache[dateKey];
+        const dateObj = getDateFromKey(dateKey);
+        const isoDate = new Date(dateObj);
+        isoDate.setHours(0, 0, 0, 0);
+        isoDate.setDate(isoDate.getDate() + 4 - (isoDate.getDay() || 7));
+        const yearStart = new Date(isoDate.getFullYear(), 0, 1);
+        const weekOne = new Date(yearStart);
+        weekOne.setDate(weekOne.getDate() + 4 - (weekOne.getDay() || 7));
+        const weekNumber = 1 + Math.round(((isoDate.getTime() - weekOne.getTime()) / 86400000 - 3 + (weekOne.getDay() + 6) % 7) / 7);
+        const key = `${dateObj.getFullYear()}-KW${String(weekNumber).padStart(2, "0")}`;
+        weekKeyCache[dateKey] = key;
+        return key;
+    };
+
     const getBest = (role, dateKey, excludedNames = []) => {
-        return staff
+        const weekKey = getWeekKeyForDate(dateKey);
+
+        return activeStaffThisMonth
             .filter((person) => {
+                if (person.canDoShifts === false) return false;
+
                 if (!matchesRole(person, role) || excludedNames.includes(person.name) || (wishes[dateKey] || []).includes(person.name)) {
                     return false;
                 }
-
-                // Determine the week of this dateKey to check vacation status in stationPlan
-                const dateObj = getDateFromKey(dateKey);
-                // Adjust date to the start of its ISO week (Monday)
-                const isoDate = new Date(dateObj);
-                isoDate.setHours(0, 0, 0, 0);
-                isoDate.setDate(isoDate.getDate() + 4 - (isoDate.getDay() || 7));
-                const yearStart = new Date(isoDate.getFullYear(), 0, 1);
-                const weekOne = new Date(yearStart);
-                weekOne.setDate(weekOne.getDate() + 4 - (weekOne.getDay() || 7));
-                const weekNumber = 1 + Math.round(((isoDate.getTime() - weekOne.getTime()) / 86400000 - 3 + (weekOne.getDay() + 6) % 7) / 7);
-                const weekKey = `${dateObj.getFullYear()}-KW${String(weekNumber).padStart(2, "0")}`;
 
                 let isOnVacation = false;
                 stationLayout.forEach((row) => {
@@ -549,7 +653,23 @@ function renderStationPlan() {
         tbody += tableRow;
     });
 
-    bodyEl.innerHTML = tbody;
+    let unassignedRow = `<tr class="border-b border-slate-300 text-center align-middle bg-slate-100 no-print text-[10px]">
+        <td class="p-2 font-bold border-r border-slate-300 text-slate-500" colspan="2">Unverplant</td>`;
+
+    weeks.forEach((week) => {
+        const assignedDocs = new Set();
+        stationLayout.forEach((row) => {
+            const val = stationPlan[`${week.key}_${row.id}`];
+            if (val) assignedDocs.add(val);
+        });
+
+        const unassigned = staff.filter((person) => !assignedDocs.has(person.name) && matchesRole(person, "AA"));
+        const namesList = unassigned.map(p => p.name).join(", ");
+        unassignedRow += `<td class="p-1 border-r border-slate-300 text-slate-500 max-w-[80px] truncate" title="${namesList}">${unassigned.length > 0 ? namesList : "-"}</td>`;
+    });
+    unassignedRow += "</tr>";
+
+    bodyEl.innerHTML = tbody + unassignedRow;
     renderValidation();
 }
 
@@ -557,7 +677,7 @@ function saveStationPlan(key, value) {
     if (value) stationPlan[key] = value;
     else delete stationPlan[key];
     save();
-    renderValidation();
+    renderStationPlan();
 }
 
 function getHeatmapColor(value, min, max) {
@@ -716,31 +836,65 @@ function showSection(id) {
     if (id === "validation") renderValidation();
 }
 
+function loadPerson(index) {
+    const monthValue = document.getElementById("monthPicker")?.value;
+    const activeStaffList = getActiveStaff(monthValue);
+    const person = activeStaffList[index];
+    if (!person) return;
+    document.getElementById("pName").value = person.name;
+    document.getElementById("pId").value = person.id || "";
+    document.getElementById("pRole").value = person.role || "AA";
+    document.getElementById("pWork").value = person.work || 100;
+    document.getElementById("pRotant").checked = person.isRotant || false;
+    document.getElementById("pCanDoShifts").checked = person.canDoShifts !== false;
+}
+
+function clearPersonForm() {
+    document.getElementById("pName").value = "";
+    document.getElementById("pId").value = "";
+    document.getElementById("pRole").value = "AA";
+    document.getElementById("pWork").value = "";
+    document.getElementById("pRotant").checked = false;
+    document.getElementById("pCanDoShifts").checked = true;
+}
+
 function savePerson() {
     const name = document.getElementById("pName")?.value.trim() || "";
     const id = document.getElementById("pId")?.value.trim() || "";
     const role = document.getElementById("pRole")?.value || "AA";
     const workInput = Number(document.getElementById("pWork")?.value);
     const work = workInput > 0 ? Math.min(workInput, 100) : 100;
+    const isRotant = document.getElementById("pRotant")?.checked || false;
+    const canDoShifts = document.getElementById("pCanDoShifts")?.checked !== false;
 
     if (!name) {
-        alert("Bitte einen Namen eingeben.");
-        return;
-    }
-    if (staff.some((person) => person.name.toLowerCase() === name.toLowerCase())) {
-        alert("Dieser Name ist bereits angelegt.");
+        showToast("Bitte einen Namen eingeben.", "warning");
         return;
     }
 
-    staff.push({ name, id, role, work });
+    const monthValue = document.getElementById("monthPicker")?.value || getCurrentMonthValue();
+    const existingIndex = staff.findIndex((person) => person.name.toLowerCase() === name.toLowerCase());
+
+    if (existingIndex !== -1) {
+        const person = staff[existingIndex];
+        if (!person.history) person.history = {};
+        person.history[monthValue] = { role, work, isRotant, canDoShifts };
+
+        person.id = id;
+
+        showToast(`Änderungen für ${name} ab ${monthValue} gespeichert.`, "success");
+    } else {
+        const history = {};
+        history[monthValue] = { role, work, isRotant, canDoShifts };
+        staff.push({ name, id, history });
+        showToast(`${name} hinzugefügt.`, "success");
+    }
+
     save();
     renderStaff();
     renderCalendar();
     renderStationPlan();
-
-    document.getElementById("pName").value = "";
-    document.getElementById("pId").value = "";
-    document.getElementById("pWork").value = "";
+    clearPersonForm();
 }
 
 function removePerson(index) {
@@ -773,12 +927,17 @@ function removePerson(index) {
 
 function renderStaff() {
     const staffList = document.getElementById("staffList");
+    const monthValue = document.getElementById("monthPicker")?.value;
     if (!staffList) return;
 
-    staffList.innerHTML = staff.map((person, index) => {
+    const activeStaff = getActiveStaff(monthValue);
+
+    staffList.innerHTML = activeStaff.map((person, index) => {
         const details = [person.role, `${getWorkPercent(person)}%`];
         if (person.id) details.unshift(person.id);
-        return `<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1"><span><span class="font-bold">${person.name}</span> <span class="text-slate-500">(${details.join(" | ")})</span></span><button onclick="removePerson(${index})" class="text-red-500 font-bold px-2">X</button></div>`;
+        if (person.isRotant) details.push("Rotant");
+        if (person.canDoShifts === false) details.push("Keine Dienste");
+        return `<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1 hover:bg-slate-100 cursor-pointer transition" onclick="loadPerson(${index})"><span><span class="font-bold">${person.name}</span> <span class="text-slate-500">(${details.join(" | ")})</span></span><button onclick="event.stopPropagation(); removePerson(${index})" class="text-red-500 font-bold px-2 hover:bg-red-100 rounded">X</button></div>`;
     }).join("");
 }
 
@@ -790,8 +949,21 @@ function renderWishMatrix() {
     const [year, month] = monthValue.split("-").map(Number);
     const daysInMonth = new Date(year, month, 0).getDate();
 
-    let head = '<tr><th class="border p-1 bg-slate-100">Tag</th>';
-    staff.forEach((person) => {
+    const groupAA = staff.filter(p => p.role === "AA" || p.role === "FOA");
+    const groupOA = staff.filter(p => p.role === "OA");
+    const groupEPU = staff.filter(p => p.role === "OA-EPU" || p.role === "FOA-EPU");
+
+    const sortedStaff = [...groupAA, ...groupOA, ...groupEPU];
+
+    let head = '<tr><th class="border p-1 bg-slate-100" rowspan="2">Tag</th>';
+
+    if (groupAA.length > 0) head += `<th class="border p-1 bg-blue-50 text-center" colspan="${groupAA.length}">Assistenten</th>`;
+    if (groupOA.length > 0) head += `<th class="border p-1 bg-purple-50 text-center" colspan="${groupOA.length}">Oberärzte</th>`;
+    if (groupEPU.length > 0) head += `<th class="border p-1 bg-green-50 text-center" colspan="${groupEPU.length}">EPU Oberärzte</th>`;
+
+    head += '</tr><tr>';
+
+    sortedStaff.forEach((person) => {
         head += `<th class="border p-1 text-[8px] h-24 align-bottom" style="writing-mode: vertical-rl;">${person.name}</th>`;
     });
     head += "</tr>";
@@ -800,9 +972,10 @@ function renderWishMatrix() {
     for (let day = 1; day <= daysInMonth; day += 1) {
         const dateKey = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
         let row = `<tr><td class="p-1 border bg-slate-50 text-center font-bold text-[10px]">${day}</td>`;
-        staff.forEach((person) => {
+        sortedStaff.forEach((person) => {
             const isSet = (wishes[dateKey] || []).includes(person.name);
-            row += `<td class="border text-center cursor-pointer ${isSet ? "bg-purple-500 text-white" : ""}" onclick="toggleWish('${dateKey}', '${person.name}')">${isSet ? "X" : ""}</td>`;
+            const escapedName = person.name.replace(/'/g, "\\'");
+            row += `<td class="border text-center cursor-pointer ${isSet ? "bg-purple-500 text-white" : ""}" onclick="toggleWish('${dateKey}', '${escapedName}')">${isSet ? "X" : ""}</td>`;
         });
         body += `${row}</tr>`;
     }
@@ -827,6 +1000,31 @@ function backupExport() {
     anchor.click();
 }
 
+function cleanupOldData() {
+    if (!confirm("Sollen alle Daten (Dienste, Wünsche, Stationspläne), die älter als 12 Monate sind, gelöscht werden? Ein Backup wird vorher automatisch heruntergeladen.")) return;
+    backupExport();
+
+    const cutoffDate = new Date();
+    cutoffDate.setMonth(cutoffDate.getMonth() - 12);
+    const cutoffKey = `${cutoffDate.getFullYear()}-${String(cutoffDate.getMonth() + 1).padStart(2, "0")}`;
+    const cutoffWeekKey = `${cutoffDate.getFullYear()}-KW${String(Math.ceil((cutoffDate.getTime() - new Date(cutoffDate.getFullYear(), 0, 1).getTime()) / 86400000 / 7)).padStart(2, "0")}`;
+
+    Object.keys(plan).forEach(key => {
+        if (key < cutoffKey) delete plan[key];
+    });
+    Object.keys(wishes).forEach(key => {
+        if (key < cutoffKey) delete wishes[key];
+    });
+    Object.keys(stationPlan).forEach(key => {
+        if (key.split("_")[0] < cutoffWeekKey) delete stationPlan[key];
+    });
+
+    save();
+    renderCalendar();
+    renderStationPlan();
+    showToast("Alte Daten erfolgreich bereinigt.", "success");
+}
+
 function backupImport(event) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -848,9 +1046,9 @@ function backupImport(event) {
             renderCalendar();
             renderStationPlan();
             renderStaff();
-            alert("Daten geladen!");
+            showToast("Daten geladen!", "success");
         } catch {
-            alert("Backup konnte nicht gelesen werden.");
+            showToast("Backup konnte nicht gelesen werden.", "error");
         } finally {
             event.target.value = "";
         }
