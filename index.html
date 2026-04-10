@@ -16,7 +16,7 @@
             <button onclick="showSection('stations')" class="hover:text-blue-300 transition">Stationen</button>
             <button onclick="showSection('stats')" class="hover:text-blue-300 transition">Statistik</button>
             <button onclick="showSection('validation')" class="hover:text-blue-300 transition">Validierung</button>
-            <button onclick="showSection('wishes')" class="hover:text-blue-300 transition">Wünsche</button>
+            <button onclick="showSection('wishes')" class="hover:text-blue-300 transition">Wuensche</button>
             <button onclick="showSection('personal')" class="hover:text-blue-300 transition">System</button>
         </nav>
     </header>
@@ -77,7 +77,7 @@
                     <div id="statsTableAA"></div>
                 </div>
                 <div class="bg-white p-4 rounded shadow border">
-                    <h3 class="font-bold border-b mb-2 text-purple-700 uppercase">Oberärzte (OA)</h3>
+                    <h3 class="font-bold border-b mb-2 text-purple-700 uppercase">Oberaerzte (OA)</h3>
                     <div id="statsTableOA"></div>
                 </div>
             </div>
@@ -88,9 +88,9 @@
                 <div class="flex justify-between items-center border-b pb-4">
                     <div>
                         <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Validierung</h2>
-                        <p class="text-sm text-slate-500">Prüft unbesetzte Dienste, Doppelbelegungen und exportrelevante Datenlücken.</p>
+                        <p class="text-sm text-slate-500">Prueft unbesetzte Dienste, Doppelbelegungen und exportrelevante Datenluecken.</p>
                     </div>
-                    <button onclick="renderValidation()" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Neu prüfen</button>
+                    <button onclick="renderValidation()" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Neu pruefen</button>
                 </div>
                 <div id="validationSummary" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
                 <div id="validationList"></div>
@@ -102,7 +102,7 @@
                 <div class="bg-white p-6 rounded shadow border">
                     <div class="flex justify-between items-center border-b mb-4 pb-2">
                         <h3 class="font-bold text-slate-800 uppercase">Mitarbeiter & Matrix</h3>
-                        <button onclick="clearWishes()" class="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600 transition">Wünsche leeren (Monat)</button>
+                        <button onclick="clearWishes()" class="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600 transition">Wuensche leeren (Monat)</button>
                     </div>
                     <div class="grid grid-cols-4 gap-2 mb-2">
                         <input type="text" id="pName" placeholder="Name" class="border p-2 rounded text-sm">
@@ -116,7 +116,7 @@
                         </select>
                         <input type="number" id="pWork" placeholder="Stelle %" class="border p-2 rounded text-sm">
                     </div>
-                    <button onclick="savePerson()" class="w-full bg-blue-600 text-white py-2 rounded font-bold shadow hover:bg-blue-700 transition">Arzt hinzufügen</button>
+                    <button onclick="savePerson()" class="w-full bg-blue-600 text-white py-2 rounded font-bold shadow hover:bg-blue-700 transition">Arzt hinzufuegen</button>
                     <div id="staffList" class="mt-4 space-y-1 max-h-40 overflow-y-auto"></div>
                 </div>
                 <div class="bg-white p-6 rounded shadow border text-center">
@@ -125,6 +125,33 @@
                         <input type="checkbox" id="holidaySeasonMode" onchange="saveHolidaySeasonMode(); renderCalendar(); renderStationPlan();" class="w-5 h-5">
                         <span>Weihnachts-Sonderregelung<br><small class="text-gray-500">(Sa vor 24.12. bis So nach 06.01.)</small></span>
                     </label>
+                    <div class="mb-6 rounded border bg-slate-50 p-3 text-left">
+                        <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-slate-600">Atoss-Stunden</h4>
+                        <div class="grid grid-cols-[1.2fr_1fr_1fr] gap-2 text-[11px] items-center">
+                            <div class="font-bold text-slate-500">Rolle</div>
+                            <div class="font-bold text-slate-500">Werktag</div>
+                            <div class="font-bold text-slate-500">WE/FT</div>
+                            <div>AA</div>
+                            <input type="number" step="0.5" min="0" id="atoss-AA-weekday" onchange="saveAtossHours()" class="border rounded p-1 text-right">
+                            <input type="number" step="0.5" min="0" id="atoss-AA-weekendHoliday" onchange="saveAtossHours()" class="border rounded p-1 text-right">
+                            <div>Visite</div>
+                            <input type="number" step="0.5" min="0" id="atoss-VISITE-weekday" onchange="saveAtossHours()" class="border rounded p-1 text-right">
+                            <input type="number" step="0.5" min="0" id="atoss-VISITE-weekendHoliday" onchange="saveAtossHours()" class="border rounded p-1 text-right">
+                            <div>OA</div>
+                            <input type="number" step="0.5" min="0" id="atoss-OA-weekday" onchange="saveAtossHours()" class="border rounded p-1 text-right">
+                            <input type="number" step="0.5" min="0" id="atoss-OA-weekendHoliday" onchange="saveAtossHours()" class="border rounded p-1 text-right">
+                        </div>
+                    </div>
+                    <div class="mb-6 rounded border bg-amber-50 p-3 text-left">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <h4 class="mb-1 text-xs font-bold uppercase tracking-wide text-amber-800">Undo / Snapshot</h4>
+                                <p id="undoSnapshotInfo" class="text-[11px] text-amber-900">Kein Snapshot verfuegbar.</p>
+                            </div>
+                            <button id="undoSnapshotButton" onclick="restoreLatestSnapshot()" class="rounded bg-amber-600 px-3 py-2 text-xs font-bold text-white shadow hover:bg-amber-700 transition disabled:cursor-not-allowed disabled:bg-amber-300" disabled>Letzten Snapshot wiederherstellen</button>
+                        </div>
+                    </div>
+                    <div id="storageStatus" class="mt-3 rounded border border-emerald-200 bg-emerald-50 p-2 text-[11px] text-emerald-800">Lokale Speicherung aktiv.</div>
                     <button onclick="backupExport()" class="w-full bg-slate-100 border p-2 mb-2 rounded font-bold">Alles sichern (Backup)</button>
                     <label class="block bg-slate-100 border p-2 mb-4 rounded font-bold text-center cursor-pointer">Backup einlesen <input type="file" class="hidden" onchange="backupImport(event)"></label>
                     <div class="grid grid-cols-2 gap-2">
@@ -140,6 +167,17 @@
         </section>
     </main>
 
-    <script src="app.js"></script>
+    <script src="scripts/core.js"></script>
+    <script src="scripts/validation.js"></script>
+    <script src="scripts/storage.js"></script>
+    <script src="scripts/ui-common.js"></script>
+    <script src="scripts/planning-actions.js"></script>
+    <script src="scripts/planning-engine.js"></script>
+    <script src="scripts/test-helpers.js"></script>
+    <script src="scripts/station-ui.js"></script>
+    <script src="scripts/calendar-ui.js"></script>
+    <script src="scripts/management-ui.js"></script>
+    <script src="scripts/export.js"></script>
+    <script src="scripts/app-init.js"></script>
 </body>
 </html>

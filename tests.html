@@ -57,12 +57,23 @@
             background: #f8fafc;
         }
     </style>
-    <script src="app.js"></script>
+    <script src="scripts/core.js"></script>
+    <script src="scripts/validation.js"></script>
+    <script src="scripts/storage.js"></script>
+    <script src="scripts/ui-common.js"></script>
+    <script src="scripts/planning-actions.js"></script>
+    <script src="scripts/planning-engine.js"></script>
+    <script src="scripts/test-helpers.js"></script>
+    <script src="scripts/station-ui.js"></script>
+    <script src="scripts/calendar-ui.js"></script>
+    <script src="scripts/management-ui.js"></script>
+    <script src="scripts/export.js"></script>
+    <script src="scripts/app-init.js"></script>
 </head>
 <body>
     <main>
         <h1>MediPlan Testlauf</h1>
-        <p class="summary" id="summary">Tests werden ausgeführt...</p>
+        <p class="summary" id="summary">Tests werden ausgefuehrt...</p>
         <table>
             <thead>
                 <tr>
@@ -84,7 +95,7 @@
 
         function assertTrue(value, label) {
             if (!value) {
-                throw new Error(`${label}: Bedingung ist nicht erfüllt`);
+                throw new Error(`${label}: Bedingung ist nicht erfuellt`);
             }
         }
 
@@ -95,7 +106,12 @@
                     name: "Ostersonntag 2026",
                     fn() {
                         const easter = api.getEasterSunday(2026);
-                        assertEqual(easter.toISOString().slice(0, 10), "2026-04-05", "Ostersonntag");
+                        const isoLocal = [
+                            easter.getFullYear(),
+                            String(easter.getMonth() + 1).padStart(2, "0"),
+                            String(easter.getDate()).padStart(2, "0")
+                        ].join("-");
+                        assertEqual(isoLocal, "2026-04-05", "Ostersonntag");
                     }
                 },
                 {
@@ -106,11 +122,20 @@
                     }
                 },
                 {
-                    name: "Kalenderwochen März 2026",
+                    name: "Kalenderwochen Maerz 2026",
                     fn() {
                         const weeks = api.getWeeksInMonth(2026, 3);
                         assertEqual(weeks.length, 6, "Anzahl Wochen");
                         assertEqual(weeks[0].mondayDateStr, "23.02.26", "Erste KW");
+                    }
+                },
+                {
+                    name: "Kalenderwochen-Key nutzt ISO-Jahr",
+                    fn() {
+                        const decemberWeeks = api.getWeeksInMonth(2025, 12);
+                        const januaryWeeks = api.getWeeksInMonth(2026, 1);
+                        assertEqual(decemberWeeks[decemberWeeks.length - 1].key, "2026-KW01", "Dezember-KW");
+                        assertEqual(januaryWeeks[0].key, "2026-KW01", "Januar-KW");
                     }
                 },
                 {
@@ -131,7 +156,7 @@
                             stationPlan: {},
                             holidaySeasonMode: false
                         });
-                        assertTrue(issues.some((issue) => issue.message.includes("Hintergrund")), "OA-Lücke");
+                        assertTrue(issues.some((issue) => issue.message.includes("Hintergrund")), "OA-Luecke");
                     }
                 },
                 {
@@ -140,15 +165,667 @@
                         const issues = api.getValidationIssues("2026-04", {
                             staff: [
                                 { name: "Anna", id: "", role: "AA", work: 100 },
-                                { name: "OA Müller", id: "200", role: "OA", work: 100 }
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
                             ],
                             plan: {
-                                "2026-04-01": { AA: "Anna", OA: "OA Müller", VISITE: "" }
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
                             },
                             stationPlan: {},
                             holidaySeasonMode: false
                         });
                         assertTrue(issues.some((issue) => issue.message.includes("Atoss-ID")), "Atoss-ID");
+                    }
+                },
+                {
+                    name: "Validierung findet doppelte Atoss-ID",
+                    fn() {
+                        const issues = api.getValidationIssues("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "Berta", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+                        assertTrue(issues.some((issue) => issue.area === "Personal" && issue.message.includes("mehrfach vergeben")), "Doppelte Atoss-ID");
+                    }
+                },
+                {
+                    name: "Personenpruefung blockiert doppelte Atoss-ID",
+                    fn() {
+                        const error = api.getPersonValidationError(
+                            { name: "Berta", id: "100" },
+                            [{ name: "Anna", id: "100", role: "AA", work: 100 }]
+                        );
+                        assertEqual(error, "Die Atoss-ID 100 ist bereits vergeben.", "Atoss-ID-Pruefung");
+                    }
+                },
+                {
+                    name: "Backup-Pruefung lehnt doppelte Atoss-ID ab",
+                    fn() {
+                        const validation = api.validateBackupPayload({
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "Berta", id: "100", role: "AA", work: 100 }
+                            ],
+                            plan: {},
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+                        assertEqual(validation.ok, false, "Backup mit doppelter Atoss-ID");
+                        assertTrue(validation.error.includes("doppelte Atoss-ID"), "Backup-Fehlertext");
+                    }
+                },
+                {
+                    name: "Backup-Pruefung lehnt ungueltigen Plan ab",
+                    fn() {
+                        const validation = api.validateBackupPayload({
+                            staff: [],
+                            plan: [],
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+                        assertEqual(validation.ok, false, "Backup mit ungueltigem Plan");
+                        assertTrue(validation.error.includes("ungueltigen Dienstplan"), "Plan-Fehlertext");
+                    }
+                },
+                {
+                    name: "Undo stellt Monat-leeren wieder her",
+                    fn() {
+                        const result = api.runUndoRestoreSimulation("2026-04", "clearMonth", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+
+                        assertEqual(result.afterAction.plan["2026-04-01"].AA, "", "Plan wurde geleert");
+                        assertEqual(JSON.stringify(result.afterRestore), JSON.stringify(result.before), "Snapshot stellt Monat wieder her");
+                        assertEqual(result.snapshotCountAfterAction, 1, "Snapshot wurde angelegt");
+                        assertEqual(result.snapshotCountAfterRestore, 0, "Snapshot wurde verbraucht");
+                    }
+                },
+                {
+                    name: "Undo stellt Autoplan wieder her",
+                    fn() {
+                        const result = api.runUndoRestoreSimulation("2026-04", "autoPlan", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "Berta", id: "101", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+
+                        assertTrue(Boolean(result.afterAction.plan["2026-04-02"]), "Autoplan hat Daten ergaenzt");
+                        assertEqual(JSON.stringify(result.afterRestore), JSON.stringify(result.before), "Snapshot stellt Autoplan-Stand wieder her");
+                    }
+                },
+                {
+                    name: "Undo stellt Backup-Import wieder her",
+                    fn() {
+                        const result = api.runUndoRestoreSimulation("2026-04", "backupImport", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false,
+                            importPayload: {
+                                staff: [
+                                    { name: "Clara", id: "102", role: "AA", work: 100 },
+                                    { name: "OA Schmidt", id: "201", role: "OA", work: 100 }
+                                ],
+                                plan: {
+                                    "2026-04-02": { AA: "Clara", OA: "OA Schmidt", VISITE: "" }
+                                },
+                                wishes: {},
+                                stationPlan: {},
+                                holidaySeasonMode: true
+                            }
+                        });
+
+                        assertEqual(result.afterAction.plan["2026-04-02"].AA, "Clara", "Import wurde angewendet");
+                        assertEqual(JSON.stringify(result.afterRestore), JSON.stringify(result.before), "Snapshot stellt Vor-Import-Stand wieder her");
+                    }
+                },
+                {
+                    name: "Storage-Fehler meldet Quota sauber",
+                    fn() {
+                        const result = api.runStorageFailureSimulation({
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        }, {
+                            failOnCall: 1,
+                            errorName: "QuotaExceededError",
+                            errorMessage: "Quota exceeded"
+                        });
+
+                        assertEqual(result.result.ok, false, "Speicherfehler erkannt");
+                        assertTrue(result.result.message.includes("Browser-Speicher ist voll"), "Quota-Text");
+                        assertTrue(result.storageStatus.message.includes("Browser-Speicher ist voll"), "Status-Text");
+                    }
+                },
+                {
+                    name: "Storage-Rollback laesst alte Daten stehen",
+                    fn() {
+                        const oldPlan = JSON.stringify({ "2026-04-01": { AA: "Alt", OA: "", VISITE: "" } });
+                        const result = api.runStorageFailureSimulation({
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        }, {
+                            failOnCall: 3,
+                            initialStore: {
+                                mp_staff: JSON.stringify([{ name: "Alt", id: "999", role: "AA", work: 100 }]),
+                                mp_plan: oldPlan,
+                                mp_wishes: JSON.stringify({ alt: ["Anna"] }),
+                                mp_station: JSON.stringify({}),
+                                mp_holiday_mode: JSON.stringify(false),
+                                mp_atoss_hours: JSON.stringify({}),
+                                mp_undo_snapshots: JSON.stringify([])
+                            }
+                        });
+
+                        assertEqual(result.result.ok, false, "Teilfehler erkannt");
+                        assertEqual(result.store.mp_staff, JSON.stringify([{ name: "Alt", id: "999", role: "AA", work: 100 }]), "Staff blieb alt");
+                        assertEqual(result.store.mp_plan, oldPlan, "Plan blieb alt");
+                        assertEqual(result.store.mp_wishes, JSON.stringify({ alt: ["Anna"] }), "Wishes blieben alt");
+                    }
+                },
+                {
+                    name: "Atoss-Export nutzt konfigurierten Werktag",
+                    fn() {
+                        const rows = api.buildAtossExportRows("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false,
+                            atossHours: {
+                                AA: { weekday: 13.5, weekendHoliday: 17 },
+                                VISITE: { weekday: 1, weekendHoliday: 5 },
+                                OA: { weekday: 11, weekendHoliday: 17 }
+                            }
+                        });
+
+                        assertTrue(rows.includes("100;2026-04-01;13.5"), "AA-Werktag");
+                        assertTrue(rows.includes("200;2026-04-01;11"), "OA-Werktag");
+                    }
+                },
+                {
+                    name: "Atoss-Export nutzt konfiguriertes WE/FT",
+                    fn() {
+                        const rows = api.buildAtossExportRows("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "Clara", id: "102", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-05": { AA: "Anna", OA: "OA Mueller", VISITE: "Clara" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false,
+                            atossHours: {
+                                AA: { weekday: 17, weekendHoliday: 21 },
+                                VISITE: { weekday: 1, weekendHoliday: 6.5 },
+                                OA: { weekday: 17, weekendHoliday: 19.5 }
+                            }
+                        });
+
+                        assertTrue(rows.includes("100;2026-04-05;21"), "AA-WE");
+                        assertTrue(rows.includes("102;2026-04-05;6.5"), "VISITE-WE");
+                        assertTrue(rows.includes("200;2026-04-05;19.5"), "OA-WE");
+                    }
+                },
+                {
+                    name: "Autoplaner erhaelt manuelle Dienste",
+                    fn() {
+                        const result = api.runAutoPlanSimulation("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "Berta", id: "101", role: "AA", work: 100 },
+                                { name: "Clara", id: "102", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-04": { AA: "Anna", OA: "OA Mueller", VISITE: "Clara" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+
+                        assertEqual(result.plan["2026-04-04"].AA, "Anna", "AA bleibt erhalten");
+                        assertEqual(result.plan["2026-04-04"].VISITE, "Clara", "VISITE bleibt erhalten");
+                        assertEqual(result.plan["2026-04-04"].OA, "OA Mueller", "OA bleibt erhalten");
+                    }
+                },
+                {
+                    name: "Autoplaner respektiert Wochen-Urlaub",
+                    fn() {
+                        const firstWeek = api.getWeeksInMonth(2026, 4)[0];
+                        const result = api.runAutoPlanSimulation("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "Berta", id: "101", role: "AA", work: 100 },
+                                { name: "Clara", id: "102", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {},
+                            wishes: {},
+                            stationPlan: {
+                                [`${firstWeek.key}_u1`]: "Anna"
+                            },
+                            holidaySeasonMode: false
+                        });
+
+                        ["2026-04-01", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05"].forEach((dateKey) => {
+                            const entry = result.plan[dateKey] || {};
+                            assertTrue(entry.AA !== "Anna", `${dateKey} AA nicht im Urlaub`);
+                            assertTrue(entry.VISITE !== "Anna", `${dateKey} VISITE nicht im Urlaub`);
+                        });
+                    }
+                },
+                {
+                    name: "Auto-Stationsplan erhaelt manuelle Dienstaerzte",
+                    fn() {
+                        const firstWeek = api.getWeeksInMonth(2026, 4)[0];
+                        const result = api.runAutoStationPlanSimulation("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "Berta", id: "101", role: "AA", work: 100 },
+                                { name: "Clara", id: "102", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 },
+                                { name: "OA Schmidt", id: "201", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-03-29": { AA: "Berta", OA: "OA Mueller", VISITE: "" },
+                                "2026-03-30": { AA: "Anna", OA: "OA Mueller", VISITE: "" },
+                                "2026-03-31": { AA: "Berta", OA: "OA Mueller", VISITE: "" },
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" },
+                                "2026-04-02": { AA: "Berta", OA: "OA Mueller", VISITE: "" },
+                                "2026-04-03": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {
+                                [`${firstWeek.key}_da_1`]: "Clara"
+                            },
+                            holidaySeasonMode: false
+                        });
+
+                        assertEqual(result.stationPlan[`${firstWeek.key}_da_1`], "Clara", "Manueller Dienst bleibt erhalten");
+                        assertEqual(result.stationPlan[`${firstWeek.key}_da_2`], "Berta", "Leerer Dienst wird aus Plan ergaenzt");
+                    }
+                },
+                {
+                    name: "Dienstaerzte Mo/Mi/Fr schreiben in den Dienstplan zurueck",
+                    fn() {
+                        const secondWeek = api.getWeeksInMonth(2026, 4)[1];
+                        const result = api.runStationPlanEditSimulation("2026-04", [
+                            { key: `${secondWeek.key}_da_1`, value: "Berta" }
+                        ], {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "Berta", id: "101", role: "AA", work: 100 }
+                            ],
+                            plan: {},
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+
+                        assertEqual(result.plan["2026-04-06"].AA, "Berta", "Montag");
+                        assertEqual(result.plan["2026-04-08"].AA, "Berta", "Mittwoch");
+                        assertEqual(result.plan["2026-04-10"].AA, "Berta", "Freitag");
+                    }
+                },
+                {
+                    name: "Dienstaerzte So/Di/Do schreiben in den Dienstplan zurueck",
+                    fn() {
+                        const firstWeek = api.getWeeksInMonth(2026, 4)[0];
+                        const result = api.runStationPlanEditSimulation("2026-04", [
+                            { key: `${firstWeek.key}_da_2`, value: "Clara" }
+                        ], {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "Clara", id: "102", role: "AA", work: 100 }
+                            ],
+                            plan: {},
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+
+                        assertEqual(result.plan["2026-03-29"].AA, "Clara", "Sonntag");
+                        assertEqual(result.plan["2026-03-31"].AA, "Clara", "Dienstag");
+                        assertEqual(result.plan["2026-04-02"].AA, "Clara", "Donnerstag");
+                    }
+                },
+                {
+                    name: "Planaenderung leert widerspruechliche Dienstarzt-Zeile",
+                    fn() {
+                        const secondWeek = api.getWeeksInMonth(2026, 4)[1];
+                        const result = api.runPlanEditSimulation("2026-04", [
+                            { dateKey: "2026-04-08", role: "AA", value: "Berta" }
+                        ], {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "Berta", id: "101", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-06": { AA: "Anna", OA: "OA Mueller", VISITE: "" },
+                                "2026-04-08": { AA: "Anna", OA: "OA Mueller", VISITE: "" },
+                                "2026-04-10": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {
+                                [`${secondWeek.key}_da_1`]: "Anna"
+                            },
+                            holidaySeasonMode: false
+                        });
+
+                        assertEqual(result.stationPlan[`${secondWeek.key}_da_1`] || "", "", "Dienstzeile wird geleert");
+                    }
+                },
+                {
+                    name: "Validierung erkennt Urlaub gegen Dienst",
+                    fn() {
+                        const firstWeek = api.getWeeksInMonth(2026, 4)[0];
+                        const issues = api.getValidationIssues("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {
+                                [`${firstWeek.key}_u1`]: "Anna"
+                            },
+                            holidaySeasonMode: false
+                        });
+
+                        assertTrue(issues.some((issue) => issue.area === "Korrelation" && issue.message.includes("Urlaub/Zeitausgleich")), "Urlaubskonflikt");
+                    }
+                },
+                {
+                    name: "Validierung erkennt Dienst-Korrelation",
+                    fn() {
+                        const firstWeek = api.getWeeksInMonth(2026, 4)[0];
+                        const issues = api.getValidationIssues("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "Berta", id: "101", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-03-29": { AA: "Berta", OA: "OA Mueller", VISITE: "" },
+                                "2026-03-30": { AA: "Anna", OA: "OA Mueller", VISITE: "" },
+                                "2026-03-31": { AA: "Berta", OA: "OA Mueller", VISITE: "" },
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" },
+                                "2026-04-02": { AA: "Berta", OA: "OA Mueller", VISITE: "" },
+                                "2026-04-03": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {
+                                [`${firstWeek.key}_da_1`]: "Berta"
+                            },
+                            holidaySeasonMode: false
+                        });
+
+                        assertTrue(issues.some((issue) => issue.area === "Korrelation" && issue.message.includes("Mo/Mi/Fr verweist")), "Dienst-Korrelation");
+                    }
+                },
+                {
+                    name: "Validierung verlangt Visite am Sonntag",
+                    fn() {
+                        const issues = api.getValidationIssues("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-05": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+
+                        assertTrue(issues.some((issue) => issue.reference === "05.04.2026" && issue.message.includes("Visite")), "Sonntags-Visite fehlt");
+                    }
+                },
+                {
+                    name: "Kalender zeigt Visite nur an aktiven Tagen",
+                    fn() {
+                        const html = api.runCalendarRenderSimulation("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+
+                        assertTrue(!html.includes("savePlan('2026-04-01', 'VISITE'"), "Keine VISITE-Auswahl am Werktag");
+                        assertTrue(html.includes("savePlan('2026-04-05', 'VISITE'"), "VISITE-Auswahl am Sonntag");
+                    }
+                },
+                {
+                    name: "Visite wird an Werktagen nicht gespeichert",
+                    fn() {
+                        const result = api.runPlanEditSimulation("2026-04", [
+                            { dateKey: "2026-04-01", role: "VISITE", value: "Anna" }
+                        ], {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+
+                        assertEqual(result.plan["2026-04-01"].VISITE, "", "Werktags-Visite bleibt leer");
+                    }
+                },
+                {
+                    name: "Autoplaner sperrt benachbarte AA-Tage",
+                    fn() {
+                        const result = api.runAutoPlanSimulation("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "Berta", id: "101", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" },
+                                "2026-04-05": { AA: "Berta", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+
+                        assertEqual(result.plan["2026-04-02"].AA, "Berta", "AA am Folgetag wird gewechselt");
+                    }
+                },
+                {
+                    name: "Autoplaner laesst Luecke statt Folgetag-Dienst",
+                    fn() {
+                        const result = api.runAutoPlanSimulation("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+
+                        assertEqual(result.plan["2026-04-02"].AA, "", "AA bleibt leer bei fehlender Alternative");
+                    }
+                },
+                {
+                    name: "Autoplaner ergaenzt widerspruechliche Split-Gruppe nicht",
+                    fn() {
+                        const result = api.runAutoPlanSimulation("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "Berta", id: "101", role: "AA", work: 100 },
+                                { name: "Clara", id: "102", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-06": { AA: "Anna", OA: "OA Mueller", VISITE: "" },
+                                "2026-04-08": { AA: "Berta", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+
+                        assertEqual(result.plan["2026-04-10"].AA, "", "Freier Split-Tag bleibt leer");
+                    }
+                },
+                {
+                    name: "Autoplaner ergaenzt widerspruechliches OA-Wochenende nicht",
+                    fn() {
+                        const result = api.runAutoPlanSimulation("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 },
+                                { name: "OA Schmidt", id: "201", role: "OA", work: 100 },
+                                { name: "OA Weber", id: "202", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-17": { AA: "Anna", OA: "OA Mueller", VISITE: "" },
+                                "2026-04-18": { AA: "", OA: "OA Schmidt", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+
+                        assertEqual(result.plan["2026-04-19"].OA, "", "Freier OA-Wochenendtag bleibt leer");
+                    }
+                },
+                {
+                    name: "Urlaubskonflikt wird im Dienstplan rot markiert",
+                    fn() {
+                        const firstWeek = api.getWeeksInMonth(2026, 4)[0];
+                        const html = api.runCalendarRenderSimulation("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {
+                                [`${firstWeek.key}_u1`]: "Anna"
+                            },
+                            holidaySeasonMode: false
+                        });
+
+                        assertTrue(/<td class="p-0 conflict-red"><select onchange="savePlan\('2026-04-01', 'AA'/.test(html), "AA-Zelle rot markiert");
+                    }
+                },
+                {
+                    name: "Monatswechsel markiert Vortagskonflikt sofort",
+                    fn() {
+                        const html = api.runCalendarRenderSimulation("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-03-31": { AA: "Anna", OA: "OA Mueller", VISITE: "" },
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+
+                        assertTrue(/<td class="p-0 conflict-red"><select onchange="savePlan\('2026-04-01', 'AA'/.test(html), "AA-Zelle am Monatsanfang rot markiert");
+                    }
+                },
+                {
+                    name: "Stationsplan-Aenderung markiert Urlaubskonflikt sofort",
+                    fn() {
+                        const firstWeek = api.getWeeksInMonth(2026, 4)[0];
+                        const result = api.runStationPlanEditSimulation("2026-04", [
+                            { key: `${firstWeek.key}_u1`, value: "Anna" }
+                        ], {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+
+                        assertTrue(/<td class="p-0 conflict-red"><select onchange="savePlan\('2026-04-01', 'AA'/.test(result.calendarHtml), "AA-Zelle wird nach Stationsaenderung rot markiert");
                     }
                 }
             ];
