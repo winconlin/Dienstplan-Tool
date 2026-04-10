@@ -195,6 +195,22 @@ function clearMonth() {
     renderCalendar();
 }
 
+function clearStationPlan() {
+    const monthValue = document.getElementById("monthPicker")?.value;
+    if (!monthValue) return;
+    if (!confirm("Möchten Sie den Stationsplan für diesen Monat komplett leeren?")) return;
+
+    const [year, month] = monthValue.split("-").map(Number);
+    const weeks = getWeeksInMonth(year, month);
+    weeks.forEach(week => {
+        stationLayout.forEach(row => {
+            delete stationPlan[`${week.key}_${row.id}`];
+        });
+    });
+    save();
+    renderStationPlan();
+}
+
 function clearWishes() {
     const monthValue = document.getElementById("monthPicker")?.value;
     if (!monthValue) return;
@@ -211,6 +227,8 @@ function runAutoPlaner() {
     if (!confirm("Möchten Sie den kombinierten Autoplaner ausführen? Der Stationsplan und Dienstplan werden (soweit möglich) neu berechnet und bestehende Einträge überschrieben. Urlaub bleibt erhalten.")) return;
 
     // --- STATION PLAN LOGIC ---
+
+    const [year, month] = monthValue.split("-").map(Number);
 
     const planWeeks = getWeeksInMonth(year, month);
 
@@ -284,7 +302,6 @@ function runAutoPlaner() {
 
     // --- END STATION PLAN LOGIC ---
 
-    const [year, month] = monthValue.split("-").map(Number);
     const daysInMonth = new Date(year, month, 0).getDate();
 
     for (let day = 1; day <= daysInMonth; day += 1) {
@@ -443,47 +460,7 @@ function runAutoPlaner() {
     save();
     renderStationPlan();
     renderCalendar();
-    alert("Stations- und Dienstplan erfolgreich generiert!");
-}
-
-
-        const getAvailableDoctor = (predicate) => {
-            const available = staff.filter((person) => predicate(person) && !usedDocs.has(person.name) && !blockedByVacation.has(person.name));
-            if (!available.length) return null;
-            available.sort((a, b) => getWorkPercent(b) - getWorkPercent(a));
-            const picked = available[0].name;
-            usedDocs.add(picked);
-            return picked;
-        };
-
-        stationLayout.forEach((row) => {
-            if (row.category === "HKL" || row.category === "Echokardiographie" || row.category === "Dienstärzte") return;
-
-            const cellKey = `${week.key}_${row.id}`;
-            if (stationPlan[cellKey]) return;
-
-            let doctor = null;
-            if (row.category === "EPU") doctor = getAvailableDoctor((person) => matchesRole(person, "EPU"));
-            else if (row.category === "Oberärzte") doctor = getAvailableDoctor((person) => matchesRole(person, "OA"));
-            else if (row.category.includes("Station") || row.category === "CPU" || row.category === "Tagesklinik/UKG") {
-                doctor = getAvailableDoctor((person) => matchesRole(person, "AA"));
-            }
-
-            if (doctor) stationPlan[cellKey] = doctor;
-        });
-
-        stationLayout.forEach((row) => {
-            if (row.category !== "HKL" && row.category !== "Echokardiographie") return;
-            const cellKey = `${week.key}_${row.id}`;
-            if (stationPlan[cellKey]) return;
-            const doctor = getAvailableDoctor((person) => matchesRole(person, "AA"));
-            if (doctor) stationPlan[cellKey] = doctor;
-        });
-    });
-
-    save();
-    renderStationPlan();
-    alert("Stationsplan erfolgreich, soweit möglich, generiert.");
+    showToast("Stations- und Dienstplan erfolgreich generiert!", "success");
 }
 
 function getWeeksInMonth(year, month) {
@@ -589,7 +566,23 @@ function renderStationPlan() {
         tbody += tableRow;
     });
 
-    bodyEl.innerHTML = tbody;
+    let unassignedRow = `<tr class="border-b border-slate-300 text-center align-middle bg-slate-100 no-print text-[10px]">
+        <td class="p-2 font-bold border-r border-slate-300 text-slate-500" colspan="2">Unverplant</td>`;
+
+    weeks.forEach((week) => {
+        const assignedDocs = new Set();
+        stationLayout.forEach((row) => {
+            const val = stationPlan[`${week.key}_${row.id}`];
+            if (val) assignedDocs.add(val);
+        });
+
+        const unassigned = staff.filter((person) => !assignedDocs.has(person.name) && matchesRole(person, "AA"));
+        const namesList = unassigned.map(p => p.name).join(", ");
+        unassignedRow += `<td class="p-1 border-r border-slate-300 text-slate-500 max-w-[80px] truncate" title="${namesList}">${unassigned.length > 0 ? namesList : "-"}</td>`;
+    });
+    unassignedRow += "</tr>";
+
+    bodyEl.innerHTML = tbody + unassignedRow;
     renderValidation();
 }
 
@@ -597,7 +590,7 @@ function saveStationPlan(key, value) {
     if (value) stationPlan[key] = value;
     else delete stationPlan[key];
     save();
-    renderValidation();
+    renderStationPlan();
 }
 
 function getHeatmapColor(value, min, max) {
@@ -756,31 +749,55 @@ function showSection(id) {
     if (id === "validation") renderValidation();
 }
 
+function loadPerson(index) {
+    const person = staff[index];
+    if (!person) return;
+    document.getElementById("pName").value = person.name;
+    document.getElementById("pId").value = person.id || "";
+    document.getElementById("pRole").value = person.role;
+    document.getElementById("pWork").value = person.work;
+    document.getElementById("pRotant").checked = person.isRotant || false;
+    document.getElementById("pCanDoShifts").checked = person.canDoShifts !== false;
+}
+
+function clearPersonForm() {
+    document.getElementById("pName").value = "";
+    document.getElementById("pId").value = "";
+    document.getElementById("pRole").value = "AA";
+    document.getElementById("pWork").value = "";
+    document.getElementById("pRotant").checked = false;
+    document.getElementById("pCanDoShifts").checked = true;
+}
+
 function savePerson() {
     const name = document.getElementById("pName")?.value.trim() || "";
     const id = document.getElementById("pId")?.value.trim() || "";
     const role = document.getElementById("pRole")?.value || "AA";
     const workInput = Number(document.getElementById("pWork")?.value);
     const work = workInput > 0 ? Math.min(workInput, 100) : 100;
+    const isRotant = document.getElementById("pRotant")?.checked || false;
+    const canDoShifts = document.getElementById("pCanDoShifts")?.checked !== false;
 
     if (!name) {
-        alert("Bitte einen Namen eingeben.");
-        return;
-    }
-    if (staff.some((person) => person.name.toLowerCase() === name.toLowerCase())) {
-        alert("Dieser Name ist bereits angelegt.");
+        showToast("Bitte einen Namen eingeben.", "warning");
         return;
     }
 
-    staff.push({ name, id, role, work });
+    const existingIndex = staff.findIndex((person) => person.name.toLowerCase() === name.toLowerCase());
+
+    if (existingIndex !== -1) {
+        staff[existingIndex] = { name, id, role, work, isRotant, canDoShifts };
+        showToast(`Änderungen für ${name} gespeichert.`, "success");
+    } else {
+        staff.push({ name, id, role, work, isRotant, canDoShifts });
+        showToast(`${name} hinzugefügt.`, "success");
+    }
+
     save();
     renderStaff();
     renderCalendar();
     renderStationPlan();
-
-    document.getElementById("pName").value = "";
-    document.getElementById("pId").value = "";
-    document.getElementById("pWork").value = "";
+    clearPersonForm();
 }
 
 function removePerson(index) {
@@ -818,7 +835,9 @@ function renderStaff() {
     staffList.innerHTML = staff.map((person, index) => {
         const details = [person.role, `${getWorkPercent(person)}%`];
         if (person.id) details.unshift(person.id);
-        return `<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1"><span><span class="font-bold">${person.name}</span> <span class="text-slate-500">(${details.join(" | ")})</span></span><button onclick="removePerson(${index})" class="text-red-500 font-bold px-2">X</button></div>`;
+        if (person.isRotant) details.push("Rotant");
+        if (person.canDoShifts === false) details.push("Keine Dienste");
+        return `<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1 hover:bg-slate-100 cursor-pointer transition" onclick="loadPerson(${index})"><span><span class="font-bold">${person.name}</span> <span class="text-slate-500">(${details.join(" | ")})</span></span><button onclick="event.stopPropagation(); removePerson(${index})" class="text-red-500 font-bold px-2 hover:bg-red-100 rounded">X</button></div>`;
     }).join("");
 }
 
@@ -830,8 +849,21 @@ function renderWishMatrix() {
     const [year, month] = monthValue.split("-").map(Number);
     const daysInMonth = new Date(year, month, 0).getDate();
 
-    let head = '<tr><th class="border p-1 bg-slate-100">Tag</th>';
-    staff.forEach((person) => {
+    const groupAA = staff.filter(p => p.role === "AA" || p.role === "FOA");
+    const groupOA = staff.filter(p => p.role === "OA");
+    const groupEPU = staff.filter(p => p.role === "OA-EPU" || p.role === "FOA-EPU");
+
+    const sortedStaff = [...groupAA, ...groupOA, ...groupEPU];
+
+    let head = '<tr><th class="border p-1 bg-slate-100" rowspan="2">Tag</th>';
+
+    if (groupAA.length > 0) head += `<th class="border p-1 bg-blue-50 text-center" colspan="${groupAA.length}">Assistenten</th>`;
+    if (groupOA.length > 0) head += `<th class="border p-1 bg-purple-50 text-center" colspan="${groupOA.length}">Oberärzte</th>`;
+    if (groupEPU.length > 0) head += `<th class="border p-1 bg-green-50 text-center" colspan="${groupEPU.length}">EPU Oberärzte</th>`;
+
+    head += '</tr><tr>';
+
+    sortedStaff.forEach((person) => {
         head += `<th class="border p-1 text-[8px] h-24 align-bottom" style="writing-mode: vertical-rl;">${person.name}</th>`;
     });
     head += "</tr>";
@@ -840,9 +872,10 @@ function renderWishMatrix() {
     for (let day = 1; day <= daysInMonth; day += 1) {
         const dateKey = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
         let row = `<tr><td class="p-1 border bg-slate-50 text-center font-bold text-[10px]">${day}</td>`;
-        staff.forEach((person) => {
+        sortedStaff.forEach((person) => {
             const isSet = (wishes[dateKey] || []).includes(person.name);
-            row += `<td class="border text-center cursor-pointer ${isSet ? "bg-purple-500 text-white" : ""}" onclick="toggleWish('${dateKey}', '${person.name}')">${isSet ? "X" : ""}</td>`;
+            const escapedName = person.name.replace(/'/g, "\\'");
+            row += `<td class="border text-center cursor-pointer ${isSet ? "bg-purple-500 text-white" : ""}" onclick="toggleWish('${dateKey}', '${escapedName}')">${isSet ? "X" : ""}</td>`;
         });
         body += `${row}</tr>`;
     }
