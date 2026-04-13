@@ -1,6 +1,12 @@
-﻿// Validation helpers for imports, cross-checks and export blockers.
+import { appState } from './state.js';
+import { getWorkPercent, normalizeAtossId, normalizeAtossHours, getDuplicateAtossAssignments, getMonthDayKeys, getDateFromKey, formatDateKey, isRoleActiveOnDate, isPlainObject, getAssignedNamesForDates, getUniqueAssignedName, getVacationDoctorsForDate, roleLabels, stationLayout } from './core.js';
 
-function validateBackupPayload(data) {
+import { getSelectedMonthValue } from './ui-common.js';
+import { getWeeksInMonth } from './planning-engine.js';
+
+// Validation helpers for imports, cross-checks and export blockers.
+
+export function validateBackupPayload(data) {
     if (!isPlainObject(data)) {
         return { ok: false, error: "Backup muss ein JSON-Objekt sein." };
     }
@@ -55,14 +61,14 @@ function validateBackupPayload(data) {
     return { ok: true, normalized };
 }
 
-function getValidationIssues(monthValue, source = {}) {
+export function getValidationIssues(monthValue, source = {}) {
     if (!monthValue) return [];
 
-    const dataStaff = source.staff || staff;
-    const dataPlan = source.plan || plan;
-    const dataWishes = source.wishes || wishes;
-    const dataStationPlan = source.stationPlan || stationPlan;
-    const holidayMode = Object.prototype.hasOwnProperty.call(source, "holidaySeasonMode") ? source.holidaySeasonMode : holidaySeasonMode;
+    const dataStaff = source.staff || appState.staff;
+    const dataPlan = source.plan || appState.plan;
+    const dataWishes = source.wishes || appState.wishes;
+    const dataStationPlan = source.stationPlan || appState.stationPlan;
+    const holidayMode = Object.prototype.hasOwnProperty.call(source, "holidaySeasonMode") ? source.holidaySeasonMode : appState.holidaySeasonMode;
     const staffByName = Object.fromEntries(dataStaff.map((person) => [person.name, person]));
     const issues = [];
     const [year, month] = monthValue.split("-").map(Number);
@@ -288,7 +294,7 @@ function getValidationIssues(monthValue, source = {}) {
     return issues;
 }
 
-function renderValidation() {
+export function renderValidation() {
     const monthValue = getSelectedMonthValue();
     const summaryEl = document.getElementById("validationSummary");
     const listEl = document.getElementById("validationList");

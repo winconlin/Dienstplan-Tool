@@ -1,6 +1,13 @@
-﻿// Station plan rendering and editing.
+import { appState } from './state.js';
+import { matchesRole, syncDienstRowsFromPlan, parseStationCellKey, applyDienstRowToPlan, stationLayout } from './core.js';
+import { renderValidation } from './validation.js';
 
-function renderStationPlan() {
+import { getSelectedMonthValue, saveAndRenderPlanningViews } from './ui-common.js';
+import { getWeeksInMonth } from './planning-engine.js';
+
+// Station appState.plan rendering and editing.
+
+export function renderStationPlan() {
     const monthValue = getSelectedMonthValue();
     const headerEl = document.getElementById("stationHeader");
     const bodyEl = document.getElementById("stationBody");
@@ -45,10 +52,10 @@ function renderStationPlan() {
 
         weeks.forEach((week) => {
             const cellKey = `${week.key}_${row.id}`;
-            const currentValue = stationPlan[cellKey] || "";
+            const currentValue = appState.stationPlan[cellKey] || "";
             let options = '<option value=""></option>';
 
-            staff.forEach((person) => {
+            appState.staff.forEach((person) => {
                 let show = false;
                 if (row.category === "Oberaerzte") show = matchesRole(person, "OA");
                 else if (row.category === "EPU") show = matchesRole(person, "EPU");
@@ -76,12 +83,12 @@ function renderStationPlan() {
     renderValidation();
 }
 
-function saveStationPlan(key, value) {
+export function saveStationPlan(key, value) {
     const monthValue = getSelectedMonthValue();
     const { rowId } = parseStationCellKey(key);
 
-    if (value) stationPlan[key] = value;
-    else delete stationPlan[key];
+    if (value) appState.stationPlan[key] = value;
+    else delete appState.stationPlan[key];
 
     if ((rowId === "da_1" || rowId === "da_2") && monthValue) {
         if (value) applyDienstRowToPlan(monthValue, key, value);

@@ -1,6 +1,11 @@
-﻿// Planning engine and automatic allocation rules.
+import { appState } from './state.js';
+import { matchesRole, getWorkPercent, getMonthDayKeys, isVisitDay, getDateKey, dateToKey, shiftDate, ensurePlanEntry, isVacationRow, getUniqueAssignedName, getRoleWeight, getVacationDoctorsForWeek, canAssignPersonToRole, getBestDoctorForDates, buildStationLoadCounters, syncDienstRowsFromPlan, planRoles, stationLayout } from './core.js';
+import { createUndoSnapshot } from './storage.js';
+import { getSelectedMonthValue, saveAndRenderPlanningViews, saveAndRenderStationView } from './ui-common.js';
 
-function fillPlanMonth(monthValue) {
+// Planning engine and automatic allocation rules.
+
+export function fillPlanMonth(monthValue) {
     const [year, month] = monthValue.split("-").map(Number);
     const daysInMonth = new Date(year, month, 0).getDate();
     const monthDayKeys = getMonthDayKeys(monthValue);
@@ -13,13 +18,13 @@ function fillPlanMonth(monthValue) {
     });
 
     const counters = {};
-    staff.forEach((person) => {
+    appState.staff.forEach((person) => {
         counters[person.name] = 0;
     });
 
     monthDayKeys.forEach((dateKey) => {
         planRoles.forEach((role) => {
-            const assignedName = plan[dateKey]?.[role];
+            const assignedName = appState.plan[dateKey]?.[role];
             if (!assignedName) return;
             if (!Object.prototype.hasOwnProperty.call(counters, assignedName)) counters[assignedName] = 0;
             counters[assignedName] += getRoleWeight(role);
@@ -55,7 +60,7 @@ function fillPlanMonth(monthValue) {
             const fixedWeekendOA = getUniqueAssignedName(weekendKeys, "OA");
             if (fixedWeekendOA === false) weekendKeys.forEach((targetKey) => blockedWeekendOAKeys.add(targetKey));
             const weekendDoctor = fixedWeekendOA && fixedWeekendOA !== false
-                ? staff.find((person) => person.name === fixedWeekendOA)
+                ? appState.staff.find((person) => person.name === fixedWeekendOA)
                 : fixedWeekendOA === false
                     ? null
                     : getBest("OA", weekendKeys);
@@ -65,7 +70,7 @@ function fillPlanMonth(monthValue) {
             });
         }
 
-        if (!plan[dateKey].OA && !blockedWeekendOAKeys.has(dateKey)) {
+        if (!appState.plan[dateKey].OA && !blockedWeekendOAKeys.has(dateKey)) {
             assignRoleIfEmpty(dateKey, "OA", getBest("OA", dateKey));
         }
 
@@ -76,7 +81,7 @@ function fillPlanMonth(monthValue) {
             const fixedSplitA = getUniqueAssignedName(splitGroupAKeys, "AA");
             if (fixedSplitA === false) splitGroupAKeys.forEach((targetKey) => blockedSplitAAKeys.add(targetKey));
             const splitDoctorA = fixedSplitA && fixedSplitA !== false
-                ? staff.find((person) => person.name === fixedSplitA)
+                ? appState.staff.find((person) => person.name === fixedSplitA)
                 : fixedSplitA === false
                     ? null
                     : getBest("AA", splitGroupAKeys);
@@ -92,7 +97,7 @@ function fillPlanMonth(monthValue) {
             if (fixedSplitB === false) splitGroupBKeys.forEach((targetKey) => blockedSplitAAKeys.add(targetKey));
             const excludedForGroupB = fixedSplitB ? [] : splitDoctorA ? [splitDoctorA.name] : [];
             const splitDoctorB = fixedSplitB && fixedSplitB !== false
-                ? staff.find((person) => person.name === fixedSplitB)
+                ? appState.staff.find((person) => person.name === fixedSplitB)
                 : fixedSplitB === false
                     ? null
                     : getBest("AA", splitGroupBKeys, excludedForGroupB);
@@ -103,17 +108,17 @@ function fillPlanMonth(monthValue) {
         }
 
         if (isVisitDay(date)) {
-            if (!plan[dateKey].AA && !blockedSplitAAKeys.has(dateKey)) {
+            if (!appState.plan[dateKey].AA && !blockedSplitAAKeys.has(dateKey)) {
                 assignRoleIfEmpty(dateKey, "AA", getBest("AA", dateKey));
             }
 
-            if (!plan[dateKey].VISITE) {
-                const excludedNames = plan[dateKey].AA ? [plan[dateKey].AA] : [];
+            if (!appState.plan[dateKey].VISITE) {
+                const excludedNames = appState.plan[dateKey].AA ? [appState.plan[dateKey].AA] : [];
                 assignRoleIfEmpty(dateKey, "VISITE", getBest("AA", dateKey, excludedNames));
             }
         }
 
-        if (!plan[dateKey].AA && !blockedSplitAAKeys.has(dateKey)) {
+        if (!appState.plan[dateKey].AA && !blockedSplitAAKeys.has(dateKey)) {
             assignRoleIfEmpty(dateKey, "AA", getBest("AA", dateKey));
         }
     }
@@ -121,7 +126,7 @@ function fillPlanMonth(monthValue) {
     syncDienstRowsFromPlan(monthValue, { preserveExisting: false });
 }
 
-function autoPlan() {
+export function autoPlan() {
     const monthValue = getSelectedMonthValue();
     if (!monthValue) return;
     if (!confirm("Moechten Sie den Autoplaner wirklich ausfuehren? Bereits eingetragene Dienste bleiben erhalten, freie Felder werden anhand der Regeln ergaenzt.")) return;
@@ -132,7 +137,7 @@ function autoPlan() {
     if (saveResult.ok) alert("Planung ergaenzt. Bestehende Eingaben wurden beibehalten.");
 }
 
-function fillStationPlanMonth(monthValue) {
+export function fillStationPlanMonth(monthValue) {
     const [year, month] = monthValue.split("-").map(Number);
     const weeks = getWeeksInMonth(year, month);
     const stationCounters = buildStationLoadCounters(weeks);
@@ -144,7 +149,7 @@ function fillStationPlanMonth(monthValue) {
         const usedDocs = new Set();
 
         stationLayout.forEach((row) => {
-            const value = stationPlan[`${week.key}_${row.id}`];
+            const value = appState.stationPlan[`${week.key}_${row.id}`];
             if (value) usedDocs.add(value);
         });
 
@@ -152,9 +157,9 @@ function fillStationPlanMonth(monthValue) {
             if (!doctorName || blockedByVacation.has(doctorName)) return false;
 
             const cellKey = `${week.key}_${rowId}`;
-            if (stationPlan[cellKey]) return false;
+            if (appState.stationPlan[cellKey]) return false;
 
-            stationPlan[cellKey] = doctorName;
+            appState.stationPlan[cellKey] = doctorName;
             usedDocs.add(doctorName);
             if (!Object.prototype.hasOwnProperty.call(stationCounters, doctorName)) stationCounters[doctorName] = 0;
             stationCounters[doctorName] += 1;
@@ -162,7 +167,7 @@ function fillStationPlanMonth(monthValue) {
         };
 
         const getAvailableDoctor = (predicate) => {
-            const available = staff
+            const available = appState.staff
                 .filter((person) => predicate(person) && !usedDocs.has(person.name) && !blockedByVacation.has(person.name))
                 .sort((a, b) => {
                     const loadA = (stationCounters[a.name] || 0) / getWorkPercent(a);
@@ -180,7 +185,7 @@ function fillStationPlanMonth(monthValue) {
             if (row.id === "hkl" || row.id.startsWith("echo_") || row.id.startsWith("da_") || isVacationRow(row)) return;
 
             const cellKey = `${week.key}_${row.id}`;
-            if (stationPlan[cellKey]) return;
+            if (appState.stationPlan[cellKey]) return;
 
             let doctor = null;
             if (row.id.startsWith("epu_")) doctor = getAvailableDoctor((person) => matchesRole(person, "EPU"));
@@ -196,7 +201,7 @@ function fillStationPlanMonth(monthValue) {
             if (row.id !== "hkl" && !row.id.startsWith("echo_")) return;
 
             const cellKey = `${week.key}_${row.id}`;
-            if (stationPlan[cellKey]) return;
+            if (appState.stationPlan[cellKey]) return;
 
             const doctor = getAvailableDoctor((person) => matchesRole(person, "AA"));
             if (doctor) assignStationCellIfEmpty(row.id, doctor);
@@ -204,7 +209,7 @@ function fillStationPlanMonth(monthValue) {
     });
 }
 
-function autoStationPlan() {
+export function autoStationPlan() {
     const monthValue = getSelectedMonthValue();
     if (!monthValue) return;
     if (!confirm("Moechten Sie den Stationsplan automatisch besetzen? Bestehende Eintraege bleiben erhalten, freie Felder werden ergaenzt. Urlaub bleibt erhalten.")) return;
@@ -216,7 +221,7 @@ function autoStationPlan() {
 }
 
 
-function getWeeksInMonth(year, month) {
+export function getWeeksInMonth(year, month) {
     const weeks = [];
     const date = new Date(year, month - 1, 1);
 

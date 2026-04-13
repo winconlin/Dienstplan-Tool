@@ -1,25 +1,36 @@
-﻿// Simulation helpers used by the browser test harness.
+import { appState } from './state.js';
+import { getCurrentMonthValue, cloneStateValue, withTemporaryState } from './core.js';
+import { validateBackupPayload } from './validation.js';
+import { renderStorageStatus, save, syncConfigControls, buildAppStatePayload, applyNormalizedAppState, renderSnapshotInfo, createUndoSnapshot, restoreLatestSnapshot } from './storage.js';
+import { clearMonthData, clearMonth } from './planning-actions.js';
+import { fillPlanMonth, autoPlan, fillStationPlanMonth } from './planning-engine.js';
+import { renderStationPlan, saveStationPlan } from './station-ui.js';
+import { renderCalendar, savePlan } from './calendar-ui.js';
+import { renderStaff } from './management-ui.js';
+import { backupImport } from './export.js';
 
-function runAutoPlanSimulation(monthValue, source = {}) {
+// Simulation helpers used by the browser test harness.
+
+export function runAutoPlanSimulation(monthValue, source = {}) {
     return withTemporaryState(source, () => {
         fillPlanMonth(monthValue);
         return {
-            plan: cloneStateValue(plan),
-            stationPlan: cloneStateValue(stationPlan)
+            plan: cloneStateValue(appState.plan),
+            stationPlan: cloneStateValue(appState.stationPlan)
         };
     });
 }
 
-function runAutoStationPlanSimulation(monthValue, source = {}) {
+export function runAutoStationPlanSimulation(monthValue, source = {}) {
     return withTemporaryState(source, () => {
         fillStationPlanMonth(monthValue);
         return {
-            stationPlan: cloneStateValue(stationPlan)
+            stationPlan: cloneStateValue(appState.stationPlan)
         };
     });
 }
 
-function createSimulationHost(monthValue) {
+export function createSimulationHost(monthValue) {
     const host = document.createElement("div");
     host.innerHTML = `
         <input type="month" id="monthPicker">
@@ -50,7 +61,7 @@ function createSimulationHost(monthValue) {
     return host;
 }
 
-function runCalendarRenderSimulation(monthValue, source = {}) {
+export function runCalendarRenderSimulation(monthValue, source = {}) {
     return withTemporaryState(source, () => {
         const host = createSimulationHost(monthValue);
 
@@ -63,7 +74,7 @@ function runCalendarRenderSimulation(monthValue, source = {}) {
     });
 }
 
-function runPlanEditSimulation(monthValue, updates, source = {}) {
+export function runPlanEditSimulation(monthValue, updates, source = {}) {
     return withTemporaryState(source, () => {
         const host = createSimulationHost(monthValue);
 
@@ -76,8 +87,8 @@ function runPlanEditSimulation(monthValue, updates, source = {}) {
             });
 
             return {
-                plan: cloneStateValue(plan),
-                stationPlan: cloneStateValue(stationPlan),
+                plan: cloneStateValue(appState.plan),
+                stationPlan: cloneStateValue(appState.stationPlan),
                 calendarHtml: host.querySelector("#calendarBody")?.innerHTML || ""
             };
         } finally {
@@ -86,7 +97,7 @@ function runPlanEditSimulation(monthValue, updates, source = {}) {
     });
 }
 
-function runStationPlanEditSimulation(monthValue, updates, source = {}) {
+export function runStationPlanEditSimulation(monthValue, updates, source = {}) {
     return withTemporaryState(source, () => {
         const host = createSimulationHost(monthValue);
 
@@ -99,8 +110,8 @@ function runStationPlanEditSimulation(monthValue, updates, source = {}) {
             });
 
             return {
-                plan: cloneStateValue(plan),
-                stationPlan: cloneStateValue(stationPlan),
+                plan: cloneStateValue(appState.plan),
+                stationPlan: cloneStateValue(appState.stationPlan),
                 calendarHtml: host.querySelector("#calendarBody")?.innerHTML || ""
             };
         } finally {
@@ -109,7 +120,7 @@ function runStationPlanEditSimulation(monthValue, updates, source = {}) {
     });
 }
 
-function runUndoRestoreSimulation(monthValue, action, source = {}) {
+export function runUndoRestoreSimulation(monthValue, action, source = {}) {
     return withTemporaryState(source, () => {
         const host = createSimulationHost(monthValue);
 
@@ -149,7 +160,7 @@ function runUndoRestoreSimulation(monthValue, action, source = {}) {
             }
 
             const afterAction = buildAppStatePayload();
-            const snapshotCountAfterAction = undoSnapshots.length;
+            const snapshotCountAfterAction = appState.undoSnapshots.length;
             restoreLatestSnapshot({ skipConfirm: true, skipAlert: true });
 
             return {
@@ -157,7 +168,7 @@ function runUndoRestoreSimulation(monthValue, action, source = {}) {
                 afterAction,
                 afterRestore: buildAppStatePayload(),
                 snapshotCountAfterAction,
-                snapshotCountAfterRestore: undoSnapshots.length
+                snapshotCountAfterRestore: appState.undoSnapshots.length
             };
         } finally {
             host.remove();
@@ -165,7 +176,7 @@ function runUndoRestoreSimulation(monthValue, action, source = {}) {
     });
 }
 
-function runStorageFailureSimulation(source = {}, options = {}) {
+export function runStorageFailureSimulation(source = {}, options = {}) {
     return withTemporaryState(source, () => {
         const host = createSimulationHost(source.monthValue || getCurrentMonthValue());
         const failOnCall = Number(options.failOnCall) > 0 ? Number(options.failOnCall) : 1;
@@ -200,11 +211,11 @@ function runStorageFailureSimulation(source = {}, options = {}) {
             return {
                 result,
                 store: { ...fakeStorage.store },
-                storageStatus: { ...storageStatus }
+                storageStatus: { ...appState.storageStatus }
             };
         } finally {
             host.remove();
-            storageStatus = { ok: true, message: "Lokale Speicherung aktiv." };
+            appState.storageStatus = { ok: true, message: "Lokale Speicherung aktiv." };
             renderStorageStatus();
         }
     });

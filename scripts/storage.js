@@ -1,26 +1,15 @@
-﻿// Storage, snapshots and persisted configuration.
+import { normalizeAtossHours, getDateFromKey, isWeekendOrHoliday, cloneStateValue, isPlainObject, defaultAtossHours } from './core.js';
+import { appState } from './state.js';
+import { validateBackupPayload } from './validation.js';
+import { saveAndRenderAllDataViews } from './ui-common.js';
 
-function readStorage(key, fallback) {
-    try {
-        const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-    } catch {
-        return fallback;
-    }
-}
+// Storage, snapshots and persisted configuration.
 
-let staff = readStorage("mp_staff", []);
-let plan = readStorage("mp_plan", {});
-let wishes = readStorage("mp_wishes", {});
-let stationPlan = readStorage("mp_station", {});
-let holidaySeasonMode = readStorage("mp_holiday_mode", false);
-let atossHours = normalizeAtossHours(readStorage("mp_atoss_hours", defaultAtossHours));
-const maxUndoSnapshots = 10;
-let undoSnapshots = normalizeUndoSnapshots(readStorage("mp_undo_snapshots", []));
-let storageStatus = { ok: true, message: "Lokale Speicherung aktiv." };
-let lastStorageAlertMessage = "";
 
-function buildStorageEntries(payload = buildAppStatePayload(), snapshots = undoSnapshots) {
+
+export const maxUndoSnapshots = 10;
+
+export function buildStorageEntries(payload = buildAppStatePayload(), snapshots = appState.undoSnapshots) {
     return [
         ["mp_staff", JSON.stringify(payload.staff)],
         ["mp_plan", JSON.stringify(payload.plan)],
@@ -32,7 +21,7 @@ function buildStorageEntries(payload = buildAppStatePayload(), snapshots = undoS
     ];
 }
 
-function getStorageErrorMessage(error) {
+export function getStorageErrorMessage(error) {
     if (!error) return "Lokale Speicherung fehlgeschlagen.";
 
     const name = String(error.name || "");
@@ -46,7 +35,7 @@ function getStorageErrorMessage(error) {
     return `Lokale Speicherung fehlgeschlagen: ${message || name || "Unbekannter Fehler."}`;
 }
 
-function persistAppStateToStorage(storage = localStorage, payload = buildAppStatePayload(), snapshots = undoSnapshots) {
+export function persistAppStateToStorage(storage = localStorage, payload = buildAppStatePayload(), snapshots = appState.undoSnapshots) {
     const entries = buildStorageEntries(payload, snapshots);
     const rollbackEntries = [];
 
@@ -72,50 +61,50 @@ function persistAppStateToStorage(storage = localStorage, payload = buildAppStat
     }
 }
 
-function renderStorageStatus() {
+export function renderStorageStatus() {
     const statusEl = document.getElementById("storageStatus");
     if (!statusEl) return;
 
-    statusEl.textContent = storageStatus.message;
-    statusEl.className = storageStatus.ok
+    statusEl.textContent = appState.storageStatus.message;
+    statusEl.className = appState.storageStatus.ok
         ? "mt-3 rounded border border-emerald-200 bg-emerald-50 p-2 text-[11px] text-emerald-800"
         : "mt-3 rounded border border-red-200 bg-red-50 p-2 text-[11px] text-red-800";
 }
 
-function save(options = {}) {
+export function save(options = {}) {
     const { storage = localStorage, suppressAlert = false } = options;
     const result = persistAppStateToStorage(storage);
 
-    storageStatus = { ok: result.ok, message: result.message };
+    appState.storageStatus = { ok: result.ok, message: result.message };
     renderStorageStatus();
 
     if (result.ok) {
-        lastStorageAlertMessage = "";
+        appState.lastStorageAlertMessage = "";
         return result;
     }
 
-    if (!suppressAlert && storage === localStorage && result.message !== lastStorageAlertMessage) {
+    if (!suppressAlert && storage === localStorage && result.message !== appState.lastStorageAlertMessage) {
         alert(`${result.message} Die Aenderungen bleiben nur in diesem Browser-Tab erhalten, bis die Speicherung wieder funktioniert.`);
-        lastStorageAlertMessage = result.message;
+        appState.lastStorageAlertMessage = result.message;
     }
 
     return result;
 }
 
-function saveHolidaySeasonMode() {
+export function saveHolidaySeasonMode() {
     const checkbox = document.getElementById("holidaySeasonMode");
-    holidaySeasonMode = checkbox ? checkbox.checked : false;
+    appState.holidaySeasonMode = checkbox ? checkbox.checked : false;
     save();
 }
 
-function syncConfigControls() {
+export function syncConfigControls() {
     const holidayCheckbox = document.getElementById("holidaySeasonMode");
-    if (holidayCheckbox) holidayCheckbox.checked = holidaySeasonMode;
+    if (holidayCheckbox) holidayCheckbox.checked = appState.holidaySeasonMode;
     syncAtossHoursInputs();
     renderStorageStatus();
 }
 
-function getAtossHoursForDate(dateKey, role, holidayMode = holidaySeasonMode, settings = atossHours) {
+export function getAtossHoursForDate(dateKey, role, holidayMode = appState.holidaySeasonMode, settings = appState.atossHours) {
     const normalizedSettings = normalizeAtossHours(settings);
     const roleSettings = normalizedSettings[role] || defaultAtossHours[role];
     return isWeekendOrHoliday(getDateFromKey(dateKey), holidayMode)
@@ -123,8 +112,8 @@ function getAtossHoursForDate(dateKey, role, holidayMode = holidaySeasonMode, se
         : roleSettings.weekday;
 }
 
-function syncAtossHoursInputs() {
-    Object.entries(atossHours).forEach(([role, values]) => {
+export function syncAtossHoursInputs() {
+    Object.entries(appState.atossHours).forEach(([role, values]) => {
         const weekdayInput = document.getElementById(`atoss-${role}-weekday`);
         const weekendInput = document.getElementById(`atoss-${role}-weekendHoliday`);
         if (weekdayInput) weekdayInput.value = String(values.weekday);
@@ -132,8 +121,8 @@ function syncAtossHoursInputs() {
     });
 }
 
-function saveAtossHours() {
-    atossHours = normalizeAtossHours({
+export function saveAtossHours() {
+    appState.atossHours = normalizeAtossHours({
         AA: {
             weekday: document.getElementById("atoss-AA-weekday")?.value,
             weekendHoliday: document.getElementById("atoss-AA-weekendHoliday")?.value
@@ -151,27 +140,27 @@ function saveAtossHours() {
     save();
 }
 
-function buildAppStatePayload() {
+export function buildAppStatePayload() {
     return {
-        staff: cloneStateValue(staff) || [],
-        plan: cloneStateValue(plan) || {},
-        wishes: cloneStateValue(wishes) || {},
-        stationPlan: cloneStateValue(stationPlan) || {},
-        holidaySeasonMode,
-        atossHours: cloneStateValue(atossHours) || cloneStateValue(defaultAtossHours)
+        staff: cloneStateValue(appState.staff) || [],
+        plan: cloneStateValue(appState.plan) || {},
+        wishes: cloneStateValue(appState.wishes) || {},
+        stationPlan: cloneStateValue(appState.stationPlan) || {},
+        holidaySeasonMode: appState.holidaySeasonMode,
+        atossHours: cloneStateValue(appState.atossHours) || cloneStateValue(defaultAtossHours)
     };
 }
 
-function applyNormalizedAppState(normalized) {
-    staff = cloneStateValue(normalized.staff) || [];
-    plan = cloneStateValue(normalized.plan) || {};
-    wishes = cloneStateValue(normalized.wishes) || {};
-    stationPlan = cloneStateValue(normalized.stationPlan) || {};
-    holidaySeasonMode = Boolean(normalized.holidaySeasonMode);
-    atossHours = normalizeAtossHours(normalized.atossHours);
+export function applyNormalizedAppState(normalized) {
+    appState.staff = cloneStateValue(normalized.staff) || [];
+    appState.plan = cloneStateValue(normalized.plan) || {};
+    appState.wishes = cloneStateValue(normalized.wishes) || {};
+    appState.stationPlan = cloneStateValue(normalized.stationPlan) || {};
+    appState.holidaySeasonMode = Boolean(normalized.holidaySeasonMode);
+    appState.atossHours = normalizeAtossHours(normalized.atossHours);
 }
 
-function normalizeUndoSnapshots(source = []) {
+export function normalizeUndoSnapshots(source = []) {
     if (!Array.isArray(source)) return [];
 
     return source.map((entry, index) => {
@@ -189,47 +178,47 @@ function normalizeUndoSnapshots(source = []) {
     }).filter(Boolean).slice(0, maxUndoSnapshots);
 }
 
-function formatSnapshotTimestamp(value) {
+export function formatSnapshotTimestamp(value) {
     const date = new Date(value);
     return Number.isNaN(date.getTime())
         ? "unbekannter Zeitpunkt"
         : date.toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" });
 }
 
-function renderSnapshotInfo() {
+export function renderSnapshotInfo() {
     const infoEl = document.getElementById("undoSnapshotInfo");
     const buttonEl = document.getElementById("undoSnapshotButton");
     if (!infoEl && !buttonEl) return;
 
-    const latestSnapshot = undoSnapshots[0] || null;
+    const latestSnapshot = appState.undoSnapshots[0] || null;
     if (infoEl) {
         infoEl.textContent = latestSnapshot
-            ? `${latestSnapshot.label} | ${formatSnapshotTimestamp(latestSnapshot.createdAt)} | ${undoSnapshots.length} gespeichert`
+            ? `${latestSnapshot.label} | ${formatSnapshotTimestamp(latestSnapshot.createdAt)} | ${appState.undoSnapshots.length} gespeichert`
             : "Kein Snapshot verfuegbar.";
     }
 
     if (buttonEl) buttonEl.disabled = !latestSnapshot;
 }
 
-function createUndoSnapshot(label, payload = buildAppStatePayload()) {
-    undoSnapshots = [
+export function createUndoSnapshot(label, payload = buildAppStatePayload()) {
+    appState.undoSnapshots = [
         {
             id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             label: String(label || "Snapshot"),
             createdAt: new Date().toISOString(),
             state: cloneStateValue(payload)
         },
-        ...undoSnapshots
+        ...appState.undoSnapshots
     ].slice(0, maxUndoSnapshots);
 
     save({ suppressAlert: true });
     renderSnapshotInfo();
-    return undoSnapshots[0];
+    return appState.undoSnapshots[0];
 }
 
-function restoreLatestSnapshot(options = {}) {
+export function restoreLatestSnapshot(options = {}) {
     const { skipConfirm = false, skipAlert = false } = options;
-    const latestSnapshot = undoSnapshots[0];
+    const latestSnapshot = appState.undoSnapshots[0];
 
     if (!latestSnapshot) {
         if (!skipAlert) alert("Kein Snapshot zum Wiederherstellen verfuegbar.");
@@ -246,7 +235,7 @@ function restoreLatestSnapshot(options = {}) {
         return false;
     }
 
-    undoSnapshots = undoSnapshots.slice(1);
+    appState.undoSnapshots = appState.undoSnapshots.slice(1);
     applyNormalizedAppState(validation.normalized);
     syncConfigControls();
     const saveResult = saveAndRenderAllDataViews();
@@ -254,3 +243,15 @@ function restoreLatestSnapshot(options = {}) {
     if (!skipAlert && saveResult.ok) alert("Snapshot wiederhergestellt.");
     return true;
 }
+
+export function readStorage(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+import { initializeState } from './core.js';
+initializeState(readStorage);
