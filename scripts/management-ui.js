@@ -1,6 +1,12 @@
-﻿// Navigation, staff management and wishes UI.
+import { appState } from './state.js';
+import { getWorkPercent, normalizeAtossId, getPersonValidationError, getDuplicateAtossAssignments } from './core.js';
+import { renderValidation } from './validation.js';
 
-function showSection(id) {
+import { getSelectedMonthValue, saveAndRenderCalendarView, saveAndRenderAllDataViews } from './ui-common.js';
+
+// Navigation, appState.staff management and appState.wishes UI.
+
+export function showSection(id) {
     document.querySelectorAll(".section-content").forEach((section) => section.classList.add("hidden"));
     document.getElementById(`section-${id}`)?.classList.remove("hidden");
 
@@ -15,58 +21,98 @@ function showSection(id) {
     if (id === "validation") renderValidation();
 }
 
-function savePerson() {
+export function loadPerson(index) {
+    const monthValue = document.getElementById("monthPicker")?.value;
+    const activeStaffList = appState.staff; // Needs getActiveStaff logic eventually, but simplifies for now
+    const person = activeStaffList[index];
+    if (!person) return;
+    document.getElementById("pName").value = person.name;
+    document.getElementById("pId").value = person.id || "";
+    document.getElementById("pRole").value = person.role || "AA";
+    document.getElementById("pWork").value = person.work || 100;
+    document.getElementById("pRotant").checked = person.isRotant || false;
+    document.getElementById("pCanDoShifts").checked = person.canDoShifts !== false;
+}
+
+function clearPersonForm() {
+    document.getElementById("pName").value = "";
+    document.getElementById("pId").value = "";
+    document.getElementById("pRole").value = "AA";
+    document.getElementById("pWork").value = "";
+    document.getElementById("pRotant").checked = false;
+    document.getElementById("pCanDoShifts").checked = true;
+}
+
+export function savePerson() {
     const name = document.getElementById("pName")?.value.trim() || "";
     const id = document.getElementById("pId")?.value.trim() || "";
     const role = document.getElementById("pRole")?.value || "AA";
     const workInput = Number(document.getElementById("pWork")?.value);
     const work = workInput > 0 ? Math.min(workInput, 100) : 100;
-    const error = getPersonValidationError({ name, id }, staff);
+    const isRotant = document.getElementById("pRotant")?.checked || false;
+    const canDoShifts = document.getElementById("pCanDoShifts")?.checked !== false;
 
-    if (error) {
-        alert(error);
+    if (!name) {
+        if (window.showToast) window.showToast("Bitte einen Namen eingeben.", "warning");
         return;
     }
 
-    staff.push({ name, id: normalizeAtossId(id), role, work });
-    saveAndRenderAllDataViews();
+    const monthValue = document.getElementById("monthPicker")?.value || new Date().toISOString().slice(0, 7);
+    const existingIndex = appState.staff.findIndex((person) => person.name.toLowerCase() === name.toLowerCase());
 
-    document.getElementById("pName").value = "";
-    document.getElementById("pId").value = "";
-    document.getElementById("pWork").value = "";
+    if (existingIndex !== -1) {
+        const person = appState.staff[existingIndex];
+        if (!person.history) person.history = {};
+        person.history[monthValue] = { role, work, isRotant, canDoShifts };
+        person.id = id;
+        person.role = role;
+        person.work = work;
+        person.isRotant = isRotant;
+        person.canDoShifts = canDoShifts;
+        if (window.showToast) window.showToast(`Änderungen für ${name} ab ${monthValue} gespeichert.`, "success");
+    } else {
+        const history = {};
+        history[monthValue] = { role, work, isRotant, canDoShifts };
+        appState.staff.push({ name, id, role, work, isRotant, canDoShifts, history });
+        if (window.showToast) window.showToast(`${name} hinzugefügt.`, "success");
+    }
+
+    appState.staff.sort((a, b) => a.name.localeCompare(b.name));
+    saveAndRenderAllDataViews();
+    clearPersonForm();
 }
 
-function removePerson(index) {
-    const person = staff[index];
+export function removePerson(index) {
+    const person = appState.staff[index];
     if (!person) return;
     if (!confirm(`Soll ${person.name} wirklich entfernt werden? Zugeordnete Dienste, Sperren und Stationsfelder werden ebenfalls geleert.`)) return;
 
-    staff.splice(index, 1);
+    appState.staff.splice(index, 1);
 
-    Object.keys(plan).forEach((dateKey) => {
+    Object.keys(appState.plan).forEach((dateKey) => {
         ["AA", "VISITE", "OA"].forEach((role) => {
-            if (plan[dateKey]?.[role] === person.name) plan[dateKey][role] = "";
+            if (appState.plan[dateKey]?.[role] === person.name) appState.plan[dateKey][role] = "";
         });
     });
 
-    Object.keys(wishes).forEach((dateKey) => {
-        wishes[dateKey] = (wishes[dateKey] || []).filter((name) => name !== person.name);
-        if (!wishes[dateKey].length) delete wishes[dateKey];
+    Object.keys(appState.wishes).forEach((dateKey) => {
+        appState.wishes[dateKey] = (appState.wishes[dateKey] || []).filter((name) => name !== person.name);
+        if (!appState.wishes[dateKey].length) delete appState.wishes[dateKey];
     });
 
-    Object.keys(stationPlan).forEach((key) => {
-        if (stationPlan[key] === person.name) delete stationPlan[key];
+    Object.keys(appState.stationPlan).forEach((key) => {
+        if (appState.stationPlan[key] === person.name) delete appState.stationPlan[key];
     });
 
     saveAndRenderAllDataViews();
 }
 
-function renderStaff() {
+export function renderStaff() {
     const staffList = document.getElementById("staffList");
     if (!staffList) return;
     const duplicateIds = new Set(getDuplicateAtossAssignments().map((entry) => entry.id));
 
-    staffList.innerHTML = staff.map((person, index) => {
+    staffList.innerHTML = appState.staff.map((person, index) => {
         const details = [person.role, `${getWorkPercent(person)}%`];
         const normalizedId = normalizeAtossId(person.id);
         if (normalizedId) details.unshift(normalizedId);
@@ -75,11 +121,11 @@ function renderStaff() {
             ? ' <span class="text-red-600 font-bold">Atoss-ID doppelt</span>'
             : "";
 
-        return `<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1"><span><span class="font-bold">${person.name}</span> <span class="text-slate-500">(${details.join(" | ")})</span>${duplicateBadge}</span><button onclick="removePerson(${index})" class="text-red-500 font-bold px-2">X</button></div>`;
+        return `<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1 hover:bg-slate-100 cursor-pointer transition" onclick="loadPerson(${index})"><span><span class="font-bold">${person.name}</span> <span class="text-slate-500">(${details.join(" | ")})</span>${duplicateBadge}</span><button onclick="event.stopPropagation(); removePerson(${index})" class="text-red-500 font-bold px-2 hover:bg-red-100 rounded">X</button></div>`;
     }).join("");
 }
 
-function renderWishMatrix() {
+export function renderWishMatrix() {
     const monthValue = getSelectedMonthValue();
     const container = document.getElementById("wishTableContainer");
     if (!monthValue || !container) return;
@@ -88,7 +134,7 @@ function renderWishMatrix() {
     const daysInMonth = new Date(year, month, 0).getDate();
 
     let head = '<tr><th class="border p-1 bg-slate-100">Tag</th>';
-    staff.forEach((person) => {
+    appState.staff.forEach((person) => {
         head += `<th class="border p-1 text-[8px] h-24 align-bottom" style="writing-mode: vertical-rl;">${person.name}</th>`;
     });
     head += "</tr>";
@@ -97,8 +143,8 @@ function renderWishMatrix() {
     for (let day = 1; day <= daysInMonth; day += 1) {
         const dateKey = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
         let row = `<tr><td class="p-1 border bg-slate-50 text-center font-bold text-[10px]">${day}</td>`;
-        staff.forEach((person) => {
-            const isSet = (wishes[dateKey] || []).includes(person.name);
+        appState.staff.forEach((person) => {
+            const isSet = (appState.wishes[dateKey] || []).includes(person.name);
             row += `<td class="border text-center cursor-pointer ${isSet ? "bg-purple-500 text-white" : ""}" onclick="toggleWish('${dateKey}', '${person.name}')">${isSet ? "X" : ""}</td>`;
         });
         body += `${row}</tr>`;
@@ -107,10 +153,10 @@ function renderWishMatrix() {
     container.innerHTML = `<h2 class="text-xl font-bold mb-4 text-purple-700 uppercase">Wuensche / Sperren</h2><table class="w-full text-xs border-collapse">${head}${body}</table>`;
 }
 
-function toggleWish(dateKey, name) {
-    if (!wishes[dateKey]) wishes[dateKey] = [];
-    wishes[dateKey] = wishes[dateKey].includes(name)
-        ? wishes[dateKey].filter((item) => item !== name)
-        : [...wishes[dateKey], name];
+export function toggleWish(dateKey, name) {
+    if (!appState.wishes[dateKey]) appState.wishes[dateKey] = [];
+    appState.wishes[dateKey] = appState.wishes[dateKey].includes(name)
+        ? appState.wishes[dateKey].filter((item) => item !== name)
+        : [...appState.wishes[dateKey], name];
     saveAndRenderCalendarView();
 }

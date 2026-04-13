@@ -1,21 +1,45 @@
-﻿// Shared domain constants and pure helper functions.
+import { appState } from './state.js';
+import { normalizeUndoSnapshots } from './storage.js';
+import { getWeeksInMonth } from './planning-engine.js';
 
-const defaultAtossHours = {
+
+export function readStorage(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+export function initializeState(readStorageFn) {
+    appState.staff = readStorageFn("mp_staff", []);
+    appState.plan = readStorageFn("mp_plan", {});
+    appState.wishes = readStorageFn("mp_wishes", {});
+    appState.stationPlan = readStorageFn("mp_station", {});
+    appState.holidaySeasonMode = readStorageFn("mp_holiday_mode", false);
+    appState.atossHours = readStorageFn("mp_atoss_hours", appState.atossHours);
+    appState.undoSnapshots = readStorageFn("mp_undo_snapshots", []);
+}
+
+// Shared domain constants and pure helper functions.
+
+export const defaultAtossHours = {
     AA: { weekday: 17, weekendHoliday: 17 },
     VISITE: { weekday: 5, weekendHoliday: 5 },
     OA: { weekday: 17, weekendHoliday: 17 }
 };
 
-const roleLabels = {
+export const roleLabels = {
     AA: "24h Dienst (AA)",
     VISITE: "Visite (WE/FT)",
     OA: "Hintergrund (OA)"
 };
 
-const planRoles = ["AA", "VISITE", "OA"];
-const autoAdjacentDayBlockRoles = ["AA", "VISITE"];
+export const planRoles = ["AA", "VISITE", "OA"];
+export const autoAdjacentDayBlockRoles = ["AA", "VISITE"];
 
-const stationLayout = [
+export const stationLayout = [
     { id: "s71_1", name: "Zimmer 1-4", category: "Station 7 - 1" },
     { id: "s71_2", name: "Zimmer 5-8", category: "Station 7 - 1" },
     { id: "s71_3", name: "Zimmer 13-18", category: "Station 7 - 1" },
@@ -44,27 +68,27 @@ const stationLayout = [
     { id: "u6", name: "Urlaub / Zeitausgleich", category: "Urlaub / Zeitausgleich" }
 ];
 
-function matchesRole(person, role) {
+export function matchesRole(person, role) {
     if (role === "OA") return person.role === "OA" || person.role === "OA-EPU";
     if (role === "EPU") return person.role === "OA-EPU";
     return person.role === "AA";
 }
 
-function getWorkPercent(person) {
+export function getWorkPercent(person) {
     const parsed = Number(person?.work);
     return parsed > 0 ? parsed : 100;
 }
 
-function normalizeAtossId(value) {
+export function normalizeAtossId(value) {
     return String(value || "").trim().toUpperCase();
 }
 
-function normalizeHourValue(value, fallback) {
+export function normalizeHourValue(value, fallback) {
     const parsed = Number(value);
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
-function normalizeAtossHours(source = {}) {
+export function normalizeAtossHours(source = {}) {
     const normalized = {};
 
     Object.entries(defaultAtossHours).forEach(([role, defaults]) => {
@@ -78,7 +102,7 @@ function normalizeAtossHours(source = {}) {
     return normalized;
 }
 
-function getPersonValidationError(candidate, dataStaff = staff) {
+export function getPersonValidationError(candidate, dataStaff = appState.staff) {
     const name = String(candidate?.name || "").trim();
     const normalizedId = normalizeAtossId(candidate?.id);
 
@@ -94,7 +118,7 @@ function getPersonValidationError(candidate, dataStaff = staff) {
     return "";
 }
 
-function getDuplicateAtossAssignments(dataStaff = staff) {
+export function getDuplicateAtossAssignments(dataStaff = appState.staff) {
     const assignments = {};
 
     dataStaff.forEach((person) => {
@@ -109,7 +133,7 @@ function getDuplicateAtossAssignments(dataStaff = staff) {
         .map(([id, names]) => ({ id, names }));
 }
 
-function getMonthDayKeys(monthValue) {
+export function getMonthDayKeys(monthValue) {
     if (!monthValue) return [];
     const [year, month] = monthValue.split("-").map(Number);
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -118,22 +142,22 @@ function getMonthDayKeys(monthValue) {
     });
 }
 
-function getDateFromKey(dateKey) {
+export function getDateFromKey(dateKey) {
     const [year, month, day] = String(dateKey || "").split("-").map(Number);
     return new Date(year, month - 1, day);
 }
 
-function formatDateKey(dateKey) {
+export function formatDateKey(dateKey) {
     const [year, month, day] = String(dateKey || "").split("-");
     return `${day}.${month}.${year}`;
 }
 
-function getCurrentMonthValue() {
+export function getCurrentMonthValue() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function getEasterSunday(year) {
+export function getEasterSunday(year) {
     const a = year % 19;
     const b = Math.floor(year / 100);
     const c = year % 100;
@@ -151,7 +175,7 @@ function getEasterSunday(year) {
     return new Date(year, month - 1, day);
 }
 
-function getHolidayName(date, holidayMode = holidaySeasonMode) {
+export function getHolidayName(date, holidayMode = appState.holidaySeasonMode) {
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
@@ -194,32 +218,32 @@ function getHolidayName(date, holidayMode = holidaySeasonMode) {
     return null;
 }
 
-function isHoliday(date) {
-    return getHolidayName(date, holidaySeasonMode);
+export function isHoliday(date) {
+    return getHolidayName(date, appState.holidaySeasonMode);
 }
 
-function isVisitDay(date, holidayMode = holidaySeasonMode) {
+export function isVisitDay(date, holidayMode = appState.holidaySeasonMode) {
     return isWeekendOrHoliday(date, holidayMode);
 }
 
-function isWeekendOrHoliday(date, holidayMode = holidaySeasonMode) {
+export function isWeekendOrHoliday(date, holidayMode = appState.holidaySeasonMode) {
     return date.getDay() === 0 || date.getDay() === 6 || Boolean(getHolidayName(date, holidayMode));
 }
 
-function isRoleActiveOnDate(role, date, holidayMode = holidaySeasonMode) {
+export function isRoleActiveOnDate(role, date, holidayMode = appState.holidaySeasonMode) {
     return role !== "VISITE" || isVisitDay(date, holidayMode);
 }
 
-function isRoleActiveOnDateKey(role, dateKey, holidayMode = holidaySeasonMode) {
+export function isRoleActiveOnDateKey(role, dateKey, holidayMode = appState.holidaySeasonMode) {
     return isRoleActiveOnDate(role, getDateFromKey(dateKey), holidayMode);
 }
 
-function getICSStartTime(dateKey, role, holidayMode = holidaySeasonMode) {
+export function getICSStartTime(dateKey, role, holidayMode = appState.holidaySeasonMode) {
     if (role === "VISITE") return "090000";
     return isWeekendOrHoliday(getDateFromKey(dateKey), holidayMode) ? "090000" : "150000";
 }
 
-function escapeICSText(value) {
+export function escapeICSText(value) {
     return String(value)
         .replace(/\\/g, "\\\\")
         .replace(/\n/g, "\\n")
@@ -227,34 +251,34 @@ function escapeICSText(value) {
         .replace(/;/g, "\\;");
 }
 
-function cloneStateValue(value) {
+export function cloneStateValue(value) {
     return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 }
 
-function isPlainObject(value) {
+export function isPlainObject(value) {
     return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function getDateKey(year, month, day) {
+export function getDateKey(year, month, day) {
     return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
-function dateToKey(date) {
+export function dateToKey(date) {
     return getDateKey(date.getFullYear(), date.getMonth() + 1, date.getDate());
 }
 
-function shiftDate(date, offset) {
+export function shiftDate(date, offset) {
     const shifted = new Date(date);
     shifted.setDate(shifted.getDate() + offset);
     shifted.setHours(0, 0, 0, 0);
     return shifted;
 }
 
-function shiftDateKey(dateKey, offset) {
+export function shiftDateKey(dateKey, offset) {
     return dateToKey(shiftDate(getDateFromKey(dateKey), offset));
 }
 
-function createPlanEntry(existing = {}) {
+export function createPlanEntry(existing = {}) {
     return {
         AA: existing.AA || "",
         VISITE: existing.VISITE || "",
@@ -262,36 +286,36 @@ function createPlanEntry(existing = {}) {
     };
 }
 
-function ensurePlanEntry(dateKey) {
-    plan[dateKey] = createPlanEntry(plan[dateKey]);
-    return plan[dateKey];
+export function ensurePlanEntry(dateKey) {
+    appState.plan[dateKey] = createPlanEntry(appState.plan[dateKey]);
+    return appState.plan[dateKey];
 }
 
-function isVacationRow(row) {
+export function isVacationRow(row) {
     return row.category.includes("Urlaub") || row.category.includes("Zeitausgleich");
 }
 
-function getAssignedNamesForDates(dateKeys, role, dataPlan = plan) {
+export function getAssignedNamesForDates(dateKeys, role, dataPlan = appState.plan) {
     return [...new Set(dateKeys.map((dateKey) => dataPlan[dateKey]?.[role]).filter(Boolean))];
 }
 
-function getUniqueAssignedName(dateKeys, role, dataPlan = plan) {
+export function getUniqueAssignedName(dateKeys, role, dataPlan = appState.plan) {
     const names = getAssignedNamesForDates(dateKeys, role, dataPlan);
     if (!names.length) return null;
     return names.length === 1 ? names[0] : false;
 }
 
-function getRoleWeight(role) {
+export function getRoleWeight(role) {
     return role === "VISITE" ? 0.2 : 1;
 }
 
-function getWeekForDate(date, weeks) {
+export function getWeekForDate(date, weeks) {
     const compareDate = new Date(date);
     compareDate.setHours(0, 0, 0, 0);
     return weeks.find((week) => compareDate >= week.mondayDate && compareDate <= week.sundayDate) || null;
 }
 
-function getVacationDoctorsForWeek(week, dataStationPlan = stationPlan) {
+export function getVacationDoctorsForWeek(week, dataStationPlan = appState.stationPlan) {
     const blocked = new Set();
     stationLayout.forEach((row) => {
         if (!isVacationRow(row)) return;
@@ -301,35 +325,35 @@ function getVacationDoctorsForWeek(week, dataStationPlan = stationPlan) {
     return blocked;
 }
 
-function getVacationDoctorsForDate(dateKey, weeks, dataStationPlan = stationPlan) {
+export function getVacationDoctorsForDate(dateKey, weeks, dataStationPlan = appState.stationPlan) {
     const week = getWeekForDate(getDateFromKey(dateKey), weeks);
     return week ? getVacationDoctorsForWeek(week, dataStationPlan) : new Set();
 }
 
-function hasVacationDutyConflict(personName, dateKey, weeks, dataStationPlan = stationPlan) {
+export function hasVacationDutyConflict(personName, dateKey, weeks, dataStationPlan = appState.stationPlan) {
     if (!personName) return false;
     return getVacationDoctorsForDate(dateKey, weeks, dataStationPlan).has(personName);
 }
 
-function hasSameDayRoleConflict(personName, dateKey, role, dataPlan = plan) {
+export function hasSameDayRoleConflict(personName, dateKey, role, dataPlan = appState.plan) {
     return planRoles.some((roleKey) => roleKey !== role && dataPlan[dateKey]?.[roleKey] === personName);
 }
 
-function hasAdjacentDayConflict(personName, dateKey, dataPlan = plan, roleKeys = planRoles) {
+export function hasAdjacentDayConflict(personName, dateKey, dataPlan = appState.plan, roleKeys = planRoles) {
     return [-1, 1].some((offset) => {
         const adjacentEntry = dataPlan[shiftDateKey(dateKey, offset)];
         return adjacentEntry && roleKeys.some((roleKey) => adjacentEntry[roleKey] === personName);
     });
 }
 
-function canAssignPersonToRole(
+export function canAssignPersonToRole(
     person,
     dateKey,
     role,
     weeks,
-    dataPlan = plan,
-    dataWishes = wishes,
-    dataStationPlan = stationPlan,
+    dataPlan = appState.plan,
+    dataWishes = appState.wishes,
+    dataStationPlan = appState.stationPlan,
     excludedNames = []
 ) {
     if (!person || !matchesRole(person, role) || excludedNames.includes(person.name)) return false;
@@ -344,22 +368,22 @@ function canAssignPersonToRole(
     return true;
 }
 
-function getBestDoctorForDates(role, dateKeys, counters, weeks, excludedNames = []) {
+export function getBestDoctorForDates(role, dateKeys, counters, weeks, excludedNames = []) {
     const normalizedDateKeys = [...new Set(dateKeys.filter(Boolean))];
     if (!normalizedDateKeys.length) return null;
 
-    const candidates = staff
+    const candidates = appState.staff
         .filter((person) => matchesRole(person, role) && !excludedNames.includes(person.name))
         .map((person) => {
             const fillableCount = normalizedDateKeys.filter((dateKey) => {
-                return canAssignPersonToRole(person, dateKey, role, weeks, plan, wishes, stationPlan, excludedNames);
+                return canAssignPersonToRole(person, dateKey, role, weeks, appState.plan, appState.wishes, appState.stationPlan, excludedNames);
             }).length;
 
             if (!fillableCount) return null;
 
             const adjacencyPenalty = normalizedDateKeys.reduce((penalty, dateKey) => {
                 const roleKeys = role === "OA" ? planRoles : autoAdjacentDayBlockRoles;
-                return penalty + (hasAdjacentDayConflict(person.name, dateKey, plan, roleKeys) ? 1 : 0);
+                return penalty + (hasAdjacentDayConflict(person.name, dateKey, appState.plan, roleKeys) ? 1 : 0);
             }, 0);
 
             return {
@@ -379,9 +403,9 @@ function getBestDoctorForDates(role, dateKeys, counters, weeks, excludedNames = 
     return candidates[0]?.person || null;
 }
 
-function buildStationLoadCounters(weeks, dataStationPlan = stationPlan) {
+export function buildStationLoadCounters(weeks, dataStationPlan = appState.stationPlan) {
     const counters = {};
-    staff.forEach((person) => {
+    appState.staff.forEach((person) => {
         counters[person.name] = 0;
     });
 
@@ -398,7 +422,7 @@ function buildStationLoadCounters(weeks, dataStationPlan = stationPlan) {
     return counters;
 }
 
-function syncDienstRowsFromPlan(monthValue, options = {}) {
+export function syncDienstRowsFromPlan(monthValue, options = {}) {
     if (!monthValue) return;
 
     const { preserveExisting = true } = options;
@@ -415,17 +439,17 @@ function syncDienstRowsFromPlan(monthValue, options = {}) {
             const cellKey = `${week.key}_${rowId}`;
 
             if (!derivedDoctor || derivedDoctor === false || blockedByVacation.has(derivedDoctor)) {
-                if (!preserveExisting) delete stationPlan[cellKey];
+                if (!preserveExisting) delete appState.stationPlan[cellKey];
                 return;
             }
 
-            if (preserveExisting && stationPlan[cellKey]) return;
-            stationPlan[cellKey] = derivedDoctor;
+            if (preserveExisting && appState.stationPlan[cellKey]) return;
+            appState.stationPlan[cellKey] = derivedDoctor;
         });
     });
 }
 
-function parseStationCellKey(cellKey) {
+export function parseStationCellKey(cellKey) {
     const [weekKey, ...rowParts] = String(cellKey || "").split("_");
     return {
         weekKey,
@@ -433,7 +457,7 @@ function parseStationCellKey(cellKey) {
     };
 }
 
-function getWeekForStationCellKey(cellKey, monthValue) {
+export function getWeekForStationCellKey(cellKey, monthValue) {
     const { weekKey, rowId } = parseStationCellKey(cellKey);
     if (!weekKey || !rowId || !monthValue) return { week: null, rowId };
 
@@ -442,14 +466,14 @@ function getWeekForStationCellKey(cellKey, monthValue) {
     return { week, rowId };
 }
 
-function getDienstDateKeysForRow(week, rowId) {
+export function getDienstDateKeysForRow(week, rowId) {
     if (!week) return [];
     if (rowId === "da_1") return week.dienstGroupA;
     if (rowId === "da_2") return week.dienstGroupB;
     return [];
 }
 
-function applyDienstRowToPlan(monthValue, cellKey, doctorName) {
+export function applyDienstRowToPlan(monthValue, cellKey, doctorName) {
     const { week, rowId } = getWeekForStationCellKey(cellKey, monthValue);
     const dateKeys = getDienstDateKeysForRow(week, rowId);
     if (!dateKeys.length || !doctorName) return false;
@@ -462,34 +486,34 @@ function applyDienstRowToPlan(monthValue, cellKey, doctorName) {
     return true;
 }
 
-function withTemporaryState(source, callback) {
+export function withTemporaryState(source, callback) {
     const previousState = {
-        staff,
-        plan,
-        wishes,
-        stationPlan,
-        holidaySeasonMode,
-        atossHours,
-        undoSnapshots
+        staff: appState.staff,
+        plan: appState.plan,
+        wishes: appState.wishes,
+        stationPlan: appState.stationPlan,
+        holidaySeasonMode: appState.holidaySeasonMode,
+        atossHours: appState.atossHours,
+        undoSnapshots: appState.undoSnapshots
     };
 
     try {
-        if (Object.prototype.hasOwnProperty.call(source, "staff")) staff = cloneStateValue(source.staff) || [];
-        if (Object.prototype.hasOwnProperty.call(source, "plan")) plan = cloneStateValue(source.plan) || {};
-        if (Object.prototype.hasOwnProperty.call(source, "wishes")) wishes = cloneStateValue(source.wishes) || {};
-        if (Object.prototype.hasOwnProperty.call(source, "stationPlan")) stationPlan = cloneStateValue(source.stationPlan) || {};
-        if (Object.prototype.hasOwnProperty.call(source, "holidaySeasonMode")) holidaySeasonMode = Boolean(source.holidaySeasonMode);
-        if (Object.prototype.hasOwnProperty.call(source, "atossHours")) atossHours = normalizeAtossHours(source.atossHours);
-        if (Object.prototype.hasOwnProperty.call(source, "undoSnapshots")) undoSnapshots = normalizeUndoSnapshots(source.undoSnapshots);
+        if (Object.prototype.hasOwnProperty.call(source, "staff")) appState.staff = cloneStateValue(source.staff) || [];
+        if (Object.prototype.hasOwnProperty.call(source, "plan")) appState.plan = cloneStateValue(source.plan) || {};
+        if (Object.prototype.hasOwnProperty.call(source, "wishes")) appState.wishes = cloneStateValue(source.wishes) || {};
+        if (Object.prototype.hasOwnProperty.call(source, "stationPlan")) appState.stationPlan = cloneStateValue(source.stationPlan) || {};
+        if (Object.prototype.hasOwnProperty.call(source, "holidaySeasonMode")) appState.holidaySeasonMode = Boolean(source.holidaySeasonMode);
+        if (Object.prototype.hasOwnProperty.call(source, "atossHours")) appState.atossHours = normalizeAtossHours(source.atossHours);
+        if (Object.prototype.hasOwnProperty.call(source, "undoSnapshots")) appState.undoSnapshots = normalizeUndoSnapshots(source.undoSnapshots);
 
         return callback();
     } finally {
-        staff = previousState.staff;
-        plan = previousState.plan;
-        wishes = previousState.wishes;
-        stationPlan = previousState.stationPlan;
-        holidaySeasonMode = previousState.holidaySeasonMode;
-        atossHours = previousState.atossHours;
-        undoSnapshots = previousState.undoSnapshots;
+        appState.staff = previousState.staff;
+        appState.plan = previousState.plan;
+        appState.wishes = previousState.wishes;
+        appState.stationPlan = previousState.stationPlan;
+        appState.holidaySeasonMode = previousState.holidaySeasonMode;
+        appState.atossHours = previousState.atossHours;
+        appState.undoSnapshots = previousState.undoSnapshots;
     }
 }

@@ -1,13 +1,18 @@
-﻿// Planning actions for user-triggered month operations.
+import { appState } from './state.js';
+import { getMonthDayKeys, syncDienstRowsFromPlan } from './core.js';
+import { createUndoSnapshot } from './storage.js';
+import { getSelectedMonthValue, saveAndRenderPlanningViews, saveAndRenderCalendarView } from './ui-common.js';
 
-function clearMonthData(monthValue) {
+// Planning actions for user-triggered month operations.
+
+export function clearMonthData(monthValue) {
     getMonthDayKeys(monthValue).forEach((dayKey) => {
-        plan[dayKey] = { AA: "", VISITE: "", OA: "" };
+        appState.plan[dayKey] = { AA: "", VISITE: "", OA: "" };
     });
     syncDienstRowsFromPlan(monthValue, { preserveExisting: false });
 }
 
-function clearMonth() {
+export function clearMonth() {
     const monthValue = getSelectedMonthValue();
     if (!monthValue) return;
     if (!confirm("Moechten Sie den gesamten Plan fuer diesen Monat unwiderruflich loeschen?")) return;
@@ -17,11 +22,11 @@ function clearMonth() {
     saveAndRenderPlanningViews();
 }
 
-function clearWishesData(monthValue) {
-    getMonthDayKeys(monthValue).forEach((dayKey) => delete wishes[dayKey]);
+export function clearWishesData(monthValue) {
+    getMonthDayKeys(monthValue).forEach((dayKey) => delete appState.wishes[dayKey]);
 }
 
-function clearWishes() {
+export function clearWishes() {
     const monthValue = getSelectedMonthValue();
     if (!monthValue) return;
     if (!confirm("Moechten Sie alle Wuensche und Sperren fuer diesen Monat loeschen?")) return;

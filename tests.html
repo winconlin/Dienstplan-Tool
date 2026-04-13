@@ -57,18 +57,18 @@
             background: #f8fafc;
         }
     </style>
-    <script src="scripts/core.js"></script>
-    <script src="scripts/validation.js"></script>
-    <script src="scripts/storage.js"></script>
-    <script src="scripts/ui-common.js"></script>
-    <script src="scripts/planning-actions.js"></script>
-    <script src="scripts/planning-engine.js"></script>
-    <script src="scripts/test-helpers.js"></script>
-    <script src="scripts/station-ui.js"></script>
-    <script src="scripts/calendar-ui.js"></script>
-    <script src="scripts/management-ui.js"></script>
-    <script src="scripts/export.js"></script>
-    <script src="scripts/app-init.js"></script>
+    <script type="module" src="scripts/core.js"></script>
+    <script type="module" src="scripts/validation.js"></script>
+    <script type="module" src="scripts/storage.js"></script>
+    <script type="module" src="scripts/ui-common.js"></script>
+    <script type="module" src="scripts/planning-actions.js"></script>
+    <script type="module" src="scripts/planning-engine.js"></script>
+    <script type="module" src="scripts/test-helpers.js"></script>
+    <script type="module" src="scripts/station-ui.js"></script>
+    <script type="module" src="scripts/calendar-ui.js"></script>
+    <script type="module" src="scripts/management-ui.js"></script>
+    <script type="module" src="scripts/export.js"></script>
+    <script type="module" src="scripts/app-init.js"></script>
 </head>
 <body>
     <main>
@@ -86,7 +86,7 @@
         </table>
     </main>
 
-    <script>
+    <script type="module">
         function assertEqual(actual, expected, label) {
             if (actual !== expected) {
                 throw new Error(`${label}: erwartet "${expected}", erhalten "${actual}"`);

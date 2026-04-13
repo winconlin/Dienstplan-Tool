@@ -1,6 +1,14 @@
-﻿// Calendar and statistics rendering.
+import { appState } from './state.js';
+import { matchesRole, isHoliday, isRoleActiveOnDateKey, shiftDateKey, createPlanEntry, hasVacationDutyConflict, syncDienstRowsFromPlan } from './core.js';
+import { renderValidation } from './validation.js';
 
-function getHeatmapColor(value, min, max) {
+import { getSelectedMonthValue, saveAndRenderPlanningViews } from './ui-common.js';
+import { getWeeksInMonth } from './planning-engine.js';
+import { renderWishMatrix } from './management-ui.js';
+
+// Calendar and statistics rendering.
+
+export function getHeatmapColor(value, min, max) {
     if (max <= min) return "transparent";
     const position = (value - min) / (max - min);
     return position < 0.5
@@ -8,7 +16,7 @@ function getHeatmapColor(value, min, max) {
         : `rgba(255, ${Math.floor(255 * (2 - position * 2))}, 0, 0.3)`;
 }
 
-function renderCalendar() {
+export function renderCalendar() {
     const monthValue = getSelectedMonthValue();
     const monthTitleEl = document.getElementById("displayMonth");
     const printTitleEl = document.getElementById("printHeaderTitle");
@@ -32,11 +40,11 @@ function renderCalendar() {
         const isSpecialDay = Boolean(holidayName) || date.getDay() === 0 || date.getDay() === 6;
 
         const checkCellClass = (role) => {
-            const value = plan[dateKey]?.[role] || "";
+            const value = appState.plan[dateKey]?.[role] || "";
             if (!value) return "";
             if (hasVacationDutyConflict(value, dateKey, weeks)) return "conflict-red";
-            if ((wishes[dateKey] || []).includes(value)) return "wish-conflict";
-            if (plan[yesterdayKey] && Object.values(plan[yesterdayKey]).includes(value)) return "conflict-red";
+            if ((appState.wishes[dateKey] || []).includes(value)) return "wish-conflict";
+            if (appState.plan[yesterdayKey] && Object.values(appState.plan[yesterdayKey]).includes(value)) return "conflict-red";
             return "";
         };
 
@@ -56,7 +64,7 @@ function renderCalendar() {
     renderValidation();
 }
 
-function renderStats() {
+export function renderStats() {
     const monthValue = getSelectedMonthValue();
     const statsTableAA = document.getElementById("statsTableAA");
     const statsTableOA = document.getElementById("statsTableOA");
@@ -65,7 +73,7 @@ function renderStats() {
     const [year, month] = monthValue.split("-").map(Number);
 
     ["AA", "OA"].forEach((role) => {
-        const data = staff.filter((person) => matchesRole(person, role)).map((person) => {
+        const data = appState.staff.filter((person) => matchesRole(person, role)).map((person) => {
             let monthDuty = 0;
             let monthVisit = 0;
             let sixMonthDuty = 0;
@@ -75,13 +83,13 @@ function renderStats() {
                 const currentMonth = new Date(year, month - 1 - offset, 1);
                 const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}`;
 
-                Object.keys(plan).forEach((dateKey) => {
+                Object.keys(appState.plan).forEach((dateKey) => {
                     if (!dateKey.startsWith(monthKey)) return;
-                    if (plan[dateKey].AA === person.name || plan[dateKey].OA === person.name) {
+                    if (appState.plan[dateKey].AA === person.name || appState.plan[dateKey].OA === person.name) {
                         sixMonthDuty += 1;
                         if (offset === 0) monthDuty += 1;
                     }
-                    if (isRoleActiveOnDateKey("VISITE", dateKey) && plan[dateKey].VISITE === person.name) {
+                    if (isRoleActiveOnDateKey("VISITE", dateKey) && appState.plan[dateKey].VISITE === person.name) {
                         sixMonthVisit += 1;
                         if (offset === 0) monthVisit += 1;
                     }
@@ -123,8 +131,8 @@ function renderStats() {
     });
 }
 
-function createSelect(dateKey, role) {
-    const currentValue = plan[dateKey]?.[role] || "";
+export function createSelect(dateKey, role) {
+    const currentValue = appState.plan[dateKey]?.[role] || "";
     if (!isRoleActiveOnDateKey(role, dateKey)) {
         if (!currentValue) {
             return '<div class="w-full p-1 text-center text-[10px] text-slate-300 print:text-slate-500">-</div>';
@@ -138,8 +146,8 @@ function createSelect(dateKey, role) {
 
     let options = '<option value="">-</option>';
 
-    staff.filter((person) => matchesRole(person, role)).forEach((person) => {
-        const isWarning = (wishes[dateKey] || []).includes(person.name);
+    appState.staff.filter((person) => matchesRole(person, role)).forEach((person) => {
+        const isWarning = (appState.wishes[dateKey] || []).includes(person.name);
         const label = person.name + (isWarning ? " (!)" : "");
         options += `<option value="${person.name}" ${currentValue === person.name ? "selected" : ""}>${label}</option>`;
     });
@@ -147,9 +155,9 @@ function createSelect(dateKey, role) {
     return `<select onchange="savePlan('${dateKey}', '${role}', this.value)" class="w-full bg-transparent p-1 outline-none text-[10px] print:font-bold">${options}</select>`;
 }
 
-function savePlan(dateKey, role, value) {
-    if (!plan[dateKey]) plan[dateKey] = createPlanEntry();
-    plan[dateKey][role] = isRoleActiveOnDateKey(role, dateKey) ? value : "";
+export function savePlan(dateKey, role, value) {
+    if (!appState.plan[dateKey]) appState.plan[dateKey] = createPlanEntry();
+    appState.plan[dateKey][role] = isRoleActiveOnDateKey(role, dateKey) ? value : "";
     syncDienstRowsFromPlan(dateKey.slice(0, 7), { preserveExisting: false });
     saveAndRenderPlanningViews();
 }
