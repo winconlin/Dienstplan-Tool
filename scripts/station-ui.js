@@ -89,11 +89,11 @@ export function renderStationPlan() {
 
     bodyEl.innerHTML = tbody;
 
-    let unassignedHtml = `<div class="flex flex-col gap-4">`;
+    let unassignedHtml = `<div class="grid grid-cols-1 md:grid-cols-${weeks.length} gap-2">`;
     weeks.forEach(week => {
-        unassignedHtml += `<div class="border p-3 rounded bg-slate-50">
-            <h4 class="font-bold text-xs border-b border-slate-200 pb-1 mb-2 text-slate-800">KW ${week.kw}</h4>
-            <div class="flex flex-wrap gap-2">`;
+        unassignedHtml += `<div class="border p-2 rounded bg-white">
+            <h4 class="font-bold text-[10px] border-b pb-1 mb-1">KW ${week.kw}</h4>
+            <div class="flex flex-wrap gap-1">`;
 
         appState.staff.forEach(person => {
             if (!assignedPerWeek[week.key].has(person.name)) {
@@ -102,7 +102,7 @@ export function renderStationPlan() {
                 if (matchesRole(person, "OA")) roles.push("OA");
                 if (matchesRole(person, "EPU")) roles.push("EPU");
 
-                unassignedHtml += `<div class="px-2 py-1 bg-white border shadow-sm text-[11px] rounded cursor-move hover:bg-blue-50 hover:border-blue-300 transition font-bold text-slate-700"
+                unassignedHtml += `<div class="px-2 py-1 bg-slate-200 text-[10px] rounded cursor-move hover:bg-slate-300 transition"
                     draggable="true"
                     data-role="${roles.join(",")}"
                     ondragstart="window.handleDragStartStation(event, '${person.name}', 'unassigned')">
