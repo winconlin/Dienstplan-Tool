@@ -2,7 +2,7 @@ import { appState } from './state.js';
 import { getWorkPercent, normalizeAtossId, getPersonValidationError, getDuplicateAtossAssignments } from './core.js';
 import { renderValidation } from './validation.js';
 
-import { getSelectedMonthValue, saveAndRenderCalendarView, saveAndRenderAllDataViews } from './ui-common.js';
+import { getSelectedMonthValue, saveAndRenderCalendarView, saveAndRenderAllDataViews, showToast } from './ui-common.js';
 
 // Navigation, appState.staff management and appState.wishes UI.
 
@@ -12,7 +12,7 @@ export function showSection(id) {
 
     document.querySelectorAll("header nav button").forEach((button) => {
         button.classList.remove("text-blue-300", "border-b-2", "border-blue-300");
-        if ((button.getAttribute("onclick") || "").includes(`'${id}'`)) {
+        if (button.dataset.section === id) {
             button.classList.add("text-blue-300", "border-b-2", "border-blue-300");
         }
     });
@@ -53,7 +53,7 @@ export function savePerson() {
     const canDoShifts = document.getElementById("pCanDoShifts")?.checked !== false;
 
     if (!name) {
-        if (window.showToast) window.showToast("Bitte einen Namen eingeben.", "warning");
+        showToast("Bitte einen Namen eingeben.", "warning");
         return;
     }
 
@@ -69,12 +69,12 @@ export function savePerson() {
         person.work = work;
         person.isRotant = isRotant;
         person.canDoShifts = canDoShifts;
-        if (window.showToast) window.showToast(`Änderungen für ${name} ab ${monthValue} gespeichert.`, "success");
+        showToast(`Änderungen für ${name} ab ${monthValue} gespeichert.`, "success");
     } else {
         const history = {};
         history[monthValue] = { role, work, isRotant, canDoShifts };
         appState.staff.push({ name, id, role, work, isRotant, canDoShifts, history });
-        if (window.showToast) window.showToast(`${name} hinzugefügt.`, "success");
+        showToast(`${name} hinzugefügt.`, "success");
     }
 
     appState.staff.sort((a, b) => a.name.localeCompare(b.name));
@@ -121,7 +121,7 @@ export function renderStaff() {
             ? ' <span class="text-red-600 font-bold">Atoss-ID doppelt</span>'
             : "";
 
-        return `<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1 hover:bg-slate-100 cursor-pointer transition" onclick="loadPerson(${index})"><span><span class="font-bold">${person.name}</span> <span class="text-slate-500">(${details.join(" | ")})</span>${duplicateBadge}</span><button onclick="event.stopPropagation(); removePerson(${index})" class="text-red-500 font-bold px-2 hover:bg-red-100 rounded">X</button></div>`;
+        return `<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1 hover:bg-slate-100 cursor-pointer transition" data-action="loadPerson" data-index="${index}"><span><span class="font-bold">${person.name}</span> <span class="text-slate-500">(${details.join(" | ")})</span>${duplicateBadge}</span><button data-action="removePerson" data-index="${index}" class="text-red-500 font-bold px-2 hover:bg-red-100 rounded">X</button></div>`;
     }).join("");
 }
 
@@ -133,9 +133,23 @@ export function renderWishMatrix() {
     const [year, month] = monthValue.split("-").map(Number);
     const daysInMonth = new Date(year, month, 0).getDate();
 
+    const assistents = appState.staff.filter(p => p.role === "AA");
+    const oberaerzte = appState.staff.filter(p => p.role !== "AA"); // OA, FOA, EPU etc.
+
+    const allStaff = [...assistents, ...oberaerzte];
+
+    let groupHead = '<tr><th class="border border-b-0 p-1 bg-slate-100"></th>';
+    if (assistents.length > 0) {
+        groupHead += `<th colspan="${assistents.length}" class="border border-b-0 p-1 text-center font-bold bg-blue-100 text-blue-800">Assistenten</th>`;
+    }
+    if (oberaerzte.length > 0) {
+        groupHead += `<th colspan="${oberaerzte.length}" class="border border-b-0 p-1 text-center font-bold bg-purple-100 text-purple-800">Oberärzte / FOA / EPU</th>`;
+    }
+    groupHead += '</tr>';
+
     let head = '<tr><th class="border p-1 bg-slate-100">Tag</th>';
-    appState.staff.forEach((person) => {
-        head += `<th class="border p-1 text-[8px] h-24 align-bottom" style="writing-mode: vertical-rl;">${person.name}</th>`;
+    allStaff.forEach((person) => {
+        head += `<th class="border p-1 text-[8px] h-24 align-bottom whitespace-nowrap" style="writing-mode: vertical-rl;">${person.name}</th>`;
     });
     head += "</tr>";
 
@@ -143,14 +157,14 @@ export function renderWishMatrix() {
     for (let day = 1; day <= daysInMonth; day += 1) {
         const dateKey = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
         let row = `<tr><td class="p-1 border bg-slate-50 text-center font-bold text-[10px]">${day}</td>`;
-        appState.staff.forEach((person) => {
+        allStaff.forEach((person) => {
             const isSet = (appState.wishes[dateKey] || []).includes(person.name);
-            row += `<td class="border text-center cursor-pointer ${isSet ? "bg-purple-500 text-white" : ""}" onclick="toggleWish('${dateKey}', '${person.name}')">${isSet ? "X" : ""}</td>`;
+            row += `<td class="border text-center cursor-pointer hover:bg-slate-200 transition ${isSet ? "bg-purple-500 text-white hover:bg-purple-600" : ""}" data-action="toggleWish" data-date="${dateKey}" data-name="${person.name}">${isSet ? "X" : ""}</td>`;
         });
         body += `${row}</tr>`;
     }
 
-    container.innerHTML = `<h2 class="text-xl font-bold mb-4 text-purple-700 uppercase">Wuensche / Sperren</h2><table class="w-full text-xs border-collapse">${head}${body}</table>`;
+    container.innerHTML = `<h2 class="text-xl font-bold mb-4 text-purple-700 uppercase">Wuensche / Sperren</h2><table class="w-full text-xs border-collapse">${groupHead}${head}${body}</table>`;
 }
 
 export function toggleWish(dateKey, name) {

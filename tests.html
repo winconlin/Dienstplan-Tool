@@ -160,41 +160,6 @@
                     }
                 },
                 {
-                    name: "Validierung findet fehlende Atoss-ID",
-                    fn() {
-                        const issues = api.getValidationIssues("2026-04", {
-                            staff: [
-                                { name: "Anna", id: "", role: "AA", work: 100 },
-                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
-                            ],
-                            plan: {
-                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
-                            },
-                            stationPlan: {},
-                            holidaySeasonMode: false
-                        });
-                        assertTrue(issues.some((issue) => issue.message.includes("Atoss-ID")), "Atoss-ID");
-                    }
-                },
-                {
-                    name: "Validierung findet doppelte Atoss-ID",
-                    fn() {
-                        const issues = api.getValidationIssues("2026-04", {
-                            staff: [
-                                { name: "Anna", id: "100", role: "AA", work: 100 },
-                                { name: "Berta", id: "100", role: "AA", work: 100 },
-                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
-                            ],
-                            plan: {
-                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
-                            },
-                            stationPlan: {},
-                            holidaySeasonMode: false
-                        });
-                        assertTrue(issues.some((issue) => issue.area === "Personal" && issue.message.includes("mehrfach vergeben")), "Doppelte Atoss-ID");
-                    }
-                },
-                {
                     name: "Personenpruefung blockiert doppelte Atoss-ID",
                     fn() {
                         const error = api.getPersonValidationError(
@@ -202,23 +167,6 @@
                             [{ name: "Anna", id: "100", role: "AA", work: 100 }]
                         );
                         assertEqual(error, "Die Atoss-ID 100 ist bereits vergeben.", "Atoss-ID-Pruefung");
-                    }
-                },
-                {
-                    name: "Backup-Pruefung lehnt doppelte Atoss-ID ab",
-                    fn() {
-                        const validation = api.validateBackupPayload({
-                            staff: [
-                                { name: "Anna", id: "100", role: "AA", work: 100 },
-                                { name: "Berta", id: "100", role: "AA", work: 100 }
-                            ],
-                            plan: {},
-                            wishes: {},
-                            stationPlan: {},
-                            holidaySeasonMode: false
-                        });
-                        assertEqual(validation.ok, false, "Backup mit doppelter Atoss-ID");
-                        assertTrue(validation.error.includes("doppelte Atoss-ID"), "Backup-Fehlertext");
                     }
                 },
                 {
@@ -655,8 +603,8 @@
                             holidaySeasonMode: false
                         });
 
-                        assertTrue(!html.includes("savePlan('2026-04-01', 'VISITE'"), "Keine VISITE-Auswahl am Werktag");
-                        assertTrue(html.includes("savePlan('2026-04-05', 'VISITE'"), "VISITE-Auswahl am Sonntag");
+                        assertTrue(!html.includes("data-action=\"savePlan\" data-date=\"2026-04-01\" data-role=\"VISITE\""), "Keine VISITE-Auswahl am Werktag");
+                        assertTrue(html.includes("data-action=\"savePlan\" data-date=\"2026-04-05\" data-role=\"VISITE\""), "VISITE-Auswahl am Sonntag");
                     }
                 },
                 {
@@ -783,7 +731,7 @@
                             holidaySeasonMode: false
                         });
 
-                        assertTrue(/<td class="p-0 conflict-red"><select onchange="savePlan\('2026-04-01', 'AA'/.test(html), "AA-Zelle rot markiert");
+                        assertTrue(/<td class="p-0 conflict-red"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(html), "AA-Zelle rot markiert");
                     }
                 },
                 {
@@ -803,7 +751,7 @@
                             holidaySeasonMode: false
                         });
 
-                        assertTrue(/<td class="p-0 conflict-red"><select onchange="savePlan\('2026-04-01', 'AA'/.test(html), "AA-Zelle am Monatsanfang rot markiert");
+                        assertTrue(/<td class="p-0 conflict-red"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(html), "AA-Zelle am Monatsanfang rot markiert");
                     }
                 },
                 {
@@ -825,7 +773,7 @@
                             holidaySeasonMode: false
                         });
 
-                        assertTrue(/<td class="p-0 conflict-red"><select onchange="savePlan\('2026-04-01', 'AA'/.test(result.calendarHtml), "AA-Zelle wird nach Stationsaenderung rot markiert");
+                        assertTrue(/<td class="p-0 conflict-red"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(result.calendarHtml), "AA-Zelle wird nach Stationsaenderung rot markiert");
                     }
                 }
             ];

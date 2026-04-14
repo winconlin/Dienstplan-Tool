@@ -69,9 +69,10 @@ export const stationLayout = [
 ];
 
 export function matchesRole(person, role) {
-    if (role === "OA") return person.role === "OA" || person.role === "OA-EPU";
-    if (role === "EPU") return person.role === "OA-EPU";
-    return person.role === "AA";
+    if (role === "OA") return person.role === "OA" || person.role === "OA-EPU" || person.role === "FOA" || person.role === "FOA-EPU";
+    if (role === "EPU") return person.role === "OA-EPU" || person.role === "FOA-EPU";
+    if (role === "VISITE") return true; // Anyone can theoretically do Visite, or at least AA/FOA/OA
+    return person.role === "AA" || person.role === "FOA" || person.role === "FOA-EPU";
 }
 
 export function getWorkPercent(person) {

@@ -138,7 +138,7 @@ export function createSelect(dateKey, role) {
             return '<div class="w-full p-1 text-center text-[10px] text-slate-300 print:text-slate-500">-</div>';
         }
 
-        return `<select onchange="savePlan('${dateKey}', '${role}', this.value)" class="w-full bg-amber-50 p-1 outline-none text-[10px] text-amber-700 print:font-bold">
+        return `<select data-action="savePlan" data-date="${dateKey}" data-role="${role}" class="w-full bg-amber-50 p-1 outline-none text-[10px] text-amber-700 print:font-bold">
             <option value="${currentValue}" selected>${currentValue} (nur entfernen)</option>
             <option value="">-</option>
         </select>`;
@@ -152,7 +152,7 @@ export function createSelect(dateKey, role) {
         options += `<option value="${person.name}" ${currentValue === person.name ? "selected" : ""}>${label}</option>`;
     });
 
-    return `<select onchange="savePlan('${dateKey}', '${role}', this.value)" class="w-full bg-transparent p-1 outline-none text-[10px] print:font-bold">${options}</select>`;
+    return `<select data-action="savePlan" data-date="${dateKey}" data-role="${role}" class="w-full bg-transparent p-1 outline-none text-[10px] print:font-bold">${options}</select>`;
 }
 
 export function savePlan(dateKey, role, value) {
