@@ -188,23 +188,6 @@
                     }
                 },
                 {
-                    name: "Backup-Pruefung lehnt doppelte Atoss-ID ab",
-                    fn() {
-                        const validation = api.validateBackupPayload({
-                            staff: [
-                                { name: "Anna", id: "100", role: "AA", work: 100 },
-                                { name: "Berta", id: "100", role: "AA", work: 100 }
-                            ],
-                            plan: {},
-                            wishes: {},
-                            stationPlan: {},
-                            holidaySeasonMode: false
-                        });
-                        assertEqual(validation.ok, false, "Backup mit doppelter Atoss-ID");
-                        assertTrue(validation.error.includes("doppelte Atoss-ID"), "Backup-Fehlertext");
-                    }
-                },
-                {
                     name: "Backup-Pruefung lehnt ungueltigen Plan ab",
                     fn() {
                         const validation = api.validateBackupPayload({

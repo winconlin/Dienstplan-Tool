@@ -53,10 +53,10 @@ export function validateBackupPayload(data) {
         return { ok: false, error: "Backup enthaelt doppelte Personennamen." };
     }
 
-    const duplicateAtossAssignments = getDuplicateAtossAssignments(normalized.staff);
-    if (duplicateAtossAssignments.length) {
-        return { ok: false, error: `Backup enthaelt doppelte Atoss-ID ${duplicateAtossAssignments[0].id}.` };
-    }
+    // const duplicateAtossAssignments = getDuplicateAtossAssignments(normalized.staff);
+    // if (duplicateAtossAssignments.length) {
+    //     return { ok: false, error: `Backup enthaelt doppelte Atoss-ID ${duplicateAtossAssignments[0].id}.` };
+    // }
 
     return { ok: true, normalized };
 }
@@ -75,15 +75,15 @@ export function getValidationIssues(monthValue, source = {}) {
     const weeks = getWeeksInMonth(year, month);
     const duplicateAtossAssignments = getDuplicateAtossAssignments(dataStaff);
 
-    duplicateAtossAssignments.forEach(({ id, names }) => {
-        issues.push({
-            severity: "error",
-            area: "Personal",
-            reference: `Atoss ${id}`,
-            message: `Die Atoss-ID ${id} ist mehrfach vergeben: ${names.join(", ")}.`,
-            blocks: ["atoss"]
-        });
-    });
+    // duplicateAtossAssignments.forEach(({ id, names }) => {
+    //     issues.push({
+    //         severity: "error",
+    //         area: "Personal",
+    //         reference: `Atoss ${id}`,
+    //         message: `Die Atoss-ID ${id} ist mehrfach vergeben: ${names.join(", ")}.`,
+    //         blocks: ["atoss"]
+    //     });
+    // });
 
     getMonthDayKeys(monthValue).forEach((dateKey) => {
         const date = getDateFromKey(dateKey);

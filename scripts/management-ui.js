@@ -2,7 +2,7 @@ import { appState } from './state.js';
 import { getWorkPercent, normalizeAtossId, getPersonValidationError, getDuplicateAtossAssignments, matchesRole } from './core.js';
 import { renderValidation } from './validation.js';
 
-import { getSelectedMonthValue, saveAndRenderCalendarView, saveAndRenderAllDataViews } from './ui-common.js';
+import { getSelectedMonthValue, saveAndRenderCalendarView, saveAndRenderAllDataViews, showToast } from './ui-common.js';
 
 // Navigation, appState.staff management and appState.wishes UI.
 
@@ -59,7 +59,7 @@ export function savePerson() {
     const canDoShifts = pCanDoShiftsEl ? pCanDoShiftsEl.checked : true;
 
     if (!name) {
-        if (window.showToast) window.showToast("Bitte einen Namen eingeben.", "warning");
+        showToast("Bitte einen Namen eingeben.", "warning");
         return;
     }
 
@@ -75,12 +75,12 @@ export function savePerson() {
         person.work = work;
         person.isRotant = isRotant;
         person.canDoShifts = canDoShifts;
-        if (window.showToast) window.showToast(`Änderungen für ${name} ab ${monthValue} gespeichert.`, "success");
+        showToast(`Änderungen für ${name} ab ${monthValue} gespeichert.`, "success");
     } else {
         const history = {};
         history[monthValue] = { role, work, isRotant, canDoShifts };
         appState.staff.push({ name, id, role, work, isRotant, canDoShifts, history });
-        if (window.showToast) window.showToast(`${name} hinzugefügt.`, "success");
+        showToast(`${name} hinzugefügt.`, "success");
     }
 
     appState.staff.sort((a, b) => a.name.localeCompare(b.name));
@@ -161,7 +161,7 @@ export function renderWishMatrix() {
         body += `${row}</tr>`;
     }
 
-    container.innerHTML = `<h2 class="text-xl font-bold mb-4 text-purple-700 uppercase">Wuensche / Sperren</h2><table class="w-full text-xs border-collapse">${head}${body}</table>`;
+    container.innerHTML = `<h2 class="text-xl font-bold mb-4 text-purple-700 uppercase">Wuensche / Sperren</h2><table class="w-full text-xs border-collapse">${groupHead}${head}${body}</table>`;
 }
 
 export function toggleWish(dateKey, name) {
