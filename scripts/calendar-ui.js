@@ -158,6 +158,15 @@ export function createSelect(dateKey, role) {
 export function savePlan(dateKey, role, value) {
     if (!appState.plan[dateKey]) appState.plan[dateKey] = createPlanEntry();
     appState.plan[dateKey][role] = isRoleActiveOnDateKey(role, dateKey) ? value : "";
+
+    if (role === "AA" && isRoleActiveOnDateKey("VISITE", dateKey)) {
+        if (!appState.plan[dateKey]["VISITE"]) {
+            appState.plan[dateKey]["VISITE"] = value;
+        } else if (!value) {
+            appState.plan[dateKey]["VISITE"] = "";
+        }
+    }
+
     syncDienstRowsFromPlan(dateKey.slice(0, 7), { preserveExisting: false });
     saveAndRenderPlanningViews();
 }

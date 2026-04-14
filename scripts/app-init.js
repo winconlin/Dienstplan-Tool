@@ -1,6 +1,6 @@
 
 import { showSection, removePerson, savePerson, toggleWish, loadPerson } from './management-ui.js';
-import { clearMonth, clearWishes } from './planning-actions.js';
+import { clearMonth, clearWishes, clearStationPlan } from './planning-actions.js';
 import { exportAllICS, backupExport, backupImport, exportAtossCSV } from './export.js';
 import { saveHolidaySeasonMode, saveAtossHours, createUndoSnapshot, restoreLatestSnapshot } from './storage.js';
 import { renderCalendar, savePlan } from './calendar-ui.js';
@@ -84,6 +84,7 @@ export function setupEventListeners() {
         if (action === "showSection") showSection(target.dataset.section);
         else if (action === "clearMonth") clearMonth();
         else if (action === "runAutoPlaner") autoPlan();
+        else if (action === "autoStationPlan") autoStationPlan();
         else if (action === "clearStationPlan") clearStationPlan();
         else if (action === "renderValidation") renderValidation();
         else if (action === "clearWishes") clearWishes();

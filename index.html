@@ -60,17 +60,22 @@
                     <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Stationsbesetzung MED I</h2>
                     <div class="flex gap-2 no-print">
                         <button data-action="clearStationPlan" class="bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Stationen leeren</button>
+                        <button data-action="autoStationPlan" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded font-bold shadow-lg hover:scale-105 transition">Autoplaner</button>
                         <button data-action="printStations" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Drucken</button>
                     </div>
                 </div>
                 <h2 id="printHeaderStationTitle" class="hidden print:block text-2xl font-bold mb-4">Stationsbesetzung</h2>
-                <table class="w-full border-collapse text-[11px] print:text-[9px]">
-                    <thead id="stationHeader"></thead>
-                    <tbody id="stationBody"></tbody>
-                </table>
-                <div id="unassignedDoctorsContainer" class="mt-6 p-4 bg-slate-50 border border-slate-200 rounded no-print">
-                    <h3 class="text-lg font-bold text-slate-700 mb-2">Unverplante / Freie Ärzte (pro Woche)</h3>
-                    <div id="unassignedDoctorsList" class="text-sm text-slate-600 space-y-2"></div>
+                <div class="flex flex-col xl:flex-row gap-6">
+                    <div class="flex-1 overflow-x-auto">
+                        <table class="w-full border-collapse text-[11px] print:text-[9px]">
+                            <thead id="stationHeader"></thead>
+                            <tbody id="stationBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="unassignedDoctorsContainer" class="xl:w-64 p-4 bg-slate-50 border border-slate-200 rounded no-print">
+                        <h3 class="text-lg font-bold text-slate-700 mb-2">Unverplante / Freie Ärzte (pro Woche)</h3>
+                        <div id="unassignedDoctorsList" class="text-sm text-slate-600 space-y-2"></div>
+                    </div>
                 </div>
             </div>
         </section>

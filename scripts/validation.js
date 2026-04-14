@@ -133,16 +133,6 @@ export function getValidationIssues(monthValue, source = {}) {
                 return;
             }
 
-            if (!normalizeAtossId(person.id)) {
-                issues.push({
-                    severity: "error",
-                    area: "Export",
-                    reference: formatDateKey(dateKey),
-                    message: `${assignedName} hat keine Atoss-ID, wird aber fuer ${role.label} verwendet.`,
-                    blocks: ["atoss"]
-                });
-            }
-
             if ((dataWishes[dateKey] || []).includes(assignedName)) {
                 issues.push({
                     severity: "warning",
