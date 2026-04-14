@@ -12,7 +12,7 @@ export function showSection(id) {
 
     document.querySelectorAll("header nav button").forEach((button) => {
         button.classList.remove("text-blue-300", "border-b-2", "border-blue-300");
-        if ((button.getAttribute("onclick") || "").includes(`'${id}'`)) {
+        if (button.dataset.section === id) {
             button.classList.add("text-blue-300", "border-b-2", "border-blue-300");
         }
     });
@@ -121,7 +121,7 @@ export function renderStaff() {
             ? ' <span class="text-red-600 font-bold">Atoss-ID doppelt</span>'
             : "";
 
-        return `<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1 hover:bg-slate-100 cursor-pointer transition" onclick="loadPerson(${index})"><span><span class="font-bold">${person.name}</span> <span class="text-slate-500">(${details.join(" | ")})</span>${duplicateBadge}</span><button onclick="event.stopPropagation(); removePerson(${index})" class="text-red-500 font-bold px-2 hover:bg-red-100 rounded">X</button></div>`;
+        return `<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1 hover:bg-slate-100 cursor-pointer transition" data-action="loadPerson" data-index="${index}"><span><span class="font-bold">${person.name}</span> <span class="text-slate-500">(${details.join(" | ")})</span>${duplicateBadge}</span><button data-action="removePerson" data-index="${index}" class="text-red-500 font-bold px-2 hover:bg-red-100 rounded">X</button></div>`;
     }).join("");
 }
 
@@ -145,7 +145,7 @@ export function renderWishMatrix() {
         let row = `<tr><td class="p-1 border bg-slate-50 text-center font-bold text-[10px]">${day}</td>`;
         appState.staff.forEach((person) => {
             const isSet = (appState.wishes[dateKey] || []).includes(person.name);
-            row += `<td class="border text-center cursor-pointer ${isSet ? "bg-purple-500 text-white" : ""}" onclick="toggleWish('${dateKey}', '${person.name}')">${isSet ? "X" : ""}</td>`;
+            row += `<td class="border text-center cursor-pointer ${isSet ? "bg-purple-500 text-white" : ""}" data-action="toggleWish" data-date="${dateKey}" data-name="${person.name}">${isSet ? "X" : ""}</td>`;
         });
         body += `${row}</tr>`;
     }
