@@ -13,6 +13,11 @@ export function backupExport() {
     anchor.href = URL.createObjectURL(new Blob([payload], { type: "application/json" }));
     anchor.download = "MediPlan_Backup.json";
     anchor.click();
+
+    // Save last backup timestamp
+    try {
+        localStorage.setItem("mp_last_backup_date", new Date().toISOString());
+    } catch(e) {}
 }
 
 export function backupImport(event) {

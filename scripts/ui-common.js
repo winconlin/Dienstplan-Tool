@@ -6,6 +6,18 @@ import { renderStaff } from './management-ui.js';
 
 // Shared UI helpers for month selection and common refresh flows.
 
+export function showLoading() {
+    const overlay = document.getElementById("loadingOverlay");
+    if (overlay) overlay.classList.remove("hidden", "flex-col");
+    if (overlay) overlay.classList.add("flex", "flex-col");
+}
+
+export function hideLoading() {
+    const overlay = document.getElementById("loadingOverlay");
+    if (overlay) overlay.classList.add("hidden");
+    if (overlay) overlay.classList.remove("flex");
+}
+
 export function showToast(message, type = "info") {
     const container = document.getElementById("toastContainer");
     if (!container) return;

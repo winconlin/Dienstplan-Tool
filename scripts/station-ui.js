@@ -12,7 +12,8 @@ export function renderStationPlan() {
     const headerEl = document.getElementById("stationHeader");
     const bodyEl = document.getElementById("stationBody");
     const printTitle = document.getElementById("printHeaderStationTitle");
-    if (!monthValue || !headerEl || !bodyEl || !printTitle) return;
+    const unassignedContainer = document.getElementById("unassignedDoctorsList");
+    if (!monthValue || !headerEl || !bodyEl || !printTitle || !unassignedContainer) return;
 
     const [year, month] = monthValue.split("-").map(Number);
     const monthName = new Date(year, month - 1, 1).toLocaleString("de-DE", { month: "long" });
@@ -28,6 +29,9 @@ export function renderStationPlan() {
     let tbody = "";
     let currentCategory = null;
     let categoryCount = 0;
+
+    const assignedPerWeek = {};
+    weeks.forEach(w => assignedPerWeek[w.key] = new Set());
 
     stationLayout.forEach((row, index) => {
         if (row.category !== currentCategory) {
@@ -53,25 +57,29 @@ export function renderStationPlan() {
         weeks.forEach((week) => {
             const cellKey = `${week.key}_${row.id}`;
             const currentValue = appState.stationPlan[cellKey] || "";
-            let options = '<option value=""></option>';
+            if (currentValue) assignedPerWeek[week.key].add(currentValue);
 
-            appState.staff.forEach((person) => {
-                let show = false;
-                if (row.category === "Oberaerzte") show = matchesRole(person, "OA");
-                else if (row.category === "EPU") show = matchesRole(person, "EPU");
-                else if (row.category.includes("Urlaub") || row.category.includes("Zeitausgleich")) show = true;
-                else show = matchesRole(person, "AA");
-
-                if (show) {
-                    options += `<option value="${person.name}" ${currentValue === person.name ? "selected" : ""}>${person.name}</option>`;
-                }
-            });
+            const allowedRoles = [];
+            if (row.category === "Oberaerzte") allowedRoles.push("OA");
+            else if (row.category === "EPU") allowedRoles.push("EPU");
+            else if (row.category.includes("Urlaub") || row.category.includes("Zeitausgleich")) allowedRoles.push("ALL");
+            else allowedRoles.push("AA");
 
             tableRow += `
-                <td class="p-0 border-r border-slate-300 relative">
-                    <select onchange="saveStationPlan('${cellKey}', this.value)" class="w-full bg-transparent p-2 outline-none text-[11px] font-bold text-center print:appearance-none cursor-pointer">
-                        ${options}
-                    </select>
+                <td class="p-0 border-r border-slate-300 relative bg-white droppable-cell"
+                    data-cell="${cellKey}"
+                    data-allowed="${allowedRoles.join(",")}"
+                    ondragover="event.preventDefault(); this.classList.add('bg-blue-50')"
+                    ondragleave="this.classList.remove('bg-blue-50')"
+                    ondrop="window.handleDropStation(event)">
+                    ${currentValue ?
+                        `<div class="w-full p-2 text-[11px] font-bold text-center cursor-move draggable-doctor"
+                              draggable="true"
+                              ondragstart="window.handleDragStartStation(event, '${currentValue}', '${cellKey}')">
+                            ${currentValue}
+                            <span class="absolute top-0 right-1 text-[10px] text-red-500 cursor-pointer font-bold px-1" data-action="removeStationDoctor" data-cell="${cellKey}">x</span>
+                        </div>`
+                        : '<div class="w-full p-2 h-full min-h-[30px]"></div>'}
                 </td>`;
         });
 
@@ -80,6 +88,33 @@ export function renderStationPlan() {
     });
 
     bodyEl.innerHTML = tbody;
+
+    let unassignedHtml = `<div class="flex flex-col gap-4">`;
+    weeks.forEach(week => {
+        unassignedHtml += `<div class="border p-3 rounded bg-slate-50">
+            <h4 class="font-bold text-xs border-b border-slate-200 pb-1 mb-2 text-slate-800">KW ${week.kw}</h4>
+            <div class="flex flex-wrap gap-2">`;
+
+        appState.staff.forEach(person => {
+            if (!assignedPerWeek[week.key].has(person.name)) {
+                const roles = [];
+                if (matchesRole(person, "AA")) roles.push("AA");
+                if (matchesRole(person, "OA")) roles.push("OA");
+                if (matchesRole(person, "EPU")) roles.push("EPU");
+
+                unassignedHtml += `<div class="px-2 py-1 bg-white border shadow-sm text-[11px] rounded cursor-move hover:bg-blue-50 hover:border-blue-300 transition font-bold text-slate-700"
+                    draggable="true"
+                    data-role="${roles.join(",")}"
+                    ondragstart="window.handleDragStartStation(event, '${person.name}', 'unassigned')">
+                    ${person.name}
+                </div>`;
+            }
+        });
+        unassignedHtml += `</div></div>`;
+    });
+    unassignedHtml += `</div>`;
+    unassignedContainer.innerHTML = unassignedHtml;
+
     renderValidation();
 }
 
@@ -97,4 +132,3 @@ export function saveStationPlan(key, value) {
 
     saveAndRenderPlanningViews();
 }
-
