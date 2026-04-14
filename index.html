@@ -12,20 +12,20 @@
     <header class="bg-slate-900 text-white shadow-md p-4 flex justify-between items-center no-print">
         <h1 class="text-2xl font-black italic tracking-wider text-blue-400">Medi<span class="text-white">Plan</span> <span class="text-sm font-normal text-slate-400">Klinik</span></h1>
         <nav class="flex gap-4 text-sm font-bold flex-wrap justify-end">
-            <button onclick="showSection('plan')" class="hover:text-blue-300 border-b-2 border-transparent transition text-blue-300 border-blue-300">Planung</button>
-            <button onclick="showSection('stations')" class="hover:text-blue-300 transition">Stationen</button>
-            <button onclick="showSection('stats')" class="hover:text-blue-300 transition">Statistik</button>
-            <button onclick="showSection('validation')" class="hover:text-blue-300 transition">Validierung</button>
-            <button onclick="showSection('wishes')" class="hover:text-blue-300 transition">Wuensche</button>
-            <button onclick="showSection('personal')" class="hover:text-blue-300 transition">System</button>
+            <button data-action="showSection" data-section="plan" class="hover:text-blue-300 border-b-2 border-transparent transition text-blue-300 border-blue-300">Planung</button>
+            <button data-action="showSection" data-section="stations" class="hover:text-blue-300 transition">Stationen</button>
+            <button data-action="showSection" data-section="stats" class="hover:text-blue-300 transition">Statistik</button>
+            <button data-action="showSection" data-section="validation" class="hover:text-blue-300 transition">Validierung</button>
+            <button data-action="showSection" data-section="wishes" class="hover:text-blue-300 transition">Wuensche</button>
+            <button data-action="showSection" data-section="personal" class="hover:text-blue-300 transition">System</button>
         </nav>
     </header>
 
     <main class="flex-1 overflow-auto p-4 max-w-7xl mx-auto w-full">
         <div class="mb-4 flex gap-4 bg-white p-3 rounded shadow items-center border no-print">
-            <input type="month" id="monthPicker" class="border p-2 rounded font-bold shadow-inner" onchange="renderCalendar(); renderStationPlan();">
+            <input type="month" id="monthPicker" class="border p-2 rounded font-bold shadow-inner" data-action="renderAll">
             <div class="flex-1 flex gap-2 justify-end">
-                <button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Drucken</button>
+                <button data-action="printWindow" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Drucken</button>
             </div>
         </div>
 
@@ -34,8 +34,8 @@
                 <div class="flex justify-between items-end mb-4 pb-2 border-b">
                     <h2 class="text-3xl font-black text-slate-800 uppercase tracking-tight" id="displayMonth">Monat</h2>
                     <div class="flex gap-2 no-print">
-                        <button onclick="clearMonth()" class="bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Monat leeren</button>
-                        <button onclick="runAutoPlaner()" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded font-bold shadow-lg hover:scale-105 transition">Autoplaner</button>
+                        <button data-action="clearMonth" class="bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Monat leeren</button>
+                        <button data-action="runAutoPlaner" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded font-bold shadow-lg hover:scale-105 transition">Autoplaner</button>
                     </div>
                 </div>
                 <h2 id="printHeaderTitle" class="hidden print:block text-2xl font-bold mb-4">Dienstplan</h2>
@@ -59,8 +59,8 @@
                 <div class="flex justify-between items-center mb-6 border-b pb-4">
                     <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Stationsbesetzung MED I</h2>
                     <div class="flex gap-2 no-print">
-                        <button onclick="clearStationPlan()" class="bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Stationen leeren</button>
-                        <button onclick="document.body.classList.add('print-only-stations'); window.print(); document.body.classList.remove('print-only-stations');" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Drucken</button>
+                        <button data-action="clearStationPlan" class="bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Stationen leeren</button>
+                        <button data-action="printStations" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Drucken</button>
                     </div>
                 </div>
                 <h2 id="printHeaderStationTitle" class="hidden print:block text-2xl font-bold mb-4">Stationsbesetzung</h2>
@@ -95,7 +95,7 @@
                         <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Validierung</h2>
                         <p class="text-sm text-slate-500">Prueft unbesetzte Dienste, Doppelbelegungen und exportrelevante Datenluecken.</p>
                     </div>
-                    <button onclick="renderValidation()" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Neu pruefen</button>
+                    <button data-action="renderValidation" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Neu pruefen</button>
                 </div>
                 <div id="validationSummary" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
                 <div id="validationList"></div>
@@ -107,7 +107,7 @@
                 <div class="bg-white p-6 rounded shadow border">
                     <div class="flex justify-between items-center border-b mb-4 pb-2">
                         <h3 class="font-bold text-slate-800 uppercase">Mitarbeiter & Matrix</h3>
-                        <button onclick="clearWishes()" class="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600 transition">Wuensche leeren (Monat)</button>
+                        <button data-action="clearWishes" class="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600 transition">Wuensche leeren (Monat)</button>
                     </div>
                     <div class="grid grid-cols-4 gap-2 mb-2">
                         <input type="text" id="pName" placeholder="Name" class="border p-2 rounded text-sm">
@@ -125,13 +125,13 @@
                         <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="pRotant" class="w-4 h-4"> Rotant</label>
                         <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="pCanDoShifts" class="w-4 h-4" checked> Darf Dienste machen</label>
                     </div>
-                    <button onclick="savePerson()" class="w-full bg-blue-600 text-white py-2 rounded font-bold shadow hover:bg-blue-700 transition">Arzt hinzufügen</button>
+                    <button data-action="savePerson" class="w-full bg-blue-600 text-white py-2 rounded font-bold shadow hover:bg-blue-700 transition">Arzt hinzufügen</button>
                     <div id="staffList" class="mt-4 space-y-1 max-h-40 overflow-y-auto"></div>
                 </div>
                 <div class="bg-white p-6 rounded shadow border text-center">
                     <h3 class="font-bold border-b mb-4 pb-2 text-red-600 uppercase italic">Konfiguration & Backup</h3>
                     <label class="flex items-center gap-2 font-bold text-xs cursor-pointer mb-6 bg-red-50 p-3 rounded border border-red-100">
-                        <input type="checkbox" id="holidaySeasonMode" onchange="saveHolidaySeasonMode(); renderCalendar(); renderStationPlan();" class="w-5 h-5">
+                        <input type="checkbox" id="holidaySeasonMode" data-action="saveHolidaySeasonMode" class="w-5 h-5">
                         <span>Weihnachts-Sonderregelung<br><small class="text-gray-500">(Sa vor 24.12. bis So nach 06.01.)</small></span>
                     </label>
                     <div class="mb-6 rounded border bg-slate-50 p-3 text-left">
@@ -141,14 +141,14 @@
                             <div class="font-bold text-slate-500">Werktag</div>
                             <div class="font-bold text-slate-500">WE/FT</div>
                             <div>AA</div>
-                            <input type="number" step="0.5" min="0" id="atoss-AA-weekday" onchange="saveAtossHours()" class="border rounded p-1 text-right">
-                            <input type="number" step="0.5" min="0" id="atoss-AA-weekendHoliday" onchange="saveAtossHours()" class="border rounded p-1 text-right">
+                            <input type="number" step="0.5" min="0" id="atoss-AA-weekday" data-action="saveAtossHours" class="border rounded p-1 text-right">
+                            <input type="number" step="0.5" min="0" id="atoss-AA-weekendHoliday" data-action="saveAtossHours" class="border rounded p-1 text-right">
                             <div>Visite</div>
-                            <input type="number" step="0.5" min="0" id="atoss-VISITE-weekday" onchange="saveAtossHours()" class="border rounded p-1 text-right">
-                            <input type="number" step="0.5" min="0" id="atoss-VISITE-weekendHoliday" onchange="saveAtossHours()" class="border rounded p-1 text-right">
+                            <input type="number" step="0.5" min="0" id="atoss-VISITE-weekday" data-action="saveAtossHours" class="border rounded p-1 text-right">
+                            <input type="number" step="0.5" min="0" id="atoss-VISITE-weekendHoliday" data-action="saveAtossHours" class="border rounded p-1 text-right">
                             <div>OA</div>
-                            <input type="number" step="0.5" min="0" id="atoss-OA-weekday" onchange="saveAtossHours()" class="border rounded p-1 text-right">
-                            <input type="number" step="0.5" min="0" id="atoss-OA-weekendHoliday" onchange="saveAtossHours()" class="border rounded p-1 text-right">
+                            <input type="number" step="0.5" min="0" id="atoss-OA-weekday" data-action="saveAtossHours" class="border rounded p-1 text-right">
+                            <input type="number" step="0.5" min="0" id="atoss-OA-weekendHoliday" data-action="saveAtossHours" class="border rounded p-1 text-right">
                         </div>
                     </div>
                     <div class="mb-6 rounded border bg-amber-50 p-3 text-left">
@@ -157,17 +157,16 @@
                                 <h4 class="mb-1 text-xs font-bold uppercase tracking-wide text-amber-800">Undo / Snapshot</h4>
                                 <p id="undoSnapshotInfo" class="text-[11px] text-amber-900">Kein Snapshot verfuegbar.</p>
                             </div>
-                            <button id="undoSnapshotButton" onclick="restoreLatestSnapshot()" class="rounded bg-amber-600 px-3 py-2 text-xs font-bold text-white shadow hover:bg-amber-700 transition disabled:cursor-not-allowed disabled:bg-amber-300" disabled>Letzten Snapshot wiederherstellen</button>
+                            <button id="undoSnapshotButton" data-action="restoreLatestSnapshot" class="rounded bg-amber-600 px-3 py-2 text-xs font-bold text-white shadow hover:bg-amber-700 transition disabled:cursor-not-allowed disabled:bg-amber-300" disabled>Letzten Snapshot wiederherstellen</button>
                         </div>
                     </div>
                     <div id="storageStatus" class="mt-3 rounded border border-emerald-200 bg-emerald-50 p-2 text-[11px] text-emerald-800">Lokale Speicherung aktiv.</div>
-                    <button onclick="backupExport()" class="w-full bg-slate-100 border p-2 mb-2 rounded font-bold">Alles sichern (Backup)</button>
-                    <label class="block bg-slate-100 border p-2 mb-4 rounded font-bold text-center cursor-pointer">Backup einlesen <input type="file" class="hidden" onchange="backupImport(event)"></label>
+                    <button data-action="backupExport" class="w-full bg-slate-100 border p-2 mb-2 rounded font-bold">Alles sichern (Backup)</button>
+                    <label class="block bg-slate-100 border p-2 mb-4 rounded font-bold text-center cursor-pointer">Backup einlesen <input type="file" class="hidden" data-action="backupImport"></label>
                     <div class="grid grid-cols-2 gap-2">
-                        <button onclick="exportAllICS()" class="bg-green-600 text-white py-2 rounded font-bold">Alle ICS</button>
-                        <button onclick="exportAtossCSV()" class="bg-slate-800 text-white py-2 rounded font-bold">Atoss CSV</button>
+                        <button data-action="exportAllICS" class="bg-green-600 text-white py-2 rounded font-bold">Alle ICS</button>
+                        <button data-action="exportAtossCSV" class="bg-slate-800 text-white py-2 rounded font-bold">Atoss CSV</button>
                     </div>
-                    <button onclick="cleanupOldData()" class="mt-4 w-full bg-orange-600 text-white py-2 rounded font-bold hover:bg-orange-700 transition">Daten > 12 Monate archivieren & löschen</button>
                 </div>
             </div>
         </section>
@@ -179,6 +178,13 @@
 
     <!-- Toasts Container -->
     <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 no-print"></div>
+
+    <!-- Fullscreen Loading Spinner -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex-col items-center justify-center text-white no-print">
+        <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <h2 class="text-xl font-bold tracking-wider">Wird berechnet...</h2>
+        <p class="text-sm text-slate-300 mt-2">Dies kann einen Moment dauern.</p>
+    </div>
 
     <script src="app.js"></script>
 </body>

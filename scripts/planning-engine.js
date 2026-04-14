@@ -1,7 +1,7 @@
 import { appState } from './state.js';
 import { matchesRole, getWorkPercent, getMonthDayKeys, isVisitDay, getDateKey, dateToKey, shiftDate, ensurePlanEntry, isVacationRow, getUniqueAssignedName, getRoleWeight, getVacationDoctorsForWeek, canAssignPersonToRole, getBestDoctorForDates, buildStationLoadCounters, syncDienstRowsFromPlan, planRoles, stationLayout } from './core.js';
 import { createUndoSnapshot } from './storage.js';
-import { getSelectedMonthValue, saveAndRenderPlanningViews, saveAndRenderStationView } from './ui-common.js';
+import { getSelectedMonthValue, saveAndRenderPlanningViews, saveAndRenderStationView, showLoading, hideLoading } from './ui-common.js';
 
 // Planning engine and automatic allocation rules.
 
@@ -131,10 +131,15 @@ export function autoPlan() {
     if (!monthValue) return;
     if (!confirm("Moechten Sie den Autoplaner wirklich ausfuehren? Bereits eingetragene Dienste bleiben erhalten, freie Felder werden anhand der Regeln ergaenzt.")) return;
 
-    createUndoSnapshot(`Vor Autoplaner ${monthValue}`);
-    fillPlanMonth(monthValue);
-    const saveResult = saveAndRenderPlanningViews();
-    if (saveResult.ok) alert("Planung ergaenzt. Bestehende Eingaben wurden beibehalten.");
+    showLoading();
+    // Yield to let browser render the loading overlay
+    setTimeout(() => {
+        createUndoSnapshot(`Vor Autoplaner ${monthValue}`);
+        fillPlanMonth(monthValue);
+        const saveResult = saveAndRenderPlanningViews();
+        hideLoading();
+        if (saveResult.ok) alert("Planung ergaenzt. Bestehende Eingaben wurden beibehalten.");
+    }, 50);
 }
 
 export function fillStationPlanMonth(monthValue) {
@@ -214,10 +219,15 @@ export function autoStationPlan() {
     if (!monthValue) return;
     if (!confirm("Moechten Sie den Stationsplan automatisch besetzen? Bestehende Eintraege bleiben erhalten, freie Felder werden ergaenzt. Urlaub bleibt erhalten.")) return;
 
-    createUndoSnapshot(`Vor Auto-Stationsplan ${monthValue}`);
-    fillStationPlanMonth(monthValue);
-    const saveResult = saveAndRenderStationView();
-    if (saveResult.ok) alert("Stationsplan erfolgreich, soweit moeglich, ergaenzt.");
+    showLoading();
+    // Yield to let browser render the loading overlay
+    setTimeout(() => {
+        createUndoSnapshot(`Vor Auto-Stationsplan ${monthValue}`);
+        fillStationPlanMonth(monthValue);
+        const saveResult = saveAndRenderStationView();
+        hideLoading();
+        if (saveResult.ok) alert("Stationsplan erfolgreich, soweit moeglich, ergaenzt.");
+    }, 50);
 }
 
 

@@ -1,49 +1,215 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
+<!DOCTYPE html><html lang="de"><head>
     <meta charset="UTF-8">
-    <title>MediPlan Pro | Bayern v7.4 (Split-Woche Restore)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @media print {
-            @page { size: A4 portrait; margin: 0.3cm; }
-            .no-print { display: none !important; }
-            body { background: white; padding: 0; margin: 0; }
-            table { width: 100% !important; table-layout: fixed !important; font-size: 7.5pt !important; border-collapse: collapse; }
-            th, td { border: 0.5pt solid #000 !important; padding: 2px !important; overflow: hidden; }
-            .holiday-bg { background-color: #d1d5db !important; -webkit-print-color-adjust: exact; }
-            .col-date { width: 35px; } .col-day { width: 40px; }
-            select { appearance: none; border: none; background: transparent; width: 100%; font-weight: bold; }
-            
-            .print-only-stations #section-plan { display: none !important; }
-            .print-only-stations #section-stats { display: none !important; }
-            .print-only-stations #section-personal { display: none !important; }
-            .print-only-stations #section-wishes { display: none !important; }
-            .print-only-stations #section-stations { display: block !important; }
-        }
-        .wish-conflict { background-color: #fef08a !important; color: #b45309; }
-        .conflict-red { background-color: #fca5a5 !important; color: #7f1d1d; }
-    </style>
-</head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediPlan Pro | Split-Aufbau</title>
+
+
+<style>*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.19 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.\!container{width:100%!important}.container{width:100%}@media (min-width:640px){.\!container{max-width:640px!important}.container{max-width:640px}}@media (min-width:768px){.\!container{max-width:768px!important}.container{max-width:768px}}@media (min-width:1024px){.\!container{max-width:1024px!important}.container{max-width:1024px}}@media (min-width:1280px){.\!container{max-width:1280px!important}.container{max-width:1280px}}@media (min-width:1536px){.\!container{max-width:1536px!important}.container{max-width:1536px}}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.inset-0{inset:0}.bottom-4{bottom:1rem}.right-1{right:.25rem}.right-4{right:1rem}.top-0{top:0}.z-50{z-index:50}.z-\[100\]{z-index:100}.mx-auto{margin-left:auto;margin-right:auto}.mb-1{margin-bottom:.25rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}.mt-1{margin-top:.25rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-4{margin-top:1rem}.mt-6{margin-top:1.5rem}.block{display:block}.flex{display:flex}.table{display:table}.grid{display:grid}.hidden{display:none}.h-16{height:4rem}.h-24{height:6rem}.h-4{height:1rem}.h-5{height:1.25rem}.h-full{height:100%}.h-screen{height:100vh}.max-h-40{max-height:10rem}.min-h-\[30px\]{min-height:30px}.w-1\/4{width:25%}.w-16{width:4rem}.w-24{width:6rem}.w-32{width:8rem}.w-4{width:1rem}.w-5{width:1.25rem}.w-full{width:100%}.max-w-7xl{max-width:80rem}.flex-1{flex:1 1 0%}.border-collapse{border-collapse:collapse}@keyframes spin{to{transform:rotate(1turn)}}.animate-spin{animation:spin 1s linear infinite}.cursor-move{cursor:move}.cursor-pointer{cursor:pointer}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.grid-cols-\[1\.2fr_1fr_1fr\]{grid-template-columns:1.2fr 1fr 1fr}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:.25rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-6{gap:1.5rem}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.space-y-2>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.5rem*var(--tw-space-y-reverse))}.space-y-6>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.5rem*var(--tw-space-y-reverse))}.overflow-auto{overflow:auto}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:.25rem}.rounded-full{border-radius:9999px}.border{border-width:1px}.border-4{border-width:4px}.border-b{border-bottom-width:1px}.border-b-2{border-bottom-width:2px}.border-l{border-left-width:1px}.border-r{border-right-width:1px}.border-blue-300{--tw-border-opacity:1;border-color:rgb(147 197 253/var(--tw-border-opacity,1))}.border-blue-500{--tw-border-opacity:1;border-color:rgb(59 130 246/var(--tw-border-opacity,1))}.border-emerald-200{--tw-border-opacity:1;border-color:rgb(167 243 208/var(--tw-border-opacity,1))}.border-red-100{--tw-border-opacity:1;border-color:rgb(254 226 226/var(--tw-border-opacity,1))}.border-red-200{--tw-border-opacity:1;border-color:rgb(254 202 202/var(--tw-border-opacity,1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.border-slate-300{--tw-border-opacity:1;border-color:rgb(203 213 225/var(--tw-border-opacity,1))}.border-slate-400{--tw-border-opacity:1;border-color:rgb(148 163 184/var(--tw-border-opacity,1))}.border-slate-700{--tw-border-opacity:1;border-color:rgb(51 65 85/var(--tw-border-opacity,1))}.border-transparent{border-color:transparent}.border-t-transparent{border-top-color:transparent}.bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235/var(--tw-bg-opacity,1))}.bg-amber-600{--tw-bg-opacity:1;background-color:rgb(217 119 6/var(--tw-bg-opacity,1))}.bg-blue-50{--tw-bg-opacity:1;background-color:rgb(239 246 255/var(--tw-bg-opacity,1))}.bg-blue-600{--tw-bg-opacity:1;background-color:rgb(37 99 235/var(--tw-bg-opacity,1))}.bg-emerald-50{--tw-bg-opacity:1;background-color:rgb(236 253 245/var(--tw-bg-opacity,1))}.bg-green-600{--tw-bg-opacity:1;background-color:rgb(22 163 74/var(--tw-bg-opacity,1))}.bg-orange-500{--tw-bg-opacity:1;background-color:rgb(249 115 22/var(--tw-bg-opacity,1))}.bg-purple-500{--tw-bg-opacity:1;background-color:rgb(168 85 247/var(--tw-bg-opacity,1))}.bg-red-50{--tw-bg-opacity:1;background-color:rgb(254 242 242/var(--tw-bg-opacity,1))}.bg-red-500{--tw-bg-opacity:1;background-color:rgb(239 68 68/var(--tw-bg-opacity,1))}.bg-red-600{--tw-bg-opacity:1;background-color:rgb(220 38 38/var(--tw-bg-opacity,1))}.bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.bg-slate-200{--tw-bg-opacity:1;background-color:rgb(226 232 240/var(--tw-bg-opacity,1))}.bg-slate-300{--tw-bg-opacity:1;background-color:rgb(203 213 225/var(--tw-bg-opacity,1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.bg-slate-800{--tw-bg-opacity:1;background-color:rgb(30 41 59/var(--tw-bg-opacity,1))}.bg-slate-900{--tw-bg-opacity:1;background-color:rgb(15 23 42/var(--tw-bg-opacity,1))}.bg-slate-900\/50{background-color:rgba(15,23,42,.5)}.bg-transparent{background-color:transparent}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.bg-gradient-to-r{background-image:linear-gradient(to right,var(--tw-gradient-stops))}.from-blue-600{--tw-gradient-from:#2563eb var(--tw-gradient-from-position);--tw-gradient-to:rgba(37,99,235,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.to-purple-600{--tw-gradient-to:#9333ea var(--tw-gradient-to-position)}.p-0{padding:0}.p-1{padding:.25rem}.p-2{padding:.5rem}.p-3{padding:.75rem}.p-4{padding:1rem}.p-6{padding:1.5rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.pb-1{padding-bottom:.25rem}.pb-2{padding-bottom:.5rem}.pb-4{padding-bottom:1rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.align-middle{vertical-align:middle}.align-bottom{vertical-align:bottom}.font-sans{font-family:ui-sans-serif,system-ui,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[7px\]{font-size:7px}.text-\[8px\]{font-size:8px}.text-\[9px\]{font-size:9px}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-black{font-weight:900}.font-bold{font-weight:700}.font-normal{font-weight:400}.uppercase{text-transform:uppercase}.italic{font-style:italic}.leading-tight{line-height:1.25}.tracking-tight{letter-spacing:-.025em}.tracking-wide{letter-spacing:.025em}.tracking-wider{letter-spacing:.05em}.text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9/var(--tw-text-opacity,1))}.text-amber-800{--tw-text-opacity:1;color:rgb(146 64 14/var(--tw-text-opacity,1))}.text-amber-900{--tw-text-opacity:1;color:rgb(120 53 15/var(--tw-text-opacity,1))}.text-blue-300{--tw-text-opacity:1;color:rgb(147 197 253/var(--tw-text-opacity,1))}.text-blue-400{--tw-text-opacity:1;color:rgb(96 165 250/var(--tw-text-opacity,1))}.text-blue-700{--tw-text-opacity:1;color:rgb(29 78 216/var(--tw-text-opacity,1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70/var(--tw-text-opacity,1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128/var(--tw-text-opacity,1))}.text-purple-700{--tw-text-opacity:1;color:rgb(126 34 206/var(--tw-text-opacity,1))}.text-red-500{--tw-text-opacity:1;color:rgb(239 68 68/var(--tw-text-opacity,1))}.text-red-600{--tw-text-opacity:1;color:rgb(220 38 38/var(--tw-text-opacity,1))}.text-red-800{--tw-text-opacity:1;color:rgb(153 27 27/var(--tw-text-opacity,1))}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225/var(--tw-text-opacity,1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184/var(--tw-text-opacity,1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139/var(--tw-text-opacity,1))}.text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59/var(--tw-text-opacity,1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.opacity-0{opacity:0}.shadow{--tw-shadow:0 1px 3px 0 rgba(0,0,0,.1),0 1px 2px -1px rgba(0,0,0,.1);--tw-shadow-colored:0 1px 3px 0 var(--tw-shadow-color),0 1px 2px -1px var(--tw-shadow-color)}.shadow,.shadow-inner{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-inner{--tw-shadow:inset 0 2px 4px 0 rgba(0,0,0,.05);--tw-shadow-colored:inset 0 2px 4px 0 var(--tw-shadow-color)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color)}.shadow-lg,.shadow-md{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-md{--tw-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color),0 2px 4px -2px var(--tw-shadow-color)}.outline-none{outline:2px solid transparent;outline-offset:2px}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-opacity{transition-property:opacity;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.duration-300{transition-duration:.3s}.hover\:scale-105:hover{--tw-scale-x:1.05;--tw-scale-y:1.05;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.hover\:bg-amber-700:hover{--tw-bg-opacity:1;background-color:rgb(180 83 9/var(--tw-bg-opacity,1))}.hover\:bg-blue-700:hover{--tw-bg-opacity:1;background-color:rgb(29 78 216/var(--tw-bg-opacity,1))}.hover\:bg-red-100:hover{--tw-bg-opacity:1;background-color:rgb(254 226 226/var(--tw-bg-opacity,1))}.hover\:bg-red-600:hover{--tw-bg-opacity:1;background-color:rgb(220 38 38/var(--tw-bg-opacity,1))}.hover\:bg-slate-100:hover{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.hover\:bg-slate-300:hover{--tw-bg-opacity:1;background-color:rgb(203 213 225/var(--tw-bg-opacity,1))}.hover\:bg-slate-700:hover{--tw-bg-opacity:1;background-color:rgb(51 65 85/var(--tw-bg-opacity,1))}.hover\:text-blue-300:hover{--tw-text-opacity:1;color:rgb(147 197 253/var(--tw-text-opacity,1))}.disabled\:cursor-not-allowed:disabled{cursor:not-allowed}.disabled\:bg-amber-300:disabled{--tw-bg-opacity:1;background-color:rgb(252 211 77/var(--tw-bg-opacity,1))}@media (min-width:768px){.md\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}}@media print{.print\:block{display:block}.print\:text-\[9px\]{font-size:9px}.print\:font-bold{font-weight:700}.print\:text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139/var(--tw-text-opacity,1))}}
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 0.3cm;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: white;
+        padding: 0;
+        margin: 0;
+    }
+
+    table {
+        width: 100% !important;
+        table-layout: fixed !important;
+        font-size: 7.5pt !important;
+        border-collapse: collapse;
+    }
+
+    th,
+    td {
+        border: 0.5pt solid #000 !important;
+        padding: 2px !important;
+        overflow: hidden;
+    }
+
+    .col-date {
+        width: 35px;
+    }
+
+    .col-day {
+        width: 40px;
+    }
+
+    select {
+        appearance: none;
+        border: none;
+        background: transparent;
+        width: 100%;
+        font-weight: bold;
+    }
+
+    .print-only-stations #section-plan {
+        display: none !important;
+    }
+
+    .print-only-stations #section-stats {
+        display: none !important;
+    }
+
+    .print-only-stations #section-validation {
+        display: none !important;
+    }
+
+    .print-only-stations #section-personal {
+        display: none !important;
+    }
+
+    .print-only-stations #section-wishes {
+        display: none !important;
+    }
+
+    .print-only-stations #section-stations {
+        display: block !important;
+    }
+}
+
+.holiday-bg {
+    background-color: #e2e8f0 !important;
+    -webkit-print-color-adjust: exact;
+}
+
+.wish-conflict {
+    background-color: #fef08a !important;
+    color: #b45309;
+}
+
+.conflict-red {
+    background-color: #fca5a5 !important;
+    color: #7f1d1d;
+}
+
+.validation-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1rem;
+}
+
+.validation-card strong {
+    display: block;
+    font-size: 1.75rem;
+    line-height: 1;
+    margin-bottom: 0.35rem;
+}
+
+.validation-card-error {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.validation-card-warning {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.validation-card-ok {
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.validation-empty {
+    border: 1px dashed #86efac;
+    border-radius: 0.75rem;
+    background: #f0fdf4;
+    color: #166534;
+    padding: 1rem;
+    font-weight: 600;
+}
+
+.validation-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.validation-table th,
+.validation-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    vertical-align: top;
+}
+
+.validation-table th {
+    background: #f8fafc;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #475569;
+}
+
+.validation-row-error td:first-child {
+    border-left: 4px solid #dc2626;
+}
+
+.validation-row-warning td:first-child {
+    border-left: 4px solid #d97706;
+}
+
+.validation-row-info td:first-child {
+    border-left: 4px solid #2563eb;
+}
+
+.validation-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.validation-badge-error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.validation-badge-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.validation-badge-info {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.validation-meta {
+    color: #64748b;
+    font-size: 0.8rem;
+}
+</style></head>
 <body class="bg-slate-100 text-slate-800 font-sans h-screen flex flex-col">
 
     <header class="bg-slate-900 text-white shadow-md p-4 flex justify-between items-center no-print">
-        <h1 class="text-2xl font-black italic tracking-wider text-blue-400">Medi<span class="text-white">Plan</span> <span class="text-sm font-normal text-slate-400">Klinik v7.4</span></h1>
-        <nav class="flex gap-4 text-sm font-bold">
-            <button onclick="showSection('plan')" class="hover:text-blue-300 border-b-2 border-transparent transition text-blue-300 border-blue-300">Planung</button>
-            <button id="btn-stations" onclick="showSection('stations')" class="hover:text-blue-300 transition">Stationen 🏥</button>
-            <button onclick="showSection('stats')" class="hover:text-blue-300 transition">Statistik 🔥</button>
-            <button onclick="showSection('wishes')" class="hover:text-blue-300 transition">Wünsche</button>
-            <button onclick="showSection('personal')" class="hover:text-blue-300 transition">System</button>
+        <h1 class="text-2xl font-black italic tracking-wider text-blue-400">Medi<span class="text-white">Plan</span> <span class="text-sm font-normal text-slate-400">Klinik</span></h1>
+        <nav class="flex gap-4 text-sm font-bold flex-wrap justify-end">
+            <button data-action="showSection" data-section="plan" class="hover:text-blue-300 border-b-2 border-transparent transition text-blue-300 border-blue-300">Planung</button>
+            <button data-action="showSection" data-section="stations" class="hover:text-blue-300 transition">Stationen</button>
+            <button data-action="showSection" data-section="stats" class="hover:text-blue-300 transition">Statistik</button>
+            <button data-action="showSection" data-section="validation" class="hover:text-blue-300 transition">Validierung</button>
+            <button data-action="showSection" data-section="wishes" class="hover:text-blue-300 transition">Wuensche</button>
+            <button data-action="showSection" data-section="personal" class="hover:text-blue-300 transition">System</button>
         </nav>
     </header>
 
     <main class="flex-1 overflow-auto p-4 max-w-7xl mx-auto w-full">
-        
         <div class="mb-4 flex gap-4 bg-white p-3 rounded shadow items-center border no-print">
-            <input type="month" id="monthPicker" class="border p-2 rounded font-bold shadow-inner" onchange="renderCalendar(); renderStationPlan();">
+            <input type="month" id="monthPicker" class="border p-2 rounded font-bold shadow-inner" data-action="renderAll">
             <div class="flex-1 flex gap-2 justify-end">
-                <button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">⎙ Drucken</button>
+                <button data-action="printWindow" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Drucken</button>
             </div>
         </div>
 
@@ -52,8 +218,8 @@
                 <div class="flex justify-between items-end mb-4 pb-2 border-b">
                     <h2 class="text-3xl font-black text-slate-800 uppercase tracking-tight" id="displayMonth">Monat</h2>
                     <div class="flex gap-2 no-print">
-                        <button onclick="clearMonth()" class="bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">🗑️ Monat leeren</button>
-                        <button onclick="autoPlan()" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded font-bold shadow-lg hover:scale-105 transition">🪄 Autoplaner (Split-Woche)</button>
+                        <button data-action="clearMonth" class="bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Monat leeren</button>
+                        <button data-action="runAutoPlaner" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded font-bold shadow-lg hover:scale-105 transition">Autoplaner</button>
                     </div>
                 </div>
                 <h2 id="printHeaderTitle" class="hidden print:block text-2xl font-bold mb-4">Dienstplan</h2>
@@ -77,16 +243,19 @@
                 <div class="flex justify-between items-center mb-6 border-b pb-4">
                     <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Stationsbesetzung MED I</h2>
                     <div class="flex gap-2 no-print">
-                        <button onclick="autoStationPlan()" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded font-bold shadow-lg hover:scale-105 transition print:hidden">🪄 Auto-Stationsplan</button>
-                        <button onclick="document.body.classList.add('print-only-stations'); window.print(); document.body.classList.remove('print-only-stations');" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">⎙ Drucken</button>
+                        <button data-action="clearStationPlan" class="bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Stationen leeren</button>
+                        <button data-action="printStations" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Drucken</button>
                     </div>
                 </div>
                 <h2 id="printHeaderStationTitle" class="hidden print:block text-2xl font-bold mb-4">Stationsbesetzung</h2>
-                
                 <table class="w-full border-collapse text-[11px] print:text-[9px]">
                     <thead id="stationHeader"></thead>
                     <tbody id="stationBody"></tbody>
                 </table>
+                <div id="unassignedDoctorsContainer" class="mt-6 p-4 bg-slate-50 border border-slate-200 rounded no-print">
+                    <h3 class="text-lg font-bold text-slate-700 mb-2">Unverplante / Freie Ärzte (pro Woche)</h3>
+                    <div id="unassignedDoctorsList" class="text-sm text-slate-600 space-y-2"></div>
+                </div>
             </div>
         </section>
 
@@ -97,9 +266,23 @@
                     <div id="statsTableAA"></div>
                 </div>
                 <div class="bg-white p-4 rounded shadow border">
-                    <h3 class="font-bold border-b mb-2 text-purple-700 uppercase">Oberärzte (OA)</h3>
+                    <h3 class="font-bold border-b mb-2 text-purple-700 uppercase">Oberaerzte (OA)</h3>
                     <div id="statsTableOA"></div>
                 </div>
+            </div>
+        </section>
+
+        <section id="section-validation" class="section-content hidden no-print">
+            <div class="bg-white p-6 rounded shadow border space-y-6">
+                <div class="flex justify-between items-center border-b pb-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Validierung</h2>
+                        <p class="text-sm text-slate-500">Prueft unbesetzte Dienste, Doppelbelegungen und exportrelevante Datenluecken.</p>
+                    </div>
+                    <button data-action="renderValidation" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Neu pruefen</button>
+                </div>
+                <div id="validationSummary" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+                <div id="validationList"></div>
             </div>
         </section>
 
@@ -107,28 +290,66 @@
             <div class="grid grid-cols-2 gap-6">
                 <div class="bg-white p-6 rounded shadow border">
                     <div class="flex justify-between items-center border-b mb-4 pb-2">
-                        <h3 class="font-bold text-slate-800 uppercase">Mitarbeiter & Matrix</h3>
-                        <button onclick="clearWishes()" class="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600 transition">Wünsche leeren (Monat)</button>
+                        <h3 class="font-bold text-slate-800 uppercase">Mitarbeiter &amp; Matrix</h3>
+                        <button data-action="clearWishes" class="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600 transition">Wuensche leeren (Monat)</button>
                     </div>
                     <div class="grid grid-cols-4 gap-2 mb-2">
-                        <input type="text" id="pName" placeholder="Name" class="border p-2 rounded text-sm"><input type="text" id="pId" placeholder="Atoss-Nr." class="border p-2 rounded text-sm">
-                        <select id="pRole" class="border p-2 rounded text-sm"><option value="AA">Assistent</option><option value="OA">Oberarzt</option><option value="OA-EPU">OA-EPU</option></select>
+                        <input type="text" id="pName" placeholder="Name" class="border p-2 rounded text-sm">
+                        <input type="text" id="pId" placeholder="Atoss-Nr." class="border p-2 rounded text-sm">
+                        <select id="pRole" class="border p-2 rounded text-sm">
+                            <option value="AA">Assistent</option>
+                            <option value="OA">Oberarzt</option>
+                            <option value="OA-EPU">OA-EPU</option>
+                            <option value="FOA">Funktionsoberarzt</option>
+                            <option value="FOA-EPU">FOA-EPU</option>
+                        </select>
                         <input type="number" id="pWork" placeholder="Stelle %" class="border p-2 rounded text-sm">
                     </div>
-                    <button onclick="savePerson()" class="w-full bg-blue-600 text-white py-2 rounded font-bold shadow hover:bg-blue-700 transition">Arzt Hinzufügen</button>
+                    <div class="flex gap-4 mb-4 text-xs font-bold items-center text-slate-700">
+                        <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="pRotant" class="w-4 h-4"> Rotant</label>
+                        <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="pCanDoShifts" class="w-4 h-4" checked=""> Darf Dienste machen</label>
+                    </div>
+                    <button data-action="savePerson" class="w-full bg-blue-600 text-white py-2 rounded font-bold shadow hover:bg-blue-700 transition">Arzt hinzufügen</button>
                     <div id="staffList" class="mt-4 space-y-1 max-h-40 overflow-y-auto"></div>
                 </div>
                 <div class="bg-white p-6 rounded shadow border text-center">
-                    <h3 class="font-bold border-b mb-4 pb-2 text-red-600 uppercase italic">Konfiguration & Backup</h3>
+                    <h3 class="font-bold border-b mb-4 pb-2 text-red-600 uppercase italic">Konfiguration &amp; Backup</h3>
                     <label class="flex items-center gap-2 font-bold text-xs cursor-pointer mb-6 bg-red-50 p-3 rounded border border-red-100">
-                        <input type="checkbox" id="holidaySeasonMode" onchange="saveHolidaySeasonMode(); renderCalendar(); renderStationPlan();" class="w-5 h-5">
+                        <input type="checkbox" id="holidaySeasonMode" data-action="saveHolidaySeasonMode" class="w-5 h-5">
                         <span>Weihnachts-Sonderregelung<br><small class="text-gray-500">(Sa vor 24.12. bis So nach 06.01.)</small></span>
                     </label>
-                    <button onclick="backupExport()" class="w-full bg-slate-100 border p-2 mb-2 rounded font-bold">💾 Alles sichern (Backup)</button>
-                    <label class="block bg-slate-100 border p-2 mb-4 rounded font-bold text-center cursor-pointer">📂 Backup einlesen <input type="file" class="hidden" onchange="backupImport(event)"></label>
+                    <div class="mb-6 rounded border bg-slate-50 p-3 text-left">
+                        <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-slate-600">Atoss-Stunden</h4>
+                        <div class="grid grid-cols-[1.2fr_1fr_1fr] gap-2 text-[11px] items-center">
+                            <div class="font-bold text-slate-500">Rolle</div>
+                            <div class="font-bold text-slate-500">Werktag</div>
+                            <div class="font-bold text-slate-500">WE/FT</div>
+                            <div>AA</div>
+                            <input type="number" step="0.5" min="0" id="atoss-AA-weekday" data-action="saveAtossHours" class="border rounded p-1 text-right">
+                            <input type="number" step="0.5" min="0" id="atoss-AA-weekendHoliday" data-action="saveAtossHours" class="border rounded p-1 text-right">
+                            <div>Visite</div>
+                            <input type="number" step="0.5" min="0" id="atoss-VISITE-weekday" data-action="saveAtossHours" class="border rounded p-1 text-right">
+                            <input type="number" step="0.5" min="0" id="atoss-VISITE-weekendHoliday" data-action="saveAtossHours" class="border rounded p-1 text-right">
+                            <div>OA</div>
+                            <input type="number" step="0.5" min="0" id="atoss-OA-weekday" data-action="saveAtossHours" class="border rounded p-1 text-right">
+                            <input type="number" step="0.5" min="0" id="atoss-OA-weekendHoliday" data-action="saveAtossHours" class="border rounded p-1 text-right">
+                        </div>
+                    </div>
+                    <div class="mb-6 rounded border bg-amber-50 p-3 text-left">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <h4 class="mb-1 text-xs font-bold uppercase tracking-wide text-amber-800">Undo / Snapshot</h4>
+                                <p id="undoSnapshotInfo" class="text-[11px] text-amber-900">Kein Snapshot verfuegbar.</p>
+                            </div>
+                            <button id="undoSnapshotButton" data-action="restoreLatestSnapshot" class="rounded bg-amber-600 px-3 py-2 text-xs font-bold text-white shadow hover:bg-amber-700 transition disabled:cursor-not-allowed disabled:bg-amber-300" disabled="">Letzten Snapshot wiederherstellen</button>
+                        </div>
+                    </div>
+                    <div id="storageStatus" class="mt-3 rounded border border-emerald-200 bg-emerald-50 p-2 text-[11px] text-emerald-800">Lokale Speicherung aktiv.</div>
+                    <button data-action="backupExport" class="w-full bg-slate-100 border p-2 mb-2 rounded font-bold">Alles sichern (Backup)</button>
+                    <label class="block bg-slate-100 border p-2 mb-4 rounded font-bold text-center cursor-pointer">Backup einlesen <input type="file" class="hidden" data-action="backupImport"></label>
                     <div class="grid grid-cols-2 gap-2">
-                        <button onclick="exportAllICS()" class="bg-green-600 text-white py-2 rounded font-bold">📥 Alle ICS</button>
-                        <button onclick="exportAtossCSV()" class="bg-slate-800 text-white py-2 rounded font-bold">📄 Atoss CSV</button>
+                        <button data-action="exportAllICS" class="bg-green-600 text-white py-2 rounded font-bold">Alle ICS</button>
+                        <button data-action="exportAtossCSV" class="bg-slate-800 text-white py-2 rounded font-bold">Atoss CSV</button>
                     </div>
                 </div>
             </div>
@@ -137,674 +358,114 @@
         <section id="section-wishes" class="section-content hidden no-print">
             <div class="bg-white p-6 rounded shadow border overflow-x-auto" id="wishTableContainer"></div>
         </section>
-
     </main>
 
-    <script>
-        function readStorage(key, fallback) {
-            try {
-                const raw = localStorage.getItem(key);
-                return raw ? JSON.parse(raw) : fallback;
-            } catch {
-                return fallback;
-            }
-        }
-
-        let staff = readStorage('mp_staff', []);
-        let plan = readStorage('mp_plan', {});
-        let wishes = readStorage('mp_wishes', {});
-        let stationPlan = readStorage('mp_station', {});
-        let holidaySeasonMode = readStorage('mp_holiday_mode', false);
-
-        function save() {
-            localStorage.setItem('mp_staff', JSON.stringify(staff));
-            localStorage.setItem('mp_plan', JSON.stringify(plan));
-            localStorage.setItem('mp_wishes', JSON.stringify(wishes));
-            localStorage.setItem('mp_station', JSON.stringify(stationPlan));
-            localStorage.setItem('mp_holiday_mode', JSON.stringify(holidaySeasonMode));
-        }
-
-        function saveHolidaySeasonMode() {
-            holidaySeasonMode = document.getElementById('holidaySeasonMode').checked;
-            save();
-        }
-
-        function matchesRole(person, role) {
-            if (role === 'OA') return person.role === 'OA' || person.role === 'OA-EPU';
-            if (role === 'EPU') return person.role === 'OA-EPU';
-            return person.role === 'AA';
-        }
-
-        function getWorkPercent(person) {
-            const parsed = Number(person.work);
-            return parsed > 0 ? parsed : 100;
-        }
-
-        function getMonthDayKeys(monthValue) {
-            if (!monthValue) return [];
-            const [y, m] = monthValue.split('-').map(Number);
-            const daysInMonth = new Date(y, m, 0).getDate();
-            return Array.from({ length: daysInMonth }, (_, index) => {
-                return `${y}-${String(m).padStart(2, '0')}-${String(index + 1).padStart(2, '0')}`;
-            });
-        }
-
-        function getDateFromKey(dateKey) {
-            const [y, m, d] = dateKey.split('-').map(Number);
-            return new Date(y, m - 1, d);
-        }
-
-        function isWeekendOrHoliday(date) {
-            return date.getDay() === 0 || date.getDay() === 6 || Boolean(isHoliday(date));
-        }
-
-        function getICSStartTime(dateKey, role) {
-            if (role === 'VISITE') return '090000';
-            return isWeekendOrHoliday(getDateFromKey(dateKey)) ? '090000' : '150000';
-        }
-
-        function escapeICSText(value) {
-            return String(value)
-                .replace(/\\/g, '\\\\')
-                .replace(/\n/g, '\\n')
-                .replace(/,/g, '\\,')
-                .replace(/;/g, '\\;');
-        }
-
-        // --- FEIERTAGS-LOGIK BAYERN ---
-        function getEasterSunday(year) {
-            const a = year % 19, b = Math.floor(year / 100), c = year % 100,
-                  d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25),
-                  g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30,
-                  i = Math.floor(c / 4), k = c % 4, L = (32 + 2 * e + 2 * i - h - k) % 7,
-                  m = Math.floor((a + 11 * h + 22 * L) / 451),
-                  month = Math.floor((h + L - 7 * m + 114) / 31),
-                  day = ((h + L - 7 * m + 114) % 31) + 1;
-            return new Date(year, month - 1, day);
-        }
-
-        function isHoliday(date) {
-            const y = date.getFullYear(), m = date.getMonth() + 1, d = date.getDate();
-            const fixes = {"1.1":"Neujahr","6.1":"Hl. 3 Könige","1.5":"Tag d. Arbeit","15.8":"Mariä Himmelfahrt","3.10":"Tag d. Dt. Einheit","1.11":"Allerheiligen","25.12":"1. Weihnachtstag","26.12":"2. Weihnachtstag"};
-            
-            if (holidaySeasonMode) {
-                let start = new Date(y, 11, 24); 
-                while(start.getDay() !== 6) start.setDate(start.getDate() - 1);
-                let end = (m === 1 && d <= 15) ? new Date(y, 0, 6) : new Date(y + 1, 0, 6);
-                while(end.getDay() !== 0) end.setDate(end.getDate() + 1);
-                if (date >= start && date <= end) return "Winterplan";
-            }
-
-            if (fixes[`${d}.${m}`]) return fixes[`${d}.${m}`];
-            const easter = getEasterSunday(y);
-            const diff = Math.round((date - easter) / 86400000);
-            if (diff === -2) return "Karfreitag";
-            if (diff === 1) return "Ostermontag";
-            if (diff === 39) return "Christi Himmelfahrt";
-            if (diff === 50) return "Pfingstmontag";
-            if (diff === 60) return "Fronleichnam";
-            
-            let bub = new Date(y, 10, 22);
-            while(bub.getDay() !== 3) bub.setDate(bub.getDate() - 1);
-            if (d === bub.getDate() && m === 11) return "Buß- & Bettag";
-
-            return null;
-        }
-
-        // --- AUTOPLANER MIT SPLIT-WOCHE (RESTORED) ---
-        function clearMonth() {
-            const val = document.getElementById('monthPicker').value; if(!val) return;
-            if(!confirm("Möchten Sie den gesamten Plan für diesen Monat unwiderruflich löschen?")) return;
-            const [y, m] = val.split('-').map(Number);
-            const daysInMonth = new Date(y, m, 0).getDate();
-            for(let d=1; d<=daysInMonth; d++) {
-                const dk = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                plan[dk] = {AA:"", VISITE:"", OA:""};
-            }
-            save(); renderCalendar();
-        }
-        function clearWishes() {
-            const val = document.getElementById('monthPicker').value; if(!val) return;
-            if(!confirm("Möchten Sie alle Wünsche und Sperren für diesen Monat löschen?")) return;
-            getMonthDayKeys(val).forEach(dayKey => delete wishes[dayKey]);
-            save(); renderCalendar();
-        }
-        function autoPlan() {
-            const val = document.getElementById('monthPicker').value; if(!val) return;
-            if(!confirm("Möchten Sie den Autoplaner wirklich ausführen? Alle bestehenden Dienste für diesen Monat werden überschrieben!")) return;
-            const [y, m] = val.split('-').map(Number); 
-            const daysInMonth = new Date(y, m, 0).getDate();
-            
-            for(let d=1; d<=daysInMonth; d++) {
-                plan[`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`] = {AA:"", VISITE:"", OA:""};
-            }
-            let counters = {}; staff.forEach(p => counters[p.name] = 0);
-
-            const getBest = (role, dk, excl = []) => {
-                return staff.filter(p => matchesRole(p, role) && !excl.includes(p.name) && !(wishes[dk]?.includes(p.name)))
-                    .sort((a, b) => (counters[a.name] / getWorkPercent(a)) - (counters[b.name] / getWorkPercent(b)))[0];
-            };
-
-            for(let d=1; d<=daysInMonth; d++) {
-                const dt = new Date(y, m-1, d);
-                const dayIdx = dt.getDay();
-                const dk = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-
-                if (dayIdx === 5) {
-                    let oa = getBest('OA', dk);
-                    if(oa) {
-                        [0,1,2].forEach(offset => {
-                            let targetD = d + offset; if(targetD > daysInMonth) return;
-                            let targetKey = `${y}-${String(m).padStart(2,'0')}-${String(targetD).padStart(2,'0')}`;
-                            if(!wishes[targetKey]?.includes(oa.name)) { plan[targetKey].OA = oa.name; counters[oa.name]++; }
-                        });
-                    }
-                } else if (!plan[dk].OA) {
-                    let oa = getBest('OA', dk); if(oa) { plan[dk].OA = oa.name; counters[oa.name]++; }
-                }
-
-                if (dayIdx === 0) { // Sonntag
-                    let pA = getBest('AA', dk);
-                    if(pA) {
-                        [0, 2, 4].forEach(off => {
-                            let tD = d + off; if(tD > daysInMonth) return;
-                            let tK = `${y}-${String(m).padStart(2,'0')}-${String(tD).padStart(2,'0')}`;
-                            if(!wishes[tK]?.includes(pA.name)) { plan[tK].AA = pA.name; counters[pA.name]++; }
-                        });
-                    }
-                    let pB = (d + 1 <= daysInMonth) ? getBest('AA', `${y}-${String(m).padStart(2,'0')}-${String(d+1).padStart(2,'0')}`, [pA?.name]) : null;
-                    if(pB) {
-                        [1, 3, 5].forEach(off => {
-                            let tD = d + off; if(tD > daysInMonth) return;
-                            let tK = `${y}-${String(m).padStart(2,'0')}-${String(tD).padStart(2,'0')}`;
-                            if(!wishes[tK]?.includes(pB.name)) { plan[tK].AA = pB.name; counters[pB.name]++; }
-                        });
-                    }
-                }
-
-                const holiday = isHoliday(dt);
-                if (dayIdx === 6 || holiday) {
-                    if (!plan[dk].AA) {
-                        let aa = getBest('AA', dk); if(aa) { plan[dk].AA = aa.name; counters[aa.name]++; }
-                    }
-                    let vis = getBest('AA', dk, [plan[dk].AA]);
-                    if (vis) { plan[dk].VISITE = vis.name; counters[vis.name] += 0.2; }
-                }
-
-                if (!plan[dk].AA) {
-                    let fb = getBest('AA', dk); if(fb) { plan[dk].AA = fb.name; counters[fb.name]++; }
-                }
-            }
-            save(); renderCalendar(); alert("Planung nach Split-Wochen-System erstellt!");
-        }
-
-        // --- STATIONSBESETZUNG ---
-        const stationLayout = [
-            { id: "s71_1", name: "Zimmer 1-4", category: "Station 7 - 1" },
-            { id: "s71_2", name: "Zimmer 5-8", category: "Station 7 - 1" },
-            { id: "s71_3", name: "Zimmer 13-18", category: "Station 7 - 1" },
-            { id: "s51_1", name: "Zimmer 8-10", category: "Station 5 - 1" },
-            { id: "s51_2", name: "Zimmer 11-14", category: "Station 5 - 1" },
-            { id: "hkl", name: "HKL", category: "HKL" },
-            { id: "cpu", name: "CPU", category: "CPU" },
-            { id: "tk", name: "Tagesklinik/UKG", category: "Tagesklinik/UKG" },
-            { id: "echo_1", name: "Echokardiographie", category: "Echokardiographie" },
-            { id: "echo_2", name: "Echokardiographie", category: "Echokardiographie" },
-            { id: "oa_1", name: "Oberärzte", category: "Oberärzte" },
-            { id: "oa_2", name: "Oberärzte", category: "Oberärzte" },
-            { id: "oa_3", name: "Oberärzte", category: "Oberärzte" },
-            { id: "oa_4", name: "Oberärzte", category: "Oberärzte" },
-            { id: "oa_5", name: "Oberärzte", category: "Oberärzte" },
-            { id: "oa_6", name: "Oberärzte", category: "Oberärzte" },
-            { id: "epu_1", name: "EPU", category: "EPU" },
-            { id: "epu_2", name: "EPU", category: "EPU" },
-            { id: "da_1", name: "Mo, Mi, Fr", category: "Dienstärzte" },
-            { id: "da_2", name: "So, Di, Do", category: "Dienstärzte" },
-            { id: "u1", name: "Urlaub / Zeitausgleich", category: "Urlaub / Zeitausgleich" },
-            { id: "u2", name: "Urlaub / Zeitausgleich", category: "Urlaub / Zeitausgleich" },
-            { id: "u3", name: "Urlaub / Zeitausgleich", category: "Urlaub / Zeitausgleich" },
-            { id: "u4", name: "Urlaub / Zeitausgleich", category: "Urlaub / Zeitausgleich" },
-            { id: "u5", name: "Urlaub / Zeitausgleich", category: "Urlaub / Zeitausgleich" },
-            { id: "u6", name: "Urlaub / Zeitausgleich", category: "Urlaub / Zeitausgleich" }
-        ];
-
-        function autoStationPlan() {
-            const val = document.getElementById('monthPicker').value; if(!val) return;
-            if(!confirm("Möchten Sie den Stationsplan automatisch besetzen? Leere Felder werden (sofern möglich) überschrieben, Urlaub bleibt erhalten.")) return;
-            
-            const [y, m] = val.split('-').map(Number);
-            const weeks = getWeeksInMonth(y, m);
-
-            weeks.forEach(w => {
-                const p = w.mondayDateStr.split('.'); 
-                const yearStr = (p[2].length === 2) ? '20'+p[2] : p[2];
-                const weekStartDate = new Date(parseInt(yearStr), parseInt(p[1])-1, parseInt(p[0]));
-                
-                const dMo = new Date(weekStartDate);
-                const dSo = new Date(weekStartDate); dSo.setDate(dSo.getDate() - 1);
-                
-                const moKey = `${dMo.getFullYear()}-${String(dMo.getMonth()+1).padStart(2,'0')}-${String(dMo.getDate()).padStart(2,'0')}`;
-                const soKey = `${dSo.getFullYear()}-${String(dSo.getMonth()+1).padStart(2,'0')}-${String(dSo.getDate()).padStart(2,'0')}`;
-
-                let splitAA_Mo = plan[moKey] ? plan[moKey].AA : null;
-                let splitAA_So = plan[soKey] ? plan[soKey].AA : null;
-                const d1Row = stationLayout.find(r => r.id === "da_1");
-                const d2Row = stationLayout.find(r => r.id === "da_2");
-                
-                // Exclude urlaub doctors from auto assignment
-                let urlaubDocs = new Set();
-                stationLayout.forEach(row => {
-                    if (row.category.includes("Urlaub") || row.category.includes("Zeitausgleich")) {
-                        const key = `${w.key}_${row.id}`;
-                        if (stationPlan[key]) urlaubDocs.add(stationPlan[key]);
-                    }
-                });
-
-                if (splitAA_Mo && d1Row) stationPlan[`${w.key}_${d1Row.id}`] = splitAA_Mo;
-                if (splitAA_So && d2Row) stationPlan[`${w.key}_${d2Row.id}`] = splitAA_So;
-
-                let usedDocs = new Set();
-                stationLayout.forEach(row => {
-                    const key = `${w.key}_${row.id}`;
-                    if (stationPlan[key]) usedDocs.add(stationPlan[key]);
-                });
-
-                const getAvailableDoc = (roleCond) => {
-                    let available = staff.filter(p => roleCond(p) && !usedDocs.has(p.name) && !urlaubDocs.has(p.name));
-                    if (available.length > 0) {
-                        available.sort((a,b) => Math.random() - 0.5);
-                        let picked = available[0].name;
-                        usedDocs.add(picked);
-                        return picked;
-                    }
-                    return null;
-                };
-
-                // Fill mandatory fields first
-                stationLayout.forEach(row => {
-                    if (row.category === "HKL" || row.category === "Echokardiographie" || row.category === "Dienstärzte") return;
-                    const key = `${w.key}_${row.id}`;
-                    if (stationPlan[key]) return; // already manually filled/has vacation etc.
-
-                    let doc = null;
-                    if (row.category === "EPU") doc = getAvailableDoc(p => p.role === "OA-EPU");
-                    else if (row.category === "Oberärzte") doc = getAvailableDoc(p => p.role === "OA" || p.role === "OA-EPU");
-                    else if (row.category.includes("Station") || row.category === "CPU" || row.category === "Tagesklinik/UKG") {
-                        doc = getAvailableDoc(p => p.role === "AA");
-                    }
-                    if (doc) stationPlan[key] = doc;
-                });
-
-                // Try to fill optional HKL & Echo
-                stationLayout.forEach(row => {
-                    if (row.category !== "HKL" && row.category !== "Echokardiographie") return;
-                    const key = `${w.key}_${row.id}`;
-                    if (stationPlan[key]) return;
-                    let doc = getAvailableDoc(p => p.role === "AA");
-                    if (doc) stationPlan[key] = doc;
-                });
-            });
-
-            save(); renderStationPlan(); alert("Stationsplan erfolgreich (soweit möglich) generiert.");
-        }
-
-        function getWeeksInMonth(year, month) {
-            let weeks = [];
-            let date = new Date(year, month - 1, 1);
-            let firstDay = new Date(year, 0, 1);
-            
-            while(date.getDay() !== 1) {
-                date.setDate(date.getDate() - 1);
-            }
-            
-            let curr = new Date(date);
-            let endMonth = new Date(year, month, 0);
-            
-            while (curr <= endMonth) {
-                let d = new Date(curr);
-                d.setHours(0, 0, 0, 0);
-                d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-                let yearStart = new Date(d.getFullYear(), 0, 1);
-                let week1 = new Date(yearStart);
-                week1.setDate(week1.getDate() + 4 - (week1.getDay() || 7));
-                let kw = 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
-
-                weeks.push({
-                    kw: kw,
-                    mondayDateStr: `${String(curr.getDate()).padStart(2, '0')}.${String(curr.getMonth()+1).padStart(2, '0')}.${String(curr.getFullYear()).slice(-2)}`,
-                    key: `${year}-KW${String(kw).padStart(2, '0')}`
-                });
-                curr.setDate(curr.getDate() + 7);
-            }
-            return weeks;
-        }
-
-        function renderStationPlan() {
-            const val = document.getElementById('monthPicker').value; if(!val) return;
-            const [y, m] = val.split('-').map(Number);
-            const monthName = new Date(y, m-1).toLocaleString('de-DE', {month:'long'});
-            document.getElementById('printHeaderStationTitle').innerText = "Stationsbesetzung MED I - " + monthName + " " + y;
-
-            const weeks = getWeeksInMonth(y, m);
-            
-            let thead = `
-                <tr class="bg-slate-300 font-bold border-b border-slate-400 text-center align-middle">
-                    <th class="p-2 border-r border-slate-400 w-32" colspan="2">Kalenderwoche<br><span class="text-[9px] font-normal">1. Montag</span></th>
-                    ${weeks.map(w => `<th class="p-2 border-r border-slate-400 w-24">${w.kw}<br><span class="text-[9px] font-normal">${w.mondayDateStr}</span></th>`).join('')}
-                </tr>`;
-            document.getElementById('stationHeader').innerHTML = thead;
-
-            let tbody = '';
-            let currentCat = null;
-            let catCount = 0;
-
-            stationLayout.forEach((row, index) => {
-                if (row.category !== currentCat) {
-                    currentCat = row.category;
-                    catCount = stationLayout.filter(r => r.category === currentCat).length;
-                }
-
-                let tr = `<tr class="border-b border-slate-300 text-center align-middle ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100 transition">`;
-                
-                let isFirstInCategory = stationLayout.findIndex(r => r.category === currentCat) === index;
-                let siblings = stationLayout.filter(r => r.category === currentCat);
-                let hasSub = siblings.some(r => r.name !== r.category);
-
-                if (isFirstInCategory) {
-                    let colsp = !hasSub ? 'colspan="2"' : '';
-                    tr += `<td class="p-2 font-bold border-r border-slate-300" ${colsp} rowspan="${catCount}">${row.category}</td>`;
-                }
-
-                if (hasSub) {
-                    let subText = row.name !== row.category ? row.name : "";
-                    tr += `<td class="p-1 border-r border-slate-300 text-[10px] whitespace-nowrap">${subText}</td>`;
-                }
-
-                weeks.forEach(w => {
-                    const cellKey = `${w.key}_${row.id}`;
-                    const curr = stationPlan[cellKey] || '';
-                    let opt = `<option value=""></option>`;
-                    staff.forEach(p => {
-                        let show = false;
-                        if (row.category === "Oberärzte") show = (p.role === "OA" || p.role === "OA-EPU");
-                        else if (row.category === "EPU") show = (p.role === "OA-EPU");
-                        else if (row.category.includes("Urlaub") || row.category.includes("Zeitausgleich")) show = true;
-                        else show = (p.role === "AA");
-
-                        if (show) {
-                            opt += `<option value="${p.name}" ${curr === p.name ? 'selected' : ''}>${p.name}</option>`;
-                        }
-                    });
-                    
-                    tr += `
-                        <td class="p-0 border-r border-slate-300 relative">
-                            <select onchange="saveStationPlan('${cellKey}', this.value)" class="w-full bg-transparent p-2 outline-none text-[11px] font-bold text-center print:appearance-none cursor-pointer">
-                                ${opt}
-                            </select>
-                        </td>`;
-                });
-
-                tr += `</tr>`;
-                tbody += tr;
-            });
-
-            document.getElementById('stationBody').innerHTML = tbody;
-        }
-
-        function saveStationPlan(key, val) {
-            if (val) stationPlan[key] = val;
-            else delete stationPlan[key];
-            save();
-        }
-
-        // --- HEATMAP & RENDERER ---
-        function getHeatmapColor(val, min, max) {
-            if (max <= min) return 'transparent';
-            let p = (val - min) / (max - min);
-            return p < 0.5 ? `rgba(${Math.floor(255*p*2)}, 255, 0, 0.3)` : `rgba(255, ${Math.floor(255*(2-p*2))}, 0, 0.3)`;
-        }
-
-        function renderCalendar() {
-            const val = document.getElementById('monthPicker').value; if(!val) return;
-            const [y, m] = val.split('-').map(Number); 
-            const str = new Date(y, m-1).toLocaleString('de-DE', {month:'long', year:'numeric'});
-            document.getElementById('displayMonth').innerText = str;
-            document.getElementById('printHeaderTitle').innerText = "Dienstplan - " + str;
-            const days = new Date(y, m, 0).getDate();
-            let html = '';
-            for(let d=1; d<=days; d++) {
-                const dt = new Date(y, m-1, d);
-                const dK = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                const yesK = `${y}-${String(m).padStart(2,'0')}-${String(d-1).padStart(2,'0')}`;
-                const h = isHoliday(dt); const isS = (h || dt.getDay() === 0 || dt.getDay() === 6);
-                const check = (r) => {
-                    const v = plan[dK]?.[r] || ''; if(!v) return '';
-                    if(wishes[dK]?.includes(v)) return 'wish-conflict';
-                    if(plan[yesK] && Object.values(plan[yesK]).includes(v)) return 'conflict-red';
-                    return '';
-                };
-                html += `<tr class="${isS ? 'holiday-bg' : ''} border-b text-xs">
-                    <td class="p-1 text-center font-bold text-slate-500">${dt.toLocaleDateString('de-DE',{weekday:'short'})}</td>
-                    <td class="p-1 text-center font-bold border-l border-r">${d}.${h ? `<br><span class="text-[7px] text-red-600 font-normal leading-tight">${h}</span>`:''}</td>
-                    <td class="p-0 ${check('AA')}">${createSelect(dK, 'AA')}</td>
-                    <td class="p-0 ${check('VISITE')}">${(dt.getDay()===6 || h) ? createSelect(dK, 'VISITE') : ''}</td>
-                    <td class="p-0 ${check('OA')}">${createSelect(dK, 'OA')}</td>
-                </tr>`;
-            }
-            document.getElementById('calendarBody').innerHTML = html;
-            renderStats(); renderWishMatrix();
-        }
-
-        function renderStats() {
-            const val = document.getElementById('monthPicker').value; if(!val) return;
-            const [y, m] = val.split('-').map(Number); 
-            ['AA', 'OA'].forEach(role => {
-                let data = staff.filter(p => matchesRole(p, role)).map(p => {
-                    let mD=0, mV=0, sD=0, sV=0;
-                    for(let i=0; i<6; i++) {
-                        let curM = `${new Date(y, m-1-i, 1).getFullYear()}-${String(new Date(y, m-1-i, 1).getMonth()+1).padStart(2,'0')}`;
-                        Object.keys(plan).forEach(k => { if(k.startsWith(curM)) { if(plan[k].AA===p.name || plan[k].OA===p.name) { sD++; if(i==0) mD++; } if(plan[k].VISITE===p.name) { sV++; if(i==0) mV++; } } });
-                    }
-                    return { name: p.name, mD, mV, sD, sV };
-                });
-                if (!data.length) {
-                    document.getElementById('statsTable'+role).innerHTML = '<p class="text-sm text-slate-500">Keine Mitarbeiter in dieser Rolle angelegt.</p>';
-                    return;
-                }
-                const ex = (k) => ({ max: Math.max(...data.map(d=>d[k]),1), min: Math.min(...data.map(d=>d[k])) });
-                const exMD=ex('mD'), exMV=ex('mV'), exSD=ex('sD'), exSV=ex('sV');
-                let h = `<table class="w-full border-collapse border text-xs text-center"><thead><tr class="bg-slate-100"><th class="p-2 border text-left">Arzt</th><th class="p-2 border">24h (M)</th><th class="p-2 border">Visite (M)</th><th class="p-2 border">24h (6M)</th><th class="p-2 border">Visite (6M)</th></tr></thead><tbody>`;
-                data.forEach(d => { h += `<tr><td class="p-2 border text-left font-bold">${d.name}</td><td class="p-2 border" style="background:${getHeatmapColor(d.mD, exMD.min, exMD.max)}">${d.mD}</td><td class="p-2 border" style="background:${getHeatmapColor(d.mV, exMV.min, exMV.max)}">${d.mV}</td><td class="p-2 border" style="background:${getHeatmapColor(d.sD, exSD.min, exSD.max)}">${d.sD}</td><td class="p-2 border" style="background:${getHeatmapColor(d.sV, exSV.min, exSV.max)}">${d.sV}</td></tr>`; });
-                document.getElementById('statsTable'+role).innerHTML = h + "</tbody></table>";
-            });
-        }
-
-        // Hilfsfunktionen (Select, Save, Backup, Staff)
-        function createSelect(dK, role) {
-            const curr = plan[dK]?.[role] || '';
-            let opt = `<option value="">-</option>`;
-            staff.filter(p => matchesRole(p, role)).forEach(p => {
-                const isWarn = wishes[dK]?.includes(p.name);
-                const label = p.name + (isWarn ? ' (!)' : '');
-                opt += `<option value="${p.name}" ${curr === p.name ? 'selected' : ''}>${label}</option>`;
-            });
-            return `<select onchange="savePlan('${dK}', '${role}', this.value)" class="w-full bg-transparent p-1 outline-none text-[10px] print:font-bold">${opt}</select>`;
-        }
-        function savePlan(k, r, v) { if(!plan[k]) plan[k]={}; plan[k][r]=v; save(); renderCalendar(); }
-        function showSection(id) { document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden')); document.getElementById('section-' + id).classList.remove('hidden'); document.querySelectorAll('header nav button').forEach(b => { b.classList.remove('text-blue-300', 'border-b-2', 'border-blue-300'); if(b.getAttribute('onclick').includes(`'${id}'`)) b.classList.add('text-blue-300', 'border-b-2', 'border-blue-300'); }); if(id === 'personal') renderStaff(); }
-        function savePerson() {
-            const name = document.getElementById('pName').value.trim();
-            const id = document.getElementById('pId').value.trim();
-            const role = document.getElementById('pRole').value;
-            const workInput = Number(document.getElementById('pWork').value);
-            const work = workInput > 0 ? Math.min(workInput, 100) : 100;
-
-            if(!name) {
-                alert("Bitte einen Namen eingeben.");
-                return;
-            }
-            if(staff.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-                alert("Dieser Name ist bereits angelegt.");
-                return;
-            }
-
-            staff.push({ name, id, role, work });
-            save(); renderStaff(); renderCalendar(); renderStationPlan();
-            document.getElementById('pName').value = '';
-            document.getElementById('pId').value = '';
-            document.getElementById('pWork').value = '';
-        }
-        function removePerson(index) {
-            const person = staff[index];
-            if (!person) return;
-            if (!confirm(`Soll ${person.name} wirklich entfernt werden? Zugeordnete Dienste, Sperren und Stationsfelder werden ebenfalls geleert.`)) return;
-
-            staff.splice(index, 1);
-            Object.keys(plan).forEach(dateKey => {
-                ['AA', 'VISITE', 'OA'].forEach(role => {
-                    if (plan[dateKey]?.[role] === person.name) plan[dateKey][role] = '';
-                });
-            });
-            Object.keys(wishes).forEach(dateKey => {
-                wishes[dateKey] = (wishes[dateKey] || []).filter(name => name !== person.name);
-                if (!wishes[dateKey].length) delete wishes[dateKey];
-            });
-            Object.keys(stationPlan).forEach(key => {
-                if (stationPlan[key] === person.name) delete stationPlan[key];
-            });
-
-            save(); renderStaff(); renderCalendar(); renderStationPlan();
-        }
-        function renderStaff() {
-            document.getElementById('staffList').innerHTML = staff.map((p, i) => {
-                const details = [p.role, `${getWorkPercent(p)}%`];
-                if (p.id) details.unshift(p.id);
-                return `<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1"><span><span class="font-bold">${p.name}</span> <span class="text-slate-500">(${details.join(' | ')})</span></span><button onclick="removePerson(${i})" class="text-red-500 font-bold px-2">X</button></div>`;
-            }).join('');
-        }
-        function renderWishMatrix() { const val = document.getElementById('monthPicker').value; if(!val) return; const [y, m] = val.split('-').map(Number);  const days = new Date(y, m, 0).getDate(); let head = `<tr><th class="border p-1 bg-slate-100">Tag</th>`; staff.forEach(p => head += `<th class="border p-1 text-[8px] h-24 align-bottom" style="writing-mode: vertical-rl;">${p.name}</th>`); let body = ''; for(let d=1; d<=days; d++) { const dk = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; let row = `<tr><td class="p-1 border bg-slate-50 text-center font-bold text-[10px]">${d}</td>`; staff.forEach(p => { const isSet = wishes[dk]?.includes(p.name); row += `<td class="border text-center cursor-pointer ${isSet ? 'bg-purple-500 text-white' : ''}" onclick="toggleWish('${dk}', '${p.name}')">${isSet ? 'X' : ''}</td>`; }); body += row + `</tr>`; } document.getElementById('wishTableContainer').innerHTML = `<h2 class="text-xl font-bold mb-4 text-purple-700 uppercase">Wünsche / Sperren</h2><table class="w-full text-xs border-collapse">${head + `</tr>` + body}</table>`; }
-        function toggleWish(k, n) { if(!wishes[k]) wishes[k] = []; wishes[k] = wishes[k].includes(n) ? wishes[k].filter(i => i !== n) : [...wishes[k], n]; save(); renderCalendar(); }
-        function backupExport() {
-            const payload = JSON.stringify({ staff, plan, wishes, stationPlan, holidaySeasonMode });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
-            a.download = `MediPlan_Backup.json`;
-            a.click();
-        }
-        function backupImport(e) {
-            const file = e.target.files?.[0];
-            if (!file) return;
-
-            const r = new FileReader();
-            r.onload = (f) => {
-                try {
-                    const d = JSON.parse(f.target.result);
-                    staff = Array.isArray(d.staff) ? d.staff : [];
-                    plan = d.plan && typeof d.plan === 'object' ? d.plan : {};
-                    wishes = d.wishes && typeof d.wishes === 'object' ? d.wishes : {};
-                    stationPlan = d.stationPlan && typeof d.stationPlan === 'object' ? d.stationPlan : {};
-                    holidaySeasonMode = Boolean(d.holidaySeasonMode);
-                    document.getElementById('holidaySeasonMode').checked = holidaySeasonMode;
-                    save(); renderCalendar(); renderStationPlan(); renderStaff();
-                    alert("Daten geladen!");
-                } catch {
-                    alert("Backup konnte nicht gelesen werden.");
-                } finally {
-                    e.target.value = '';
-                }
-            };
-            r.readAsText(file);
-        }
-        function exportAllICS() {
-            const monthValue = document.getElementById('monthPicker').value;
-            if (!monthValue) return;
-
-            const monthEntries = Object.keys(plan).filter(k => k.startsWith(monthValue)).sort();
-            if (!monthEntries.length) {
-                alert("Keine Dienste im gewählten Monat gefunden.");
-                return;
-            }
-
-            const dtStamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
-            let exported = 0;
-
-            staff.forEach(p => {
-                const events = [];
-                monthEntries.forEach(dateKey => {
-                    [
-                        ['AA', '24h Dienst'],
-                        ['VISITE', 'Visite'],
-                        ['OA', 'Hintergrund']
-                    ].forEach(([role, label]) => {
-                        if (plan[dateKey]?.[role] !== p.name) return;
-                        const startTime = getICSStartTime(dateKey, role);
-                        const uid = `${dateKey}-${role}-${p.name}`.replace(/\s+/g, '-');
-                        events.push([
-                            'BEGIN:VEVENT',
-                            `UID:${uid}@mediplan`,
-                            `DTSTAMP:${dtStamp}`,
-                            `SUMMARY:${escapeICSText(label)}`,
-                            `DTSTART:${dateKey.replace(/-/g, '')}T${startTime}`,
-                            `DTEND:${dateKey.replace(/-/g, '')}T235900`,
-                            'END:VEVENT'
-                        ].join('\r\n'));
-                    });
-                });
-
-                if (!events.length) return;
-
-                const lines = [
-                    'BEGIN:VCALENDAR',
-                    'VERSION:2.0',
-                    'PRODID:-//MediPlan Pro//Dienstplan//DE',
-                    ...events,
-                    'END:VCALENDAR'
-                ];
-                const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar' });
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = `Dienst_${p.name}.ics`;
-                a.click();
-                exported++;
-            });
-
-            if (!exported) {
-                alert("Für den gewählten Monat gibt es keine exportierbaren Dienste.");
-            }
-        }
-        function exportAtossCSV() {
-            const monthValue = document.getElementById('monthPicker').value;
-            if (!monthValue) return;
-
-            const rows = [];
-            Object.keys(plan).sort().forEach(dateKey => {
-                if (!dateKey.startsWith(monthValue)) return;
-                [
-                    ['AA', 17],
-                    ['VISITE', 5],
-                    ['OA', 17]
-                ].forEach(([role, hours]) => {
-                    const person = staff.find(x => x.name === plan[dateKey]?.[role]);
-                    if (person?.id) rows.push(`${person.id};${dateKey};${hours}`);
-                });
-            });
-
-            if (!rows.length) {
-                alert("Für den gewählten Monat gibt es keine exportierbaren Atoss-Daten.");
-                return;
-            }
-
-            const csv = ["Personalnummer;Datum;Stunden", ...rows].join("\n");
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-            a.download = "Atoss_Export.csv";
-            a.click();
-        }
-
-        const now = new Date();
-        document.getElementById('monthPicker').value = now.toISOString().substring(0,7);
-        document.getElementById('holidaySeasonMode').checked = holidaySeasonMode;
-        renderStationPlan(); renderCalendar(); showSection('plan');
-    </script>
-</body>
-</html>
+    <!-- Toasts Container -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 no-print"></div>
+
+    <!-- Fullscreen Loading Spinner -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex-col items-center justify-center text-white no-print">
+        <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <h2 class="text-xl font-bold tracking-wider">Wird berechnet...</h2>
+        <p class="text-sm text-slate-300 mt-2">Dies kann einen Moment dauern.</p>
+    </div>
+
+
+
+
+<script>(()=>{var a={staff:[],plan:{},wishes:{},stationPlan:{},holidaySeasonMode:!1,atossHours:{AA:{weekday:17,weekendHoliday:17},VISITE:{weekday:5,weekendHoliday:5},OA:{weekday:17,weekendHoliday:17}},undoSnapshots:[],storageStatus:{ok:!0,message:"Lokale Speicherung aktiv."},lastStorageAlertMessage:""};function ue(e){let[t,n]=e.split("-").map(Number),o=new Date(t,n,0).getDate(),r=q(e),s=M(t,n),d=new Set,f=new Set;r.forEach(u=>{de(u)});let l={};a.staff.forEach(u=>{l[u.name]=0}),r.forEach(u=>{ae.forEach(h=>{let m=a.plan[u]?.[h];m&&(Object.prototype.hasOwnProperty.call(l,m)||(l[m]=0),l[m]+=Pe(h))})});let c=(u,h,m)=>{if(!m)return!1;let i=de(u);return i[h]||!Be(m,u,h,s)?!1:(i[h]=m.name,Object.prototype.hasOwnProperty.call(l,m.name)||(l[m.name]=0),l[m.name]+=Pe(h),!0)},p=(u,h,m=[])=>{let i=Array.isArray(h)?h:[h];return Ze(u,i,l,s,m)};for(let u=1;u<=o;u+=1){let h=new Date(t,n-1,u),m=h.getDay(),i=ee(t,n,u);if(m===5){let g=[0,1,2].map(w=>u+w<=o?ee(t,n,u+w):null).filter(Boolean),b=W(g,"OA");b===!1&&g.forEach(w=>f.add(w));let k=b&&b!==!1?a.staff.find(w=>w.name===b):b===!1?null:p("OA",g);g.forEach(w=>{c(w,"OA",k)})}if(!a.plan[i].OA&&!f.has(i)&&c(i,"OA",p("OA",i)),m===0){let g=[0,2,4].map(A=>u+A<=o?ee(t,n,u+A):null).filter(Boolean),b=W(g,"AA");b===!1&&g.forEach(A=>d.add(A));let k=b&&b!==!1?a.staff.find(A=>A.name===b):b===!1?null:p("AA",g);g.forEach(A=>{c(A,"AA",k)});let w=[1,3,5].map(A=>u+A<=o?ee(t,n,u+A):null).filter(Boolean),x=W(w,"AA");x===!1&&w.forEach(A=>d.add(A));let y=x?[]:k?[k.name]:[],S=x&&x!==!1?a.staff.find(A=>A.name===x):x===!1?null:p("AA",w,y);w.forEach(A=>{c(A,"AA",S)})}if(Me(h)&&(!a.plan[i].AA&&!d.has(i)&&c(i,"AA",p("AA",i)),!a.plan[i].VISITE)){let g=a.plan[i].AA?[a.plan[i].AA]:[];c(i,"VISITE",p("AA",i,g))}!a.plan[i].AA&&!d.has(i)&&c(i,"AA",p("AA",i))}L(e,{preserveExisting:!1})}function je(){let e=D();e&&confirm("Moechten Sie den Autoplaner wirklich ausfuehren? Bereits eingetragene Dienste bleiben erhalten, freie Felder werden anhand der Regeln ergaenzt.")&&(ze(),setTimeout(()=>{H(`Vor Autoplaner ${e}`),ue(e);let t=z();Fe(),t.ok&&alert("Planung ergaenzt. Bestehende Eingaben wurden beibehalten.")},50))}function We(e){let[t,n]=e.split("-").map(Number),o=M(t,n),r=Ge(o);L(e,{preserveExisting:!0}),o.forEach(s=>{let d=pe(s),f=new Set;P.forEach(p=>{let u=a.stationPlan[`${s.key}_${p.id}`];u&&f.add(u)});let l=(p,u)=>{if(!u||d.has(u))return!1;let h=`${s.key}_${p}`;return a.stationPlan[h]?!1:(a.stationPlan[h]=u,f.add(u),Object.prototype.hasOwnProperty.call(r,u)||(r[u]=0),r[u]+=1,!0)},c=p=>a.staff.filter(m=>p(m)&&!f.has(m.name)&&!d.has(m.name)).sort((m,i)=>{let g=(r[m.name]||0)/E(m),b=(r[i.name]||0)/E(i);return g!==b?g-b:E(i)!==E(m)?E(i)-E(m):m.name.localeCompare(i.name,"de-DE")})[0]?.name||null;P.forEach(p=>{if(p.id==="hkl"||p.id.startsWith("echo_")||p.id.startsWith("da_")||fe(p))return;let u=`${s.key}_${p.id}`;if(a.stationPlan[u])return;let h=null;p.id.startsWith("epu_")?h=c(m=>$(m,"EPU")):p.id.startsWith("oa_")?h=c(m=>$(m,"OA")):(p.category.includes("Station")||p.id==="cpu"||p.id==="tk")&&(h=c(m=>$(m,"AA"))),h&&l(p.id,h)}),P.forEach(p=>{if(p.id!=="hkl"&&!p.id.startsWith("echo_"))return;let u=`${s.key}_${p.id}`;if(a.stationPlan[u])return;let h=c(m=>$(m,"AA"));h&&l(p.id,h)})})}function M(e,t){let n=[],o=new Date(e,t-1,1);for(;o.getDay()!==1;)o.setDate(o.getDate()-1);let r=new Date(o),s=new Date(e,t,0);for(;r<=s;){let d=new Date(r);d.setHours(0,0,0,0),d.setDate(d.getDate()+4-(d.getDay()||7));let f=d.getFullYear(),l=new Date(d.getFullYear(),0,1),c=new Date(l);c.setDate(c.getDate()+4-(c.getDay()||7));let p=1+Math.round(((d.getTime()-c.getTime())/864e5-3+(c.getDay()+6)%7)/7),u=new Date(r);u.setHours(0,0,0,0);let h=j(u,6),m=j(u,-1);n.push({kw:p,mondayDateStr:`${String(r.getDate()).padStart(2,"0")}.${String(r.getMonth()+1).padStart(2,"0")}.${String(r.getFullYear()).slice(-2)}`,key:`${f}-KW${String(p).padStart(2,"0")}`,mondayDate:u,sundayDate:h,dienstGroupA:[U(u),U(j(u,2)),U(j(u,4))],dienstGroupB:[U(m),U(j(u,1)),U(j(u,3))]}),r.setDate(r.getDate()+7)}return n}function O(){let e=D(),t=document.getElementById("stationHeader"),n=document.getElementById("stationBody"),o=document.getElementById("printHeaderStationTitle"),r=document.getElementById("unassignedDoctorsList");if(!e||!t||!n||!o||!r)return;let[s,d]=e.split("-").map(Number),f=new Date(s,d-1,1).toLocaleString("de-DE",{month:"long"});o.innerText=`Stationsbesetzung MED I - ${f} ${s}`;let l=M(s,d);t.innerHTML=`
+        <tr class="bg-slate-300 font-bold border-b border-slate-400 text-center align-middle">
+            <th class="p-2 border-r border-slate-400 w-32" colspan="2">Kalenderwoche<br><span class="text-[9px] font-normal">1. Montag</span></th>
+            ${l.map(i=>`<th class="p-2 border-r border-slate-400 w-24">${i.kw}<br><span class="text-[9px] font-normal">${i.mondayDateStr}</span></th>`).join("")}
+        </tr>`;let c="",p=null,u=0,h={};l.forEach(i=>h[i.key]=new Set),P.forEach((i,g)=>{i.category!==p&&(p=i.category,u=P.filter(y=>y.category===p).length);let b=`<tr class="border-b border-slate-300 text-center align-middle ${g%2===0?"bg-white":"bg-slate-50"} hover:bg-slate-100 transition">`,k=P.findIndex(y=>y.category===p)===g,x=P.filter(y=>y.category===p).some(y=>y.name!==y.category);if(k&&(b+=`<td class="p-2 font-bold border-r border-slate-300" ${x?"":'colspan="2"'} rowspan="${u}">${i.category}</td>`),x){let y=i.name!==i.category?i.name:"";b+=`<td class="p-1 border-r border-slate-300 text-[10px] whitespace-nowrap">${y}</td>`}l.forEach(y=>{let S=`${y.key}_${i.id}`,A=a.stationPlan[S]||"";A&&h[y.key].add(A);let G=[];i.category==="Oberaerzte"?G.push("OA"):i.category==="EPU"?G.push("EPU"):i.category.includes("Urlaub")||i.category.includes("Zeitausgleich")?G.push("ALL"):G.push("AA"),b+=`
+                <td class="p-0 border-r border-slate-300 relative bg-white droppable-cell"
+                    data-cell="${S}"
+                    data-allowed="${G.join(",")}"
+                    ondragover="event.preventDefault(); this.classList.add('bg-blue-50')"
+                    ondragleave="this.classList.remove('bg-blue-50')"
+                    ondrop="window.handleDropStation(event)">
+                    ${A?`<div class="w-full p-2 text-[11px] font-bold text-center cursor-move draggable-doctor"
+                              draggable="true"
+                              ondragstart="window.handleDragStartStation(event, '${A}', '${S}')">
+                            ${A}
+                            <span class="absolute top-0 right-1 text-[8px] text-red-500 cursor-pointer" data-action="saveStationPlan" data-cell="${S}" data-value="">x</span>
+                        </div>`:'<div class="w-full p-2 h-full min-h-[30px]"></div>'}
+                </td>`}),b+="</tr>",c+=b}),n.innerHTML=c;let m=`<div class="grid grid-cols-1 md:grid-cols-${l.length} gap-2">`;l.forEach(i=>{m+=`<div class="border p-2 rounded bg-white">
+            <h4 class="font-bold text-[10px] border-b pb-1 mb-1">KW ${i.kw}</h4>
+            <div class="flex flex-wrap gap-1">`,a.staff.forEach(g=>{if(!h[i.key].has(g.name)){let b=[];$(g,"AA")&&b.push("AA"),$(g,"OA")&&b.push("OA"),$(g,"EPU")&&b.push("EPU"),m+=`<div class="px-2 py-1 bg-slate-200 text-[10px] rounded cursor-move hover:bg-slate-300 transition"
+                    draggable="true"
+                    data-role="${b.join(",")}"
+                    ondragstart="window.handleDragStartStation(event, '${g.name}', 'unassigned')">
+                    ${g.name}
+                </div>`}}),m+="</div></div>"}),m+="</div>",r.innerHTML=m,T()}function te(e,t){let n=D(),{rowId:o}=Oe(e);t?a.stationPlan[e]=t:delete a.stationPlan[e],(o==="da_1"||o==="da_2")&&n&&(t&&qe(n,e,t),L(n,{preserveExisting:!1})),z()}function me(e,t,n){if(n<=t)return"transparent";let o=(e-t)/(n-t);return o<.5?`rgba(${Math.floor(255*o*2)}, 255, 0, 0.3)`:`rgba(255, ${Math.floor(255*(2-o*2))}, 0, 0.3)`}function I(){let e=D(),t=document.getElementById("displayMonth"),n=document.getElementById("printHeaderTitle"),o=document.getElementById("calendarBody");if(!e||!t||!n||!o)return;let[r,s]=e.split("-").map(Number),d=new Date(r,s-1,1).toLocaleString("de-DE",{month:"long",year:"numeric"}),f=new Date(r,s,0).getDate(),l=M(r,s);t.innerText=d,n.innerText=`Dienstplan - ${d}`;let c="";for(let p=1;p<=f;p+=1){let u=new Date(r,s-1,p),h=`${r}-${String(s).padStart(2,"0")}-${String(p).padStart(2,"0")}`,m=Ve(h,-1),i=Je(u),g=!!i||u.getDay()===0||u.getDay()===6,b=k=>{let w=a.plan[h]?.[k]||"";return w?Ke(w,h,l)?"conflict-red":(a.wishes[h]||[]).includes(w)?"wish-conflict":a.plan[m]&&Object.values(a.plan[m]).includes(w)?"conflict-red":"":""};c+=`
+            <tr class="${g?"holiday-bg":""} border-b text-xs">
+                <td class="p-1 text-center font-bold text-slate-500">${u.toLocaleDateString("de-DE",{weekday:"short"})}</td>
+                <td class="p-1 text-center font-bold border-l border-r">${p}.${i?`<br><span class="text-[7px] text-red-600 font-normal leading-tight">${i}</span>`:""}</td>
+                <td class="p-0 ${b("AA")}">${Te(h,"AA")}</td>
+                <td class="p-0 ${b("VISITE")}">${Te(h,"VISITE")}</td>
+                <td class="p-0 ${b("OA")}">${Te(h,"OA")}</td>
+            </tr>`}o.innerHTML=c,$t(),Ye(),T()}function $t(){let e=D(),t=document.getElementById("statsTableAA"),n=document.getElementById("statsTableOA");if(!e||!t||!n)return;let[o,r]=e.split("-").map(Number);["AA","OA"].forEach(s=>{let d=a.staff.filter(i=>$(i,s)).map(i=>{let g=0,b=0,k=0,w=0;for(let x=0;x<6;x+=1){let y=new Date(o,r-1-x,1),S=`${y.getFullYear()}-${String(y.getMonth()+1).padStart(2,"0")}`;Object.keys(a.plan).forEach(A=>{A.startsWith(S)&&((a.plan[A].AA===i.name||a.plan[A].OA===i.name)&&(k+=1,x===0&&(g+=1)),J("VISITE",A)&&a.plan[A].VISITE===i.name&&(w+=1,x===0&&(b+=1)))})}return{name:i.name,monthDuty:g,monthVisit:b,sixMonthDuty:k,sixMonthVisit:w}}),f=document.getElementById(`statsTable${s}`);if(!d.length){f.innerHTML='<p class="text-sm text-slate-500">Keine Mitarbeiter in dieser Rolle angelegt.</p>';return}let l=i=>({max:Math.max(...d.map(g=>g[i]),1),min:Math.min(...d.map(g=>g[i]))}),c=l("monthDuty"),p=l("monthVisit"),u=l("sixMonthDuty"),h=l("sixMonthVisit"),m='<table class="w-full border-collapse border text-xs text-center"><thead><tr class="bg-slate-100"><th class="p-2 border text-left">Arzt</th><th class="p-2 border">24h (M)</th><th class="p-2 border">Visite (M)</th><th class="p-2 border">24h (6M)</th><th class="p-2 border">Visite (6M)</th></tr></thead><tbody>';d.forEach(i=>{m+=`<tr>
+                <td class="p-2 border text-left font-bold">${i.name}</td>
+                <td class="p-2 border" style="background:${me(i.monthDuty,c.min,c.max)}">${i.monthDuty}</td>
+                <td class="p-2 border" style="background:${me(i.monthVisit,p.min,p.max)}">${i.monthVisit}</td>
+                <td class="p-2 border" style="background:${me(i.sixMonthDuty,u.min,u.max)}">${i.sixMonthDuty}</td>
+                <td class="p-2 border" style="background:${me(i.sixMonthVisit,h.min,h.max)}">${i.sixMonthVisit}</td>
+            </tr>`}),f.innerHTML=`${m}</tbody></table>`})}function Te(e,t){let n=a.plan[e]?.[t]||"";if(!J(t,e))return n?`<select data-action="savePlan" data-date="${e}" data-role="${t}" class="w-full bg-amber-50 p-1 outline-none text-[10px] text-amber-700 print:font-bold">
+            <option value="${n}" selected>${n} (nur entfernen)</option>
+            <option value="">-</option>
+        </select>`:'<div class="w-full p-1 text-center text-[10px] text-slate-300 print:text-slate-500">-</div>';let o='<option value="">-</option>';return a.staff.filter(r=>$(r,t)).forEach(r=>{let s=(a.wishes[e]||[]).includes(r.name),d=r.name+(s?" (!)":"");o+=`<option value="${r.name}" ${n===r.name?"selected":""}>${d}</option>`}),`<select data-action="savePlan" data-date="${e}" data-role="${t}" class="w-full bg-transparent p-1 outline-none text-[10px] print:font-bold">${o}</select>`}function he(e,t,n){a.plan[e]||(a.plan[e]=He()),a.plan[e][t]=J(t,e)?n:"",L(e.slice(0,7),{preserveExisting:!1}),z()}function ze(){let e=document.getElementById("loadingOverlay");e&&e.classList.remove("hidden","flex-col"),e&&e.classList.add("flex","flex-col")}function Fe(){let e=document.getElementById("loadingOverlay");e&&e.classList.add("hidden"),e&&e.classList.remove("flex")}function Ce(e,t="info"){let n=document.getElementById("toastContainer");if(!n)return;let o=document.createElement("div"),r={info:"bg-blue-600",success:"bg-green-600",warning:"bg-orange-500",error:"bg-red-600"};o.className=`${r[t]} text-white px-4 py-2 rounded shadow-lg text-sm transition-opacity duration-300 opacity-0`,o.innerText=e,n.appendChild(o),requestAnimationFrame(()=>o.classList.remove("opacity-0")),setTimeout(()=>{o.classList.add("opacity-0"),setTimeout(()=>o.remove(),300)},3e3)}function D(){return document.getElementById("monthPicker")?.value||""}function ge(){I(),O()}function z(e={}){let t=V(e);return ge(),t}function ye(e={}){let t=V(e);return I(),t}function It(){ge(),ne(),T(),Y()}function K(e={}){let t=V(e);return It(),t}function _(e){if(!B(e))return{ok:!1,error:"Backup muss ein JSON-Objekt sein."};if("staff"in e&&!Array.isArray(e.staff))return{ok:!1,error:"Backup enthaelt eine ungueltige Personal-Liste."};if("plan"in e&&!B(e.plan))return{ok:!1,error:"Backup enthaelt einen ungueltigen Dienstplan."};if("wishes"in e&&!B(e.wishes))return{ok:!1,error:"Backup enthaelt ungueltige Wunschdaten."};if("stationPlan"in e&&!B(e.stationPlan))return{ok:!1,error:"Backup enthaelt einen ungueltigen Stationsplan."};if("atossHours"in e&&!B(e.atossHours))return{ok:!1,error:"Backup enthaelt ungueltige Atoss-Stunden."};let t={staff:Array.isArray(e.staff)?e.staff.map(s=>({name:String(s?.name||"").trim(),id:C(s?.id),role:s?.role||"AA",work:E(s||{})})):[],plan:B(e.plan)?e.plan:{},wishes:B(e.wishes)?e.wishes:{},stationPlan:B(e.stationPlan)?e.stationPlan:{},holidaySeasonMode:!!e.holidaySeasonMode,atossHours:Q(e.atossHours)};if(t.staff.find(s=>!s.name))return{ok:!1,error:"Backup enthaelt Personal ohne Namen."};if(t.staff.filter((s,d)=>t.staff.findIndex(f=>f.name.toLowerCase()===s.name.toLowerCase())!==d).length)return{ok:!1,error:"Backup enthaelt doppelte Personennamen."};let r=se(t.staff);return r.length?{ok:!1,error:`Backup enthaelt doppelte Atoss-ID ${r[0].id}.`}:{ok:!0,normalized:t}}function re(e,t={}){if(!e)return[];let n=t.staff||a.staff,o=t.plan||a.plan,r=t.wishes||a.wishes,s=t.stationPlan||a.stationPlan,d=Object.prototype.hasOwnProperty.call(t,"holidaySeasonMode")?t.holidaySeasonMode:a.holidaySeasonMode,f=Object.fromEntries(n.map(i=>[i.name,i])),l=[],[c,p]=e.split("-").map(Number),u=M(c,p);se(n).forEach(({id:i,names:g})=>{l.push({severity:"error",area:"Personal",reference:`Atoss ${i}`,message:`Die Atoss-ID ${i} ist mehrfach vergeben: ${g.join(", ")}.`,blocks:["atoss"]})}),q(e).forEach(i=>{let g=Z(i),b=o[i]||{},k=Ae(i,u,s);[{key:"AA",label:oe.AA,required:!0,blocks:["ics","atoss"]},{key:"OA",label:oe.OA,required:!0,blocks:["ics","atoss"]},{key:"VISITE",label:oe.VISITE,required:Se("VISITE",g,d),blocks:["ics","atoss"]}].forEach(y=>{let S=b[y.key];if(!Se(y.key,g,d)&&S){l.push({severity:"error",area:"Planung",reference:F(i),message:`${y.label} ist an diesem Tag nicht vorgesehen, hat aber mit ${S} eine Belegung.`,blocks:y.blocks});return}if(y.required&&!S){l.push({severity:"error",area:"Planung",reference:F(i),message:`${y.label} ist nicht besetzt.`,blocks:y.blocks});return}if(!S)return;let A=f[S];if(!A){l.push({severity:"error",area:"Planung",reference:F(i),message:`${y.label} verweist auf "${S}", aber die Person ist nicht im Personalstamm.`,blocks:y.blocks});return}C(A.id)||l.push({severity:"error",area:"Export",reference:F(i),message:`${S} hat keine Atoss-ID, wird aber fuer ${y.label} verwendet.`,blocks:["atoss"]}),(r[i]||[]).includes(S)&&l.push({severity:"warning",area:"Planung",reference:F(i),message:`${S} ist fuer ${y.label} eingeteilt, obwohl Wunschfrei/Sperre hinterlegt ist.`,blocks:[]}),k.has(S)&&l.push({severity:"error",area:"Korrelation",reference:F(i),message:`${S} ist im Stationsplan fuer diese Woche als Urlaub/Zeitausgleich markiert, wird aber fuer ${y.label} verwendet.`,blocks:y.blocks})});let x={};["AA","VISITE","OA"].forEach(y=>{let S=b[y];S&&(x[S]||(x[S]=[]),x[S].push(oe[y]))}),Object.entries(x).forEach(([y,S])=>{S.length<2||l.push({severity:"warning",area:"Planung",reference:F(i),message:`${y} ist mehrfach eingeteilt: ${S.join(", ")}.`,blocks:[]})})}),u.forEach(i=>{let g={},b=new Set,k=s[`${i.key}_da_1`]||"",w=s[`${i.key}_da_2`]||"",x=W(i.dienstGroupA,"AA",o),y=W(i.dienstGroupB,"AA",o);if(P.forEach(S=>{let A=s[`${i.key}_${S.id}`];if(!A)return;let G=S.name!==S.category?`${S.category}: ${S.name}`:S.category;if(S.category.includes("Urlaub")||S.category.includes("Zeitausgleich")){b.add(A);return}g[A]||(g[A]=[]),g[A].push(G)}),Object.entries(g).forEach(([S,A])=>{A.length>1&&l.push({severity:"warning",area:"Stationen",reference:i.key,message:`${S} ist mehrfach im Stationsplan eingetragen: ${A.join(", ")}.`,blocks:[]}),b.has(S)&&l.push({severity:"warning",area:"Stationen",reference:i.key,message:`${S} ist gleichzeitig im Urlaub/Zeitausgleich und im Stationsplan eingeteilt.`,blocks:[]})}),x===!1){let S=be(i.dienstGroupA,"AA",o);l.push({severity:"warning",area:"Korrelation",reference:i.key,message:`Die Dienstarzt-Gruppe Mo/Mi/Fr ist im Dienstplan nicht eindeutig: ${S.join(", ")}.`,blocks:[]})}else x&&k&&k!==x?l.push({severity:"warning",area:"Korrelation",reference:i.key,message:`Stationsplan Mo/Mi/Fr verweist auf ${k}, im Dienstplan ist jedoch ${x} hinterlegt.`,blocks:[]}):x&&!k&&l.push({severity:"warning",area:"Korrelation",reference:i.key,message:`Die Dienstarzt-Zeile Mo/Mi/Fr ist leer, obwohl im Dienstplan ${x} hinterlegt ist.`,blocks:[]});if(y===!1){let S=be(i.dienstGroupB,"AA",o);l.push({severity:"warning",area:"Korrelation",reference:i.key,message:`Die Dienstarzt-Gruppe So/Di/Do ist im Dienstplan nicht eindeutig: ${S.join(", ")}.`,blocks:[]})}else y&&w&&w!==y?l.push({severity:"warning",area:"Korrelation",reference:i.key,message:`Stationsplan So/Di/Do verweist auf ${w}, im Dienstplan ist jedoch ${y} hinterlegt.`,blocks:[]}):y&&!w&&l.push({severity:"warning",area:"Korrelation",reference:i.key,message:`Die Dienstarzt-Zeile So/Di/Do ist leer, obwohl im Dienstplan ${y} hinterlegt ist.`,blocks:[]})});let m={error:0,warning:1,info:2};return l.sort((i,g)=>{let b=m[i.severity]-m[g.severity];if(b!==0)return b;let k=i.area.localeCompare(g.area,"de-DE");return k!==0?k:i.reference.localeCompare(g.reference,"de-DE")}),l}function T(){let e=D(),t=document.getElementById("validationSummary"),n=document.getElementById("validationList");if(!t||!n)return;if(!e){t.innerHTML="",n.innerHTML='<div class="validation-empty">Bitte zuerst einen Monat auswaehlen.</div>';return}let o=re(e),r=o.filter(c=>c.severity==="error").length,s=o.filter(c=>c.severity==="warning").length,d=o.filter(c=>c.blocks&&c.blocks.length).length;if(t.innerHTML=`
+        <div class="validation-card validation-card-error">
+            <strong>${r}</strong>
+            <span>Fehler</span>
+        </div>
+        <div class="validation-card validation-card-warning">
+            <strong>${s}</strong>
+            <span>Warnungen</span>
+        </div>
+        <div class="validation-card ${d?"validation-card-warning":"validation-card-ok"}">
+            <strong>${d}</strong>
+            <span>Export-relevante Punkte</span>
+        </div>`,!o.length){n.innerHTML='<div class="validation-empty">Keine offenen Validierungsprobleme im gewaehlten Monat gefunden.</div>';return}let f={error:"validation-badge validation-badge-error",warning:"validation-badge validation-badge-warning",info:"validation-badge validation-badge-info"},l=o.map(c=>{let p=c.blocks?.length?`Blockiert: ${c.blocks.join(", ").toUpperCase()}`:"Nur Hinweis";return`
+            <tr class="validation-row-${c.severity}">
+                <td><span class="${f[c.severity]}">${c.severity==="error"?"Fehler":c.severity==="warning"?"Warnung":"Hinweis"}</span></td>
+                <td>${c.area}</td>
+                <td>${c.reference}</td>
+                <td>${c.message}<div class="validation-meta mt-1">${p}</div></td>
+            </tr>`}).join("");n.innerHTML=`
+        <table class="validation-table">
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Bereich</th>
+                    <th>Referenz</th>
+                    <th>Beschreibung</th>
+                </tr>
+            </thead>
+            <tbody>${l}</tbody>
+        </table>`}var Qe=10;function Pt(e=X(),t=a.undoSnapshots){return[["mp_staff",JSON.stringify(e.staff)],["mp_plan",JSON.stringify(e.plan)],["mp_wishes",JSON.stringify(e.wishes)],["mp_station",JSON.stringify(e.stationPlan)],["mp_holiday_mode",JSON.stringify(e.holidaySeasonMode)],["mp_atoss_hours",JSON.stringify(e.atossHours)],["mp_undo_snapshots",JSON.stringify(t)]]}function Mt(e){if(!e)return"Lokale Speicherung fehlgeschlagen.";let t=String(e.name||""),n=String(e.message||"");return t==="QuotaExceededError"||t==="NS_ERROR_DOM_QUOTA_REACHED"||e.code===22||e.code===1014||/quota/i.test(n)?"Lokale Speicherung fehlgeschlagen: Der Browser-Speicher ist voll.":`Lokale Speicherung fehlgeschlagen: ${n||t||"Unbekannter Fehler."}`}function Re(e=localStorage,t=X(),n=a.undoSnapshots){let o=Pt(t,n),r=[];try{return o.forEach(([s,d])=>{let f=typeof e.getItem=="function"?e.getItem(s):null;r.push([s,f]),e.setItem(s,d)}),{ok:!0,message:"Lokale Speicherung aktiv."}}catch(s){return r.reverse().forEach(([d,f])=>{try{f==null?e.removeItem?.(d):e.setItem(d,f)}catch{}}),{ok:!1,message:Mt(s)}}}function we(){let e=document.getElementById("storageStatus");e&&(e.textContent=a.storageStatus.message,e.className=a.storageStatus.ok?"mt-3 rounded border border-emerald-200 bg-emerald-50 p-2 text-[11px] text-emerald-800":"mt-3 rounded border border-red-200 bg-red-50 p-2 text-[11px] text-red-800")}function V(e={}){let{storage:t=localStorage,suppressAlert:n=!1}=e,o=Re(t);return a.storageStatus={ok:o.ok,message:o.message},we(),o.ok?(a.lastStorageAlertMessage="",o):(!n&&t===localStorage&&o.message!==a.lastStorageAlertMessage&&(alert(`${o.message} Die Aenderungen bleiben nur in diesem Browser-Tab erhalten, bis die Speicherung wieder funktioniert.`),a.lastStorageAlertMessage=o.message),o)}function Xe(){let e=document.getElementById("holidaySeasonMode");a.holidaySeasonMode=e?e.checked:!1,V()}function N(){let e=document.getElementById("holidaySeasonMode");e&&(e.checked=a.holidaySeasonMode),et(),we()}function xe(e,t,n=a.holidaySeasonMode,o=a.atossHours){let s=Q(o)[t]||ke[t];return De(Z(e),n)?s.weekendHoliday:s.weekday}function et(){Object.entries(a.atossHours).forEach(([e,t])=>{let n=document.getElementById(`atoss-${e}-weekday`),o=document.getElementById(`atoss-${e}-weekendHoliday`);n&&(n.value=String(t.weekday)),o&&(o.value=String(t.weekendHoliday))})}function tt(){a.atossHours=Q({AA:{weekday:document.getElementById("atoss-AA-weekday")?.value,weekendHoliday:document.getElementById("atoss-AA-weekendHoliday")?.value},VISITE:{weekday:document.getElementById("atoss-VISITE-weekday")?.value,weekendHoliday:document.getElementById("atoss-VISITE-weekendHoliday")?.value},OA:{weekday:document.getElementById("atoss-OA-weekday")?.value,weekendHoliday:document.getElementById("atoss-OA-weekendHoliday")?.value}}),et(),V()}function X(){return{staff:v(a.staff)||[],plan:v(a.plan)||{},wishes:v(a.wishes)||{},stationPlan:v(a.stationPlan)||{},holidaySeasonMode:a.holidaySeasonMode,atossHours:v(a.atossHours)||v(ke)}}function ie(e){a.staff=v(e.staff)||[],a.plan=v(e.plan)||{},a.wishes=v(e.wishes)||{},a.stationPlan=v(e.stationPlan)||{},a.holidaySeasonMode=!!e.holidaySeasonMode,a.atossHours=Q(e.atossHours)}function nt(e=[]){return Array.isArray(e)?e.map((t,n)=>{if(!B(t)||!B(t.state))return null;let o=_(t.state);return o.ok?{id:String(t.id||`snapshot-${n}`),label:String(t.label||"Snapshot").trim()||"Snapshot",createdAt:t.createdAt||new Date().toISOString(),state:o.normalized}:null}).filter(Boolean).slice(0,Qe):[]}function at(e){let t=new Date(e);return Number.isNaN(t.getTime())?"unbekannter Zeitpunkt":t.toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"})}function Y(){let e=document.getElementById("undoSnapshotInfo"),t=document.getElementById("undoSnapshotButton");if(!e&&!t)return;let n=a.undoSnapshots[0]||null;e&&(e.textContent=n?`${n.label} | ${at(n.createdAt)} | ${a.undoSnapshots.length} gespeichert`:"Kein Snapshot verfuegbar."),t&&(t.disabled=!n)}function H(e,t=X()){return a.undoSnapshots=[{id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,label:String(e||"Snapshot"),createdAt:new Date().toISOString(),state:v(t)},...a.undoSnapshots].slice(0,Qe),V({suppressAlert:!0}),Y(),a.undoSnapshots[0]}function ve(e={}){let{skipConfirm:t=!1,skipAlert:n=!1}=e,o=a.undoSnapshots[0];if(!o)return n||alert("Kein Snapshot zum Wiederherstellen verfuegbar."),!1;if(!t&&!confirm(`Snapshot "${o.label}" vom ${at(o.createdAt)} wiederherstellen?`))return!1;let r=_(o.state);if(!r.ok)return n||alert(r.error),!1;a.undoSnapshots=a.undoSnapshots.slice(1),ie(r.normalized),N();let s=K();return!n&&s.ok&&alert("Snapshot wiederhergestellt."),!0}function Bt(e,t){try{let n=localStorage.getItem(e);return n?JSON.parse(n):t}catch{return t}}ot(Bt);function ot(e){a.staff=e("mp_staff",[]),a.plan=e("mp_plan",{}),a.wishes=e("mp_wishes",{}),a.stationPlan=e("mp_station",{}),a.holidaySeasonMode=e("mp_holiday_mode",!1),a.atossHours=e("mp_atoss_hours",a.atossHours),a.undoSnapshots=e("mp_undo_snapshots",[])}var ke={AA:{weekday:17,weekendHoliday:17},VISITE:{weekday:5,weekendHoliday:5},OA:{weekday:17,weekendHoliday:17}},oe={AA:"24h Dienst (AA)",VISITE:"Visite (WE/FT)",OA:"Hintergrund (OA)"},ae=["AA","VISITE","OA"],Le=["AA","VISITE"],P=[{id:"s71_1",name:"Zimmer 1-4",category:"Station 7 - 1"},{id:"s71_2",name:"Zimmer 5-8",category:"Station 7 - 1"},{id:"s71_3",name:"Zimmer 13-18",category:"Station 7 - 1"},{id:"s51_1",name:"Zimmer 8-10",category:"Station 5 - 1"},{id:"s51_2",name:"Zimmer 11-14",category:"Station 5 - 1"},{id:"hkl",name:"HKL",category:"HKL"},{id:"cpu",name:"CPU",category:"CPU"},{id:"tk",name:"Tagesklinik/UKG",category:"Tagesklinik/UKG"},{id:"echo_1",name:"Echokardiographie",category:"Echokardiographie"},{id:"echo_2",name:"Echokardiographie",category:"Echokardiographie"},{id:"oa_1",name:"Oberaerzte",category:"Oberaerzte"},{id:"oa_2",name:"Oberaerzte",category:"Oberaerzte"},{id:"oa_3",name:"Oberaerzte",category:"Oberaerzte"},{id:"oa_4",name:"Oberaerzte",category:"Oberaerzte"},{id:"oa_5",name:"Oberaerzte",category:"Oberaerzte"},{id:"oa_6",name:"Oberaerzte",category:"Oberaerzte"},{id:"epu_1",name:"EPU",category:"EPU"},{id:"epu_2",name:"EPU",category:"EPU"},{id:"da_1",name:"Mo, Mi, Fr",category:"Dienstaerzte"},{id:"da_2",name:"So, Di, Do",category:"Dienstaerzte"},{id:"u1",name:"Urlaub / Zeitausgleich",category:"Urlaub / Zeitausgleich"},{id:"u2",name:"Urlaub / Zeitausgleich",category:"Urlaub / Zeitausgleich"},{id:"u3",name:"Urlaub / Zeitausgleich",category:"Urlaub / Zeitausgleich"},{id:"u4",name:"Urlaub / Zeitausgleich",category:"Urlaub / Zeitausgleich"},{id:"u5",name:"Urlaub / Zeitausgleich",category:"Urlaub / Zeitausgleich"},{id:"u6",name:"Urlaub / Zeitausgleich",category:"Urlaub / Zeitausgleich"}];function $(e,t){return t==="OA"?e.role==="OA"||e.role==="OA-EPU":t==="EPU"?e.role==="OA-EPU":e.role==="AA"}function E(e){let t=Number(e?.work);return t>0?t:100}function C(e){return String(e||"").trim().toUpperCase()}function rt(e,t){let n=Number(e);return Number.isFinite(n)&&n>=0?n:t}function Q(e={}){let t={};return Object.entries(ke).forEach(([n,o])=>{let r=B(e?.[n])?e[n]:{};t[n]={weekday:rt(r.weekday,o.weekday),weekendHoliday:rt(r.weekendHoliday,o.weekendHoliday)}}),t}function st(e,t=a.staff){let n=String(e?.name||"").trim(),o=C(e?.id);return n?t.some(r=>r.name.toLowerCase()===n.toLowerCase())?"Dieser Name ist bereits angelegt.":o&&t.some(r=>C(r.id)===o)?`Die Atoss-ID ${o} ist bereits vergeben.`:"":"Bitte einen Namen eingeben."}function se(e=a.staff){let t={};return e.forEach(n=>{let o=C(n.id);o&&(t[o]||(t[o]=[]),t[o].push(n.name))}),Object.entries(t).filter(([,n])=>n.length>1).map(([n,o])=>({id:n,names:o}))}function q(e){if(!e)return[];let[t,n]=e.split("-").map(Number),o=new Date(t,n,0).getDate();return Array.from({length:o},(r,s)=>`${t}-${String(n).padStart(2,"0")}-${String(s+1).padStart(2,"0")}`)}function Z(e){let[t,n,o]=String(e||"").split("-").map(Number);return new Date(t,n-1,o)}function F(e){let[t,n,o]=String(e||"").split("-");return`${o}.${n}.${t}`}function Ee(){let e=new Date;return`${e.getFullYear()}-${String(e.getMonth()+1).padStart(2,"0")}`}function _e(e){let t=e%19,n=Math.floor(e/100),o=e%100,r=Math.floor(n/4),s=n%4,d=Math.floor((n+8)/25),f=Math.floor((n-d+1)/3),l=(19*t+n-r-f+15)%30,c=Math.floor(o/4),p=o%4,u=(32+2*s+2*c-l-p)%7,h=Math.floor((t+11*l+22*u)/451),m=Math.floor((l+u-7*h+114)/31),i=(l+u-7*h+114)%31+1;return new Date(e,m-1,i)}function $e(e,t=a.holidaySeasonMode){let n=e.getFullYear(),o=e.getMonth()+1,r=e.getDate(),s={"1.1":"Neujahr","6.1":"Hl. 3 Koenige","1.5":"Tag d. Arbeit","15.8":"Mariae Himmelfahrt","3.10":"Tag d. Dt. Einheit","1.11":"Allerheiligen","25.12":"1. Weihnachtstag","26.12":"2. Weihnachtstag"};if(t){let p=new Date(n,11,24);for(;p.getDay()!==6;)p.setDate(p.getDate()-1);let u=o===1&&r<=15?new Date(n,0,6):new Date(n+1,0,6);for(;u.getDay()!==0;)u.setDate(u.getDate()+1);if(e>=p&&e<=u)return"Winterplan"}let d=s[`${r}.${o}`];if(d)return d;let f=_e(n),l=Math.round((e-f)/864e5);if(l===-2)return"Karfreitag";if(l===1)return"Ostermontag";if(l===39)return"Christi Himmelfahrt";if(l===50)return"Pfingstmontag";if(l===60)return"Fronleichnam";let c=new Date(n,10,22);for(;c.getDay()!==3;)c.setDate(c.getDate()-1);return r===c.getDate()&&o===11?"Buss- & Bettag":null}function Je(e){return $e(e,a.holidaySeasonMode)}function Me(e,t=a.holidaySeasonMode){return De(e,t)}function De(e,t=a.holidaySeasonMode){return e.getDay()===0||e.getDay()===6||!!$e(e,t)}function Se(e,t,n=a.holidaySeasonMode){return e!=="VISITE"||Me(t,n)}function J(e,t,n=a.holidaySeasonMode){return Se(e,Z(t),n)}function Ie(e,t,n=a.holidaySeasonMode){return t==="VISITE"||De(Z(e),n)?"090000":"150000"}function it(e){return String(e).replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;")}function v(e){return e===void 0?void 0:JSON.parse(JSON.stringify(e))}function B(e){return!!e&&typeof e=="object"&&!Array.isArray(e)}function ee(e,t,n){return`${e}-${String(t).padStart(2,"0")}-${String(n).padStart(2,"0")}`}function U(e){return ee(e.getFullYear(),e.getMonth()+1,e.getDate())}function j(e,t){let n=new Date(e);return n.setDate(n.getDate()+t),n.setHours(0,0,0,0),n}function Ve(e,t){return U(j(Z(e),t))}function He(e={}){return{AA:e.AA||"",VISITE:e.VISITE||"",OA:e.OA||""}}function de(e){return a.plan[e]=He(a.plan[e]),a.plan[e]}function fe(e){return e.category.includes("Urlaub")||e.category.includes("Zeitausgleich")}function be(e,t,n=a.plan){return[...new Set(e.map(o=>n[o]?.[t]).filter(Boolean))]}function W(e,t,n=a.plan){let o=be(e,t,n);return o.length?o.length===1?o[0]:!1:null}function Pe(e){return e==="VISITE"?.2:1}function Ot(e,t){let n=new Date(e);return n.setHours(0,0,0,0),t.find(o=>n>=o.mondayDate&&n<=o.sundayDate)||null}function pe(e,t=a.stationPlan){let n=new Set;return P.forEach(o=>{if(!fe(o))return;let r=t[`${e.key}_${o.id}`];r&&n.add(r)}),n}function Ae(e,t,n=a.stationPlan){let o=Ot(Z(e),t);return o?pe(o,n):new Set}function Ke(e,t,n,o=a.stationPlan){return e?Ae(t,n,o).has(e):!1}function Tt(e,t,n,o=a.plan){return ae.some(r=>r!==n&&o[t]?.[r]===e)}function lt(e,t,n=a.plan,o=ae){return[-1,1].some(r=>{let s=n[Ve(t,r)];return s&&o.some(d=>s[d]===e)})}function Be(e,t,n,o,r=a.plan,s=a.wishes,d=a.stationPlan,f=[]){if(!e||!$(e,n)||f.includes(e.name)||(s[t]||[]).includes(e.name)||Ae(t,o,d).has(e.name))return!1;let l=r[t]?.[n]||"";return!(l&&l!==e.name||Tt(e.name,t,n,r)||Le.includes(n)&&lt(e.name,t,r,Le))}function Ze(e,t,n,o,r=[]){let s=[...new Set(t.filter(Boolean))];return s.length&&a.staff.filter(f=>$(f,e)&&!r.includes(f.name)).map(f=>{let l=s.filter(p=>Be(f,p,e,o,a.plan,a.wishes,a.stationPlan,r)).length;if(!l)return null;let c=s.reduce((p,u)=>{let h=e==="OA"?ae:Le;return p+(lt(f.name,u,a.plan,h)?1:0)},0);return{person:f,fillableCount:l,score:(n[f.name]||0)/E(f)+c*1e3}}).filter(Boolean).sort((f,l)=>l.fillableCount!==f.fillableCount?l.fillableCount-f.fillableCount:f.score!==l.score?f.score-l.score:E(l.person)!==E(f.person)?E(l.person)-E(f.person):f.person.name.localeCompare(l.person.name,"de-DE"))[0]?.person||null}function Ge(e,t=a.stationPlan){let n={};return a.staff.forEach(o=>{n[o.name]=0}),e.forEach(o=>{P.forEach(r=>{if(fe(r))return;let s=t[`${o.key}_${r.id}`];s&&(Object.prototype.hasOwnProperty.call(n,s)||(n[s]=0),n[s]+=1)})}),n}function L(e,t={}){if(!e)return;let{preserveExisting:n=!0}=t,[o,r]=e.split("-").map(Number);M(o,r).forEach(d=>{let f=pe(d);[["da_1",d.dienstGroupA],["da_2",d.dienstGroupB]].forEach(([l,c])=>{let p=W(c,"AA"),u=`${d.key}_${l}`;if(!p||p===!1||f.has(p)){n||delete a.stationPlan[u];return}n&&a.stationPlan[u]||(a.stationPlan[u]=p)})})}function Oe(e){let[t,...n]=String(e||"").split("_");return{weekKey:t,rowId:n.join("_")}}function Vt(e,t){let{weekKey:n,rowId:o}=Oe(e);if(!n||!o||!t)return{week:null,rowId:o};let[r,s]=t.split("-").map(Number);return{week:M(r,s).find(f=>f.key===n)||null,rowId:o}}function Ht(e,t){return e?t==="da_1"?e.dienstGroupA:t==="da_2"?e.dienstGroupB:[]:[]}function qe(e,t,n){let{week:o,rowId:r}=Vt(t,e),s=Ht(o,r);return!s.length||!n?!1:(s.forEach(d=>{let f=de(d);f.AA=n}),!0)}function R(e,t){let n={staff:a.staff,plan:a.plan,wishes:a.wishes,stationPlan:a.stationPlan,holidaySeasonMode:a.holidaySeasonMode,atossHours:a.atossHours,undoSnapshots:a.undoSnapshots};try{return Object.prototype.hasOwnProperty.call(e,"staff")&&(a.staff=v(e.staff)||[]),Object.prototype.hasOwnProperty.call(e,"plan")&&(a.plan=v(e.plan)||{}),Object.prototype.hasOwnProperty.call(e,"wishes")&&(a.wishes=v(e.wishes)||{}),Object.prototype.hasOwnProperty.call(e,"stationPlan")&&(a.stationPlan=v(e.stationPlan)||{}),Object.prototype.hasOwnProperty.call(e,"holidaySeasonMode")&&(a.holidaySeasonMode=!!e.holidaySeasonMode),Object.prototype.hasOwnProperty.call(e,"atossHours")&&(a.atossHours=Q(e.atossHours)),Object.prototype.hasOwnProperty.call(e,"undoSnapshots")&&(a.undoSnapshots=nt(e.undoSnapshots)),t()}finally{a.staff=n.staff,a.plan=n.plan,a.wishes=n.wishes,a.stationPlan=n.stationPlan,a.holidaySeasonMode=n.holidaySeasonMode,a.atossHours=n.atossHours,a.undoSnapshots=n.undoSnapshots}}function le(e){document.querySelectorAll(".section-content").forEach(t=>t.classList.add("hidden")),document.getElementById(`section-${e}`)?.classList.remove("hidden"),document.querySelectorAll("header nav button").forEach(t=>{t.classList.remove("text-blue-300","border-b-2","border-blue-300"),t.dataset.section===e&&t.classList.add("text-blue-300","border-b-2","border-blue-300")}),e==="personal"&&ne(),e==="validation"&&T()}function ct(e){let t=document.getElementById("monthPicker")?.value,o=a.staff[e];o&&(document.getElementById("pName").value=o.name,document.getElementById("pId").value=o.id||"",document.getElementById("pRole").value=o.role||"AA",document.getElementById("pWork").value=o.work||100,document.getElementById("pRotant").checked=o.isRotant||!1,document.getElementById("pCanDoShifts").checked=o.canDoShifts!==!1)}function Ct(){document.getElementById("pName").value="",document.getElementById("pId").value="",document.getElementById("pRole").value="AA",document.getElementById("pWork").value="",document.getElementById("pRotant").checked=!1,document.getElementById("pCanDoShifts").checked=!0}function dt(){let e=document.getElementById("pName")?.value.trim()||"",t=document.getElementById("pId")?.value.trim()||"",n=document.getElementById("pRole")?.value||"AA",o=Number(document.getElementById("pWork")?.value),r=o>0?Math.min(o,100):100,s=document.getElementById("pRotant")?.checked||!1,d=document.getElementById("pCanDoShifts")?.checked!==!1;if(!e){window.showToast&&window.showToast("Bitte einen Namen eingeben.","warning");return}let f=document.getElementById("monthPicker")?.value||new Date().toISOString().slice(0,7),l=a.staff.findIndex(c=>c.name.toLowerCase()===e.toLowerCase());if(l!==-1){let c=a.staff[l];c.history||(c.history={}),c.history[f]={role:n,work:r,isRotant:s,canDoShifts:d},c.id=t,c.role=n,c.work=r,c.isRotant=s,c.canDoShifts=d,window.showToast&&window.showToast(`\xC4nderungen f\xFCr ${e} ab ${f} gespeichert.`,"success")}else{let c={};c[f]={role:n,work:r,isRotant:s,canDoShifts:d},a.staff.push({name:e,id:t,role:n,work:r,isRotant:s,canDoShifts:d,history:c}),window.showToast&&window.showToast(`${e} hinzugef\xFCgt.`,"success")}a.staff.sort((c,p)=>c.name.localeCompare(p.name)),K(),Ct()}function ut(e){let t=a.staff[e];t&&confirm(`Soll ${t.name} wirklich entfernt werden? Zugeordnete Dienste, Sperren und Stationsfelder werden ebenfalls geleert.`)&&(a.staff.splice(e,1),Object.keys(a.plan).forEach(n=>{["AA","VISITE","OA"].forEach(o=>{a.plan[n]?.[o]===t.name&&(a.plan[n][o]="")})}),Object.keys(a.wishes).forEach(n=>{a.wishes[n]=(a.wishes[n]||[]).filter(o=>o!==t.name),a.wishes[n].length||delete a.wishes[n]}),Object.keys(a.stationPlan).forEach(n=>{a.stationPlan[n]===t.name&&delete a.stationPlan[n]}),K())}function ne(){let e=document.getElementById("staffList");if(!e)return;let t=new Set(se().map(n=>n.id));e.innerHTML=a.staff.map((n,o)=>{let r=[n.role,`${E(n)}%`],s=C(n.id);s&&r.unshift(s);let d=t.has(s)?' <span class="text-red-600 font-bold">Atoss-ID doppelt</span>':"";return`<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1 hover:bg-slate-100 cursor-pointer transition" data-action="loadPerson" data-index="${o}"><span><span class="font-bold">${n.name}</span> <span class="text-slate-500">(${r.join(" | ")})</span>${d}</span><button data-action="removePerson" data-index="${o}" class="text-red-500 font-bold px-2 hover:bg-red-100 rounded">X</button></div>`}).join("")}function Ye(){let e=D(),t=document.getElementById("wishTableContainer");if(!e||!t)return;let[n,o]=e.split("-").map(Number),r=new Date(n,o,0).getDate(),s='<tr><th class="border p-1 bg-slate-100">Tag</th>';a.staff.forEach(f=>{s+=`<th class="border p-1 text-[8px] h-24 align-bottom" style="writing-mode: vertical-rl;">${f.name}</th>`}),s+="</tr>";let d="";for(let f=1;f<=r;f+=1){let l=`${n}-${String(o).padStart(2,"0")}-${String(f).padStart(2,"0")}`,c=`<tr><td class="p-1 border bg-slate-50 text-center font-bold text-[10px]">${f}</td>`;a.staff.forEach(p=>{let u=(a.wishes[l]||[]).includes(p.name);c+=`<td class="border text-center cursor-pointer ${u?"bg-purple-500 text-white":""}" data-action="toggleWish" data-date="${l}" data-name="${p.name}">${u?"X":""}</td>`}),d+=`${c}</tr>`}t.innerHTML=`<h2 class="text-xl font-bold mb-4 text-purple-700 uppercase">Wuensche / Sperren</h2><table class="w-full text-xs border-collapse">${s}${d}</table>`}function ft(e,t){a.wishes[e]||(a.wishes[e]=[]),a.wishes[e]=a.wishes[e].includes(t)?a.wishes[e].filter(n=>n!==t):[...a.wishes[e],t],ye()}function Ne(e){q(e).forEach(t=>{a.plan[t]={AA:"",VISITE:"",OA:""}}),L(e,{preserveExisting:!1})}function pt(){let e=D();e&&confirm("Moechten Sie den gesamten Plan fuer diesen Monat unwiderruflich loeschen?")&&(H(`Vor Monat leeren ${e}`),Ne(e),z())}function Rt(e){q(e).forEach(t=>delete a.wishes[t])}function mt(){let e=D();e&&confirm("Moechten Sie alle Wuensche und Sperren fuer diesen Monat loeschen?")&&(H(`Vor Wuensche leeren ${e}`),Rt(e),ye())}function ht(){let e=JSON.stringify({staff:a.staff,plan:a.plan,wishes:a.wishes,stationPlan:a.stationPlan,holidaySeasonMode:a.holidaySeasonMode,atossHours:a.atossHours}),t=document.createElement("a");t.href=URL.createObjectURL(new Blob([e],{type:"application/json"})),t.download="MediPlan_Backup.json",t.click();try{localStorage.setItem("mp_last_backup_date",new Date().toISOString())}catch{}}function gt(e){let t=e.target.files?.[0];if(!t)return;let n=new FileReader;n.onload=o=>{try{let r=JSON.parse(o.target.result),s=_(r);if(!s.ok)throw new Error(s.error);H(`Vor Backup-Import ${t.name}`),ie(s.normalized),N(),K().ok&&alert("Daten geladen!")}catch(r){alert(r?.message||"Backup konnte nicht gelesen werden.")}finally{e.target.value=""}},n.readAsText(t)}function yt(e,t){let n=D();if(!n)return!1;let o=re(n).filter(r=>(r.blocks||[]).includes(e));return o.length?(T(),le("validation"),!confirm(`${t}: ${o.length} blockierende Punkte gefunden. Trotzdem exportieren?`)):!1}function St(){let e=D();if(!e||yt("ics","ICS-Export"))return;let t=Object.keys(a.plan).filter(r=>r.startsWith(e)).sort();if(!t.length){alert("Keine Dienste im gewaehlten Monat gefunden.");return}let n=new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d{3}Z$/,"Z"),o=0;a.staff.forEach(r=>{let s=[];if(t.forEach(l=>{[["AA","24h Dienst"],["VISITE","Visite"],["OA","Hintergrund"]].forEach(([c,p])=>{if(!J(c,l)||a.plan[l]?.[c]!==r.name)return;let u=Ie(l,c),h=`${l}-${c}-${r.name}`.replace(/\s+/g,"-");s.push(["BEGIN:VEVENT",`UID:${h}@mediplan`,`DTSTAMP:${n}`,`SUMMARY:${it(p)}`,`DTSTART:${l.replace(/-/g,"")}T${u}`,`DTEND:${l.replace(/-/g,"")}T235900`,"END:VEVENT"].join(`\r
+`))})}),!s.length)return;let d=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//MediPlan Pro//Dienstplan//DE",...s,"END:VCALENDAR"],f=document.createElement("a");f.href=URL.createObjectURL(new Blob([d.join(`\r
+`)],{type:"text/calendar"})),f.download=`Dienst_${r.name}.ics`,f.click(),o+=1}),o||alert("Fuer den gewaehlten Monat gibt es keine exportierbaren Dienste.")}function Ue(e,t={}){return R(t,()=>{if(!e)return[];let n=[];return Object.keys(a.plan).sort().forEach(o=>{o.startsWith(e)&&["AA","VISITE","OA"].forEach(r=>{if(!J(r,o))return;let s=a.staff.find(l=>l.name===a.plan[o]?.[r]),d=C(s?.id);if(!d)return;let f=xe(o,r,a.holidaySeasonMode,a.atossHours);n.push(`${d};${o};${f}`)})}),n})}function bt(){let e=D();if(!e||yt("atoss","Atoss-Export"))return;let t=Ue(e);if(!t.length){alert("Fuer den gewaehlten Monat gibt es keine exportierbaren Atoss-Daten.");return}let n=["Personalnummer;Datum;Stunden",...t].join(`
+`),o=document.createElement("a");o.href=URL.createObjectURL(new Blob([n],{type:"text/csv"})),o.download="Atoss_Export.csv",o.click()}function At(e,t={}){return R(t,()=>(ue(e),{plan:v(a.plan),stationPlan:v(a.stationPlan)}))}function wt(e,t={}){return R(t,()=>(We(e),{stationPlan:v(a.stationPlan)}))}function ce(e){let t=document.createElement("div");return t.innerHTML=`
+        <input type="month" id="monthPicker">
+        <input type="checkbox" id="holidaySeasonMode">
+        <input type="number" id="atoss-AA-weekday">
+        <input type="number" id="atoss-AA-weekendHoliday">
+        <input type="number" id="atoss-VISITE-weekday">
+        <input type="number" id="atoss-VISITE-weekendHoliday">
+        <input type="number" id="atoss-OA-weekday">
+        <input type="number" id="atoss-OA-weekendHoliday">
+        <div id="displayMonth"></div>
+        <div id="printHeaderTitle"></div>
+        <div id="printHeaderStationTitle"></div>
+        <table><thead id="stationHeader"></thead><tbody id="stationBody"></tbody></table>
+        <table><tbody id="calendarBody"></tbody></table>
+        <div id="statsTableAA"></div>
+        <div id="statsTableOA"></div>
+        <div id="staffList"></div>
+        <div id="wishTableContainer"></div>
+        <div id="validationSummary"></div>
+        <div id="validationList"></div>
+        <div id="storageStatus"></div>
+        <div id="undoSnapshotInfo"></div>
+        <button id="undoSnapshotButton"></button>`,document.body.appendChild(t),t.querySelector("#monthPicker").value=e,t}function xt(e,t={}){return R(t,()=>{let n=ce(e);try{return I(),n.querySelector("#calendarBody")?.innerHTML||""}finally{n.remove()}})}function vt(e,t,n={}){return R(n,()=>{let o=ce(e);try{return I(),O(),t.forEach(({dateKey:r,role:s,value:d})=>{he(r,s,d)}),{plan:v(a.plan),stationPlan:v(a.stationPlan),calendarHtml:o.querySelector("#calendarBody")?.innerHTML||""}}finally{o.remove()}})}function kt(e,t,n={}){return R(n,()=>{let o=ce(e);try{return I(),O(),t.forEach(({key:r,value:s})=>{te(r,s)}),{plan:v(a.plan),stationPlan:v(a.stationPlan),calendarHtml:o.querySelector("#calendarBody")?.innerHTML||""}}finally{o.remove()}})}function Dt(e,t,n={}){return R(n,()=>{let o=ce(e);try{N(),Y(),I(),O(),ne();let r=X();if(t==="clearMonth")H(`Vor Monat leeren ${e}`),Ne(e),V(),I(),O();else if(t==="autoPlan")H(`Vor Autoplaner ${e}`),ue(e),V(),I(),O();else if(t==="backupImport"){let f=_(n.importPayload);if(!f.ok)throw new Error(f.error);H("Vor Backup-Import Test"),ie(f.normalized),N(),V(),I(),O(),ne()}else throw new Error(`Unbekannte Undo-Simulation: ${t}`);let s=X(),d=a.undoSnapshots.length;return ve({skipConfirm:!0,skipAlert:!0}),{before:r,afterAction:s,afterRestore:X(),snapshotCountAfterAction:d,snapshotCountAfterRestore:a.undoSnapshots.length}}finally{o.remove()}})}function Et(e={},t={}){return R(e,()=>{let n=ce(e.monthValue||Ee()),o=Number(t.failOnCall)>0?Number(t.failOnCall):1,r=t.errorName||"QuotaExceededError",s=t.errorMessage||"Quota exceeded",d={...t.initialStore||{}},f=0,l={store:{...d},getItem(c){return Object.prototype.hasOwnProperty.call(this.store,c)?this.store[c]:null},setItem(c,p){if(f+=1,f===o){let u=new Error(s);throw u.name=r,u.code=r==="QuotaExceededError"?22:0,u}this.store[c]=String(p)},removeItem(c){delete this.store[c]}};try{return N(),{result:V({storage:l,suppressAlert:!0}),store:{...l.store},storageStatus:{...a.storageStatus}}}finally{n.remove(),a.storageStatus={ok:!0,message:"Lokale Speicherung aktiv."},we()}})}function Lt(){try{let e=localStorage.getItem("mp_last_backup_date");if(!e){Ce("Bitte erstelle regelm\xE4\xDFig Backups (System > Backup)!","warning");return}let t=new Date(e),n=(new Date-t)/(1e3*60*60*24);n>7&&Ce(`Das letzte Backup ist ${Math.round(n)} Tage alt. Bitte erstelle ein neues!`,"warning")}catch{}}function _t(){let e=document.getElementById("monthPicker");e&&(e.value=Ee(),N(),Y(),ge(),le("plan"),setTimeout(Lt,1e3))}window.MediPlanTestApi={getEasterSunday:_e,getHolidayName:$e,getWeeksInMonth:M,getICSStartTime:Ie,getAtossHoursForDate:xe,getPersonValidationError:st,validateBackupPayload:_,getValidationIssues:re,buildAtossExportRows:Ue,persistAppStateToStorage:Re,runAutoPlanSimulation:At,runAutoStationPlanSimulation:wt,runCalendarRenderSimulation:xt,runPlanEditSimulation:vt,runStationPlanEditSimulation:kt,runUndoRestoreSimulation:Dt,runStorageFailureSimulation:Et};document.addEventListener("DOMContentLoaded",_t);function Nt(){document.addEventListener("click",e=>{let t=e.target.closest("[data-action]");if(!t)return;let n=t.dataset.action;n&&(n==="showSection"?le(t.dataset.section):n==="clearMonth"?pt():n==="runAutoPlaner"?je():n==="clearStationPlan"?clearStationPlan():n==="renderValidation"?T():n==="clearWishes"?mt():n==="savePerson"?dt():n==="backupExport"?ht():n==="exportAllICS"?St():n==="exportAtossCSV"?bt():n==="restoreLatestSnapshot"?ve():n==="printWindow"?window.print():n==="printStations"?(document.body.classList.add("print-only-stations"),window.print(),document.body.classList.remove("print-only-stations")):n==="loadPerson"?ct(Number(t.dataset.index)):n==="removePerson"?(e.stopPropagation(),ut(Number(t.dataset.index))):n==="toggleWish"&&ft(t.dataset.date,t.dataset.name))}),document.addEventListener("change",e=>{let t=e.target.closest("[data-action]");if(!t)return;let n=t.dataset.action;if(n)if(n==="saveStationPlan"){let o=t.hasAttribute("data-value")?t.dataset.value:t.value;te(t.dataset.cell,o)}else n==="savePlan"?he(t.dataset.date,t.dataset.role,t.value):n==="renderAll"?(I(),O()):n==="saveHolidaySeasonMode"?(Xe(),I(),O()):n==="saveAtossHours"?tt():n==="backupImport"&&gt(e)})}document.addEventListener("DOMContentLoaded",()=>{Nt()});window.handleDragStartStation=function(e,t,n){e.dataTransfer.setData("text/plain",JSON.stringify({doctorName:t,sourceCell:n})),e.dataTransfer.effectAllowed="move"};window.handleDropStation=function(e){e.preventDefault();let t=e.currentTarget;t.classList.remove("bg-blue-50");let n=t.dataset.cell,o=(t.dataset.allowed||"").split(",");try{let r=JSON.parse(e.dataTransfer.getData("text/plain")),{doctorName:s,sourceCell:d}=r;if(!s||n===d)return;d!=="unassigned"&&te(d,""),te(n,s)}catch(r){console.error("Drop failed",r)}};})();
+</script></body></html>
