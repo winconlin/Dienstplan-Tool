@@ -1,6 +1,6 @@
 
 import { showSection, removePerson, savePerson, toggleWish, loadPerson } from './management-ui.js';
-import { clearMonth, clearWishes } from './planning-actions.js';
+import { clearMonth, clearWishes, clearStationPlan } from './planning-actions.js';
 import { exportAllICS, backupExport, backupImport, exportAtossCSV } from './export.js';
 import { saveHolidaySeasonMode, saveAtossHours, createUndoSnapshot, restoreLatestSnapshot } from './storage.js';
 import { renderCalendar, savePlan } from './calendar-ui.js';
