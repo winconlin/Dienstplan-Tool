@@ -75,15 +75,15 @@ export function getValidationIssues(monthValue, source = {}) {
     const weeks = getWeeksInMonth(year, month);
     const duplicateAtossAssignments = getDuplicateAtossAssignments(dataStaff);
 
-    // duplicateAtossAssignments.forEach(({ id, names }) => {
-    //     issues.push({
-    //         severity: "error",
-    //         area: "Personal",
-    //         reference: `Atoss ${id}`,
-    //         message: `Die Atoss-ID ${id} ist mehrfach vergeben: ${names.join(", ")}.`,
-    //         blocks: ["atoss"]
-    //     });
-    // });
+    duplicateAtossAssignments.forEach(({ id, names }) => {
+        issues.push({
+            severity: "error",
+            area: "Personal",
+            reference: `Atoss ${id}`,
+            message: `Die Atoss-ID ${id} ist mehrfach vergeben: ${names.join(", ")}.`,
+            blocks: ["atoss"]
+        });
+    });
 
     getMonthDayKeys(monthValue).forEach((dateKey) => {
         const date = getDateFromKey(dateKey);
