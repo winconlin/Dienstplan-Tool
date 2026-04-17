@@ -16,7 +16,7 @@
             <button data-action="showSection" data-section="stations" class="hover:text-blue-300 transition">Stationen</button>
             <button data-action="showSection" data-section="stats" class="hover:text-blue-300 transition">Statistik</button>
             <button data-action="showSection" data-section="validation" class="hover:text-blue-300 transition">Validierung</button>
-            <button data-action="showSection" data-section="wishes" class="hover:text-blue-300 transition">Wuensche</button>
+            <button data-action="showSection" data-section="wishes" class="hover:text-blue-300 transition">Wünsche</button>
             <button data-action="showSection" data-section="personal" class="hover:text-blue-300 transition">System</button>
         </nav>
     </header>
@@ -61,15 +61,9 @@
                     <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Stationsbesetzung MED I</h2>
                     <div class="flex gap-2 no-print">
                         <button data-action="clearStationPlan" class="bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Stationen leeren</button>
-                        <button data-action="autoStationPlan" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded font-bold shadow-lg hover:scale-105 transition">Autoplaner</button>
                         <button data-action="printStations" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Drucken</button>
                         <button data-action="runAutoStationPlaner" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded font-bold shadow-lg hover:scale-105 transition">Autoplaner</button>
                     </div>
-                    <h2 id="printHeaderStationTitle" class="hidden print:block text-2xl font-bold mb-4">Stationsbesetzung</h2>
-                    <table class="w-full border-collapse text-[11px] print:text-[9px]">
-                        <thead id="stationHeader"></thead>
-                        <tbody id="stationBody"></tbody>
-                    </table>
                 </div>
                 <h2 id="printHeaderStationTitle" class="hidden print:block text-2xl font-bold mb-4">Stationsbesetzung</h2>
                 <div class="flex flex-col xl:flex-row gap-6">
@@ -119,7 +113,6 @@
                 <div class="bg-white p-6 rounded shadow border">
                     <div class="flex justify-between items-center border-b mb-4 pb-2">
                         <h3 class="font-bold text-slate-800 uppercase">Mitarbeiter & Matrix</h3>
-                        <button data-action="clearWishes" class="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600 transition">Wuensche leeren (Monat)</button>
                     </div>
                     <div class="grid grid-cols-4 gap-2 mb-2">
                         <input type="text" id="pName" placeholder="Name" class="border p-2 rounded text-sm">
@@ -184,7 +177,13 @@
         </section>
 
         <section id="section-wishes" class="section-content hidden no-print">
-            <div class="bg-white p-6 rounded shadow border overflow-x-auto" id="wishTableContainer"></div>
+            <div class="bg-white p-6 rounded shadow border">
+                <div class="flex justify-between items-center border-b mb-4 pb-4">
+                    <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Wünsche & Sperren</h2>
+                    <button data-action="clearWishes" class="bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Wünsche leeren (Monat)</button>
+                </div>
+                <div class="overflow-x-auto" id="wishTableContainer"></div>
+            </div>
         </section>
     </main>
 

@@ -60,7 +60,7 @@ export function renderStationPlan() {
             if (currentValue) assignedPerWeek[week.key].add(currentValue);
 
             const allowedRoles = [];
-            if (row.category === "Oberaerzte") allowedRoles.push("OA");
+            if (row.category === "Oberaerzte") allowedRoles.push("OA_STATION");
             else if (row.category === "EPU") allowedRoles.push("EPU");
             else if (row.category.includes("Urlaub") || row.category.includes("Zeitausgleich")) allowedRoles.push("ALL");
             else allowedRoles.push("AA");
@@ -99,7 +99,7 @@ export function renderStationPlan() {
             if (!assignedPerWeek[week.key].has(person.name)) {
                 const roles = [];
                 if (matchesRole(person, "AA")) roles.push("AA");
-                if (matchesRole(person, "OA")) roles.push("OA");
+                if (matchesRole(person, "OA_STATION")) roles.push("OA_STATION");
                 if (matchesRole(person, "EPU")) roles.push("EPU");
 
                 unassignedHtml += `<div class="px-2 py-1 bg-slate-200 text-[10px] rounded cursor-move hover:bg-slate-300 transition"
