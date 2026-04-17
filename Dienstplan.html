@@ -245,6 +245,7 @@
                     <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Stationsbesetzung MED I</h2>
                     <div class="flex gap-2 no-print">
                         <button data-action="clearStationPlan" class="bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Stationen leeren</button>
+                        <button data-action="autoStationPlan" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded font-bold shadow-lg hover:scale-105 transition">Autoplaner</button>
                         <button data-action="printStations" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Drucken</button>
                         <button data-action="runAutoStationPlaner" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded font-bold shadow-lg hover:scale-105 transition">Autoplaner</button>
                     </div>
@@ -386,7 +387,7 @@
         </tr>`;let f="",u=null,l=0,m={};c.forEach(s=>m[s.key]=new Set),M.forEach((s,g)=>{s.category!==u&&(u=s.category,l=M.filter(y=>y.category===u).length);let b=`<tr class="border-b border-slate-300 text-center align-middle ${g%2===0?"bg-white":"bg-slate-50"} hover:bg-slate-100 transition">`,E=M.findIndex(y=>y.category===u)===g,x=M.filter(y=>y.category===u).some(y=>y.name!==y.category);if(E&&(b+=`<td class="p-2 font-bold border-r border-slate-300" ${x?"":'colspan="2"'} rowspan="${l}">${s.category}</td>`),x){let y=s.name!==s.category?s.name:"";b+=`<td class="p-1 border-r border-slate-300 text-[10px] whitespace-nowrap">${y}</td>`}c.forEach(y=>{let S=`${y.key}_${s.id}`,A=a.stationPlan[S]||"";A&&m[y.key].add(A);let G=[];s.category==="Oberaerzte"?G.push("OA"):s.category==="EPU"?G.push("EPU"):s.category.includes("Urlaub")||s.category.includes("Zeitausgleich")?G.push("ALL"):G.push("AA"),b+=`
                 <td class="p-0 border-r border-slate-300 relative bg-white droppable-cell"
                     data-cell="${S}"
-                    data-allowed="${G.join(",")}"
+                    data-allowed="${te.join(",")}"
                     ondragover="event.preventDefault(); this.classList.add('bg-blue-50')"
                     ondragleave="this.classList.remove('bg-blue-50')"
                     ondrop="window.handleDropStation(event)">
@@ -428,8 +429,8 @@
             <strong>${i}</strong>
             <span>Warnungen</span>
         </div>
-        <div class="validation-card ${d?"validation-card-warning":"validation-card-ok"}">
-            <strong>${d}</strong>
+        <div class="validation-card ${u?"validation-card-warning":"validation-card-ok"}">
+            <strong>${u}</strong>
             <span>Export-relevante Punkte</span>
         </div>`,!o.length){n.innerHTML='<div class="validation-empty">Keine offenen Validierungsprobleme im gewaehlten Monat gefunden.</div>';return}let p={error:"validation-badge validation-badge-error",warning:"validation-badge validation-badge-warning",info:"validation-badge validation-badge-info"},c=o.map(f=>{let u=f.blocks?.length?`Blockiert: ${f.blocks.join(", ").toUpperCase()}`:"Nur Hinweis";return`
             <tr class="validation-row-${f.severity}">
