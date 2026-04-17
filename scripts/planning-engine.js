@@ -129,7 +129,7 @@ export function fillPlanMonth(monthValue) {
 export function autoPlan() {
     const monthValue = getSelectedMonthValue();
     if (!monthValue) return;
-    if (!confirm("Moechten Sie den Autoplaner wirklich ausfuehren? Bereits eingetragene Dienste bleiben erhalten, freie Felder werden anhand der Regeln ergaenzt.")) return;
+    if (!confirm("Moechten Sie den kombinierten Autoplaner ausfuehren? Bereits eingetragene Dienste und Stationsbesetzungen bleiben erhalten, freie Felder werden anhand der Regeln ergaenzt.")) return;
 
     showLoading();
     // Yield to let browser render the loading overlay
