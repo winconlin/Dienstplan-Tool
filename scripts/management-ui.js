@@ -161,7 +161,7 @@ export function renderWishMatrix() {
         body += `${row}</tr>`;
     }
 
-    container.innerHTML = `<h2 class="text-xl font-bold mb-4 text-purple-700 uppercase">Wuensche / Sperren</h2><table class="w-full text-xs border-collapse">${groupHead}${head}${body}</table>`;
+    container.innerHTML = `<table class="w-full text-xs border-collapse">${head}${body}</table>`;
 }
 
 export function toggleWish(dateKey, name) {

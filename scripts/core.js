@@ -69,7 +69,8 @@ export const stationLayout = [
 ];
 
 export function matchesRole(person, role) {
-    if (role === "OA") return person.role === "OA" || person.role === "OA-EPU" || person.role === "FOA" || person.role === "FOA-EPU";
+    if (role === "OA") return person.role === "OA";
+    if (role === "OA_STATION") return person.role === "OA" || person.role === "OA-EPU" || person.role === "FOA" || person.role === "FOA-EPU";
     if (role === "EPU") return person.role === "OA-EPU" || person.role === "FOA-EPU";
     return person.role === "AA" || person.role === "FOA" || person.role === "FOA-EPU";
 }
