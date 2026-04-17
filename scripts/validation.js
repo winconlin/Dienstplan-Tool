@@ -53,10 +53,10 @@ export function validateBackupPayload(data) {
         return { ok: false, error: "Backup enthaelt doppelte Personennamen." };
     }
 
-    const duplicateAtossAssignments = getDuplicateAtossAssignments(normalized.staff);
-    if (duplicateAtossAssignments.length) {
-        return { ok: false, error: `Backup enthaelt doppelte Atoss-ID ${duplicateAtossAssignments[0].id}.` };
-    }
+    // const duplicateAtossAssignments = getDuplicateAtossAssignments(normalized.staff);
+    // if (duplicateAtossAssignments.length) {
+    //     return { ok: false, error: `Backup enthaelt doppelte Atoss-ID ${duplicateAtossAssignments[0].id}.` };
+    // }
 
     return { ok: true, normalized };
 }

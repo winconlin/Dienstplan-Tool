@@ -114,7 +114,7 @@ export function fillPlanMonth(monthValue) {
 
             if (!appState.plan[dateKey].VISITE) {
                 const excludedNames = appState.plan[dateKey].AA ? [appState.plan[dateKey].AA] : [];
-                assignRoleIfEmpty(dateKey, "VISITE", getBest("AA", dateKey, excludedNames));
+                assignRoleIfEmpty(dateKey, "VISITE", getBest("VISITE", dateKey, excludedNames));
             }
         }
 

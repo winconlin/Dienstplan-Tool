@@ -98,17 +98,3 @@
 127.0.0.1 - - [14/Apr/2026 12:48:25] "GET /scripts/state.js HTTP/1.1" 200 -
 127.0.0.1 - - [14/Apr/2026 12:51:26] "GET /Dienstplan.html HTTP/1.1" 200 -
 127.0.0.1 - - [14/Apr/2026 12:52:17] "GET /Dienstplan.html HTTP/1.1" 200 -
-127.0.0.1 - - [14/Apr/2026 19:34:59] "GET /tests.html HTTP/1.1" 200 -
-127.0.0.1 - - [14/Apr/2026 19:34:59] "GET /scripts/planning-actions.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Apr/2026 19:34:59] "GET /scripts/planning-engine.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Apr/2026 19:34:59] "GET /scripts/core.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Apr/2026 19:34:59] "GET /scripts/ui-common.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Apr/2026 19:34:59] "GET /scripts/validation.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Apr/2026 19:34:59] "GET /scripts/storage.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Apr/2026 19:34:59] "GET /scripts/station-ui.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Apr/2026 19:34:59] "GET /scripts/test-helpers.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Apr/2026 19:34:59] "GET /scripts/calendar-ui.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Apr/2026 19:34:59] "GET /scripts/app-init.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Apr/2026 19:34:59] "GET /scripts/management-ui.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Apr/2026 19:34:59] "GET /scripts/export.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Apr/2026 19:34:59] "GET /scripts/state.js HTTP/1.1" 200 -

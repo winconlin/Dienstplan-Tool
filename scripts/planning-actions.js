@@ -44,14 +44,28 @@ export function clearStationPlanData(monthValue) {
     });
 }
 
+// Manual pre-planning remains authoritative; automatic planning only fills gaps around it.
+
+import { getWeeksInMonth } from './planning-engine.js';
+import { saveAndRenderStationView } from './ui-common.js';
+
 export function clearStationPlan() {
     const monthValue = getSelectedMonthValue();
     if (!monthValue) return;
-    if (!confirm("Moechten Sie den Stationsplan fuer diesen Monat leeren?")) return;
+    if (!confirm("Moechten Sie die Stationsbesetzung fuer diesen Monat unwiderruflich loeschen?")) return;
 
-    createUndoSnapshot(`Vor Stationsplan leeren ${monthValue}`);
-    clearStationPlanData(monthValue);
-    import('./ui-common.js').then((module) => module.saveAndRenderStationView());
+    createUndoSnapshot(`Vor Stationen leeren ${monthValue}`);
+
+    const [year, month] = monthValue.split("-").map(Number);
+    const weeks = getWeeksInMonth(year, month);
+    const weekKeys = weeks.map(w => w.key);
+
+    Object.keys(appState.stationPlan).forEach(key => {
+        const weekKey = key.split('_')[0];
+        if (weekKeys.includes(weekKey)) {
+            delete appState.stationPlan[key];
+        }
+    });
+
+    saveAndRenderStationView();
 }
-
-// Manual pre-planning remains authoritative; automatic planning only fills gaps around it.
