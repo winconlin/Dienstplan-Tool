@@ -36,6 +36,14 @@ export function clearWishes() {
     saveAndRenderCalendarView();
 }
 
+export function clearStationPlanData(monthValue) {
+    Object.keys(appState.stationPlan).forEach((key) => {
+        if (key.startsWith(monthValue)) {
+            delete appState.stationPlan[key];
+        }
+    });
+}
+
 // Manual pre-planning remains authoritative; automatic planning only fills gaps around it.
 
 import { getWeeksInMonth } from './planning-engine.js';

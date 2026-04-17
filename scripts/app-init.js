@@ -84,7 +84,7 @@ export function setupEventListeners() {
         if (action === "showSection") showSection(target.dataset.section);
         else if (action === "clearMonth") clearMonth();
         else if (action === "runAutoPlaner") autoPlan();
-        else if (action === "runAutoStationPlan") autoStationPlan();
+        else if (action === "runAutoStationPlaner") autoStationPlan();
         else if (action === "clearStationPlan") clearStationPlan();
         else if (action === "renderValidation") renderValidation();
         else if (action === "clearWishes") clearWishes();
@@ -105,9 +105,9 @@ export function setupEventListeners() {
             removePerson(Number(target.dataset.index));
         }
         else if (action === "toggleWish") toggleWish(target.dataset.date, target.dataset.name);
-        else if (action === "removeStationDoctor") {
-            e.stopPropagation();
-            saveStationPlan(target.dataset.cell, "");
+        else if (action === "saveStationPlan") {
+            const value = target.hasAttribute('data-value') ? target.dataset.value : target.value;
+            saveStationPlan(target.dataset.cell, value);
         }
     });
 
@@ -119,7 +119,8 @@ export function setupEventListeners() {
         if (!action) return;
 
         if (action === "saveStationPlan") {
-            saveStationPlan(target.dataset.cell, target.value);
+            const value = target.hasAttribute('data-value') ? target.dataset.value : target.value;
+            saveStationPlan(target.dataset.cell, value);
         }
         else if (action === "savePlan") savePlan(target.dataset.date, target.dataset.role, target.value);
         else if (action === "renderAll") {

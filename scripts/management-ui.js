@@ -1,5 +1,5 @@
 import { appState } from './state.js';
-import { getWorkPercent, normalizeAtossId, getPersonValidationError, getDuplicateAtossAssignments } from './core.js';
+import { getWorkPercent, normalizeAtossId, getPersonValidationError, getDuplicateAtossAssignments, matchesRole } from './core.js';
 import { renderValidation } from './validation.js';
 
 import { getSelectedMonthValue, saveAndRenderCalendarView, saveAndRenderAllDataViews, showToast } from './ui-common.js';
@@ -30,8 +30,10 @@ export function loadPerson(index) {
     document.getElementById("pId").value = person.id || "";
     document.getElementById("pRole").value = person.role || "AA";
     document.getElementById("pWork").value = person.work || 100;
-    document.getElementById("pRotant").checked = person.isRotant || false;
-    document.getElementById("pCanDoShifts").checked = person.canDoShifts !== false;
+    const pRotantEl = document.getElementById("pRotant");
+    if (pRotantEl) pRotantEl.checked = Boolean(person.isRotant);
+    const pCanDoShiftsEl = document.getElementById("pCanDoShifts");
+    if (pCanDoShiftsEl) pCanDoShiftsEl.checked = person.canDoShifts !== false;
 }
 
 function clearPersonForm() {
@@ -39,8 +41,10 @@ function clearPersonForm() {
     document.getElementById("pId").value = "";
     document.getElementById("pRole").value = "AA";
     document.getElementById("pWork").value = "";
-    document.getElementById("pRotant").checked = false;
-    document.getElementById("pCanDoShifts").checked = true;
+    const pRotantEl = document.getElementById("pRotant");
+    if (pRotantEl) pRotantEl.checked = false;
+    const pCanDoShiftsEl = document.getElementById("pCanDoShifts");
+    if (pCanDoShiftsEl) pCanDoShiftsEl.checked = true;
 }
 
 export function savePerson() {
@@ -49,8 +53,10 @@ export function savePerson() {
     const role = document.getElementById("pRole")?.value || "AA";
     const workInput = Number(document.getElementById("pWork")?.value);
     const work = workInput > 0 ? Math.min(workInput, 100) : 100;
-    const isRotant = document.getElementById("pRotant")?.checked || false;
-    const canDoShifts = document.getElementById("pCanDoShifts")?.checked !== false;
+    const pRotantEl = document.getElementById("pRotant");
+    const isRotant = pRotantEl ? pRotantEl.checked : false;
+    const pCanDoShiftsEl = document.getElementById("pCanDoShifts");
+    const canDoShifts = pCanDoShiftsEl ? pCanDoShiftsEl.checked : true;
 
     if (!name) {
         showToast("Bitte einen Namen eingeben.", "warning");
@@ -133,23 +139,14 @@ export function renderWishMatrix() {
     const [year, month] = monthValue.split("-").map(Number);
     const daysInMonth = new Date(year, month, 0).getDate();
 
-    const assistents = appState.staff.filter(p => p.role === "AA");
-    const oberaerzte = appState.staff.filter(p => p.role !== "AA"); // OA, FOA, EPU etc.
-
-    const allStaff = [...assistents, ...oberaerzte];
-
-    let groupHead = '<tr><th class="border border-b-0 p-1 bg-slate-100"></th>';
-    if (assistents.length > 0) {
-        groupHead += `<th colspan="${assistents.length}" class="border border-b-0 p-1 text-center font-bold bg-blue-100 text-blue-800">Assistenten</th>`;
-    }
-    if (oberaerzte.length > 0) {
-        groupHead += `<th colspan="${oberaerzte.length}" class="border border-b-0 p-1 text-center font-bold bg-purple-100 text-purple-800">Oberärzte / FOA / EPU</th>`;
-    }
-    groupHead += '</tr>';
+    // Group staff by roles: Assistants vs Seniors
+    const assistants = appState.staff.filter((person) => !matchesRole(person, "OA"));
+    const seniors = appState.staff.filter((person) => matchesRole(person, "OA"));
+    const groupedStaff = [...assistants, ...seniors];
 
     let head = '<tr><th class="border p-1 bg-slate-100">Tag</th>';
-    allStaff.forEach((person) => {
-        head += `<th class="border p-1 text-[8px] h-24 align-bottom whitespace-nowrap" style="writing-mode: vertical-rl;">${person.name}</th>`;
+    groupedStaff.forEach((person) => {
+        head += `<th class="border p-1 text-[8px] h-24 align-bottom" style="writing-mode: vertical-rl;">${person.name}</th>`;
     });
     head += "</tr>";
 
@@ -157,9 +154,9 @@ export function renderWishMatrix() {
     for (let day = 1; day <= daysInMonth; day += 1) {
         const dateKey = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
         let row = `<tr><td class="p-1 border bg-slate-50 text-center font-bold text-[10px]">${day}</td>`;
-        allStaff.forEach((person) => {
+        groupedStaff.forEach((person) => {
             const isSet = (appState.wishes[dateKey] || []).includes(person.name);
-            row += `<td class="border text-center cursor-pointer hover:bg-slate-200 transition ${isSet ? "bg-purple-500 text-white hover:bg-purple-600" : ""}" data-action="toggleWish" data-date="${dateKey}" data-name="${person.name}">${isSet ? "X" : ""}</td>`;
+            row += `<td class="border text-center cursor-pointer ${isSet ? "bg-purple-500 text-white" : ""}" data-action="toggleWish" data-date="${dateKey}" data-name="${person.name}">${isSet ? "X" : ""}</td>`;
         });
         body += `${row}</tr>`;
     }

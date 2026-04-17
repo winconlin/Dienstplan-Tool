@@ -135,14 +135,10 @@ export function autoPlan() {
     // Yield to let browser render the loading overlay
     setTimeout(() => {
         createUndoSnapshot(`Vor Autoplaner ${monthValue}`);
-
-        // As requested by the user, the main Autoplaner button should also fill the Station plan
-        fillStationPlanMonth(monthValue);
         fillPlanMonth(monthValue);
-
         const saveResult = saveAndRenderPlanningViews();
         hideLoading();
-        if (saveResult.ok) alert("Stations- und Dienstplanung ergaenzt. Bestehende Eingaben wurden beibehalten.");
+        if (saveResult.ok) alert("Planung ergaenzt. Bestehende Eingaben wurden beibehalten.");
     }, 50);
 }
 

@@ -7,18 +7,9 @@ async def main():
         page = await browser.new_page()
         await page.goto("http://localhost:8000/tests.html")
         await page.wait_for_selector(".summary", timeout=10000)
-
-        # Output text result
-        text = await page.locator(".summary").inner_text()
-        print(f"Test Results: {text}")
-
-        # Check if tests failed
-        failed = await page.locator(".fail").count()
-        if failed > 0:
-            print("Tests FAILED")
-        else:
-            print("Tests PASSED")
-
+        html = await page.content()
+        with open("rendered_tests.html", "w") as f:
+            f.write(html)
         await browser.close()
 
 asyncio.run(main())
