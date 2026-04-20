@@ -7,16 +7,19 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans h-screen flex flex-col">
+<body class="bg-slate-100 text-slate-800 font-sans h-screen flex flex-col transition-colors duration-200 dark:bg-slate-800 dark:text-slate-200">
 
     <header class="bg-slate-900 text-white shadow-md p-4 flex justify-between items-center no-print">
-        <h1 class="text-2xl font-black italic tracking-wider text-blue-400">Medi<span class="text-white">Plan</span> <span class="text-sm font-normal text-slate-400">Klinik</span></h1>
+        <h1 class="text-2xl font-black italic tracking-wider text-blue-400 flex items-center gap-2">
+            Medi<span class="text-white">Plan</span> <span class="text-sm font-normal text-slate-400">Klinik</span>
+            <button id="darkModeToggle" class="ml-4 text-xs bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded transition">🌙</button>
+        </h1>
         <nav class="flex gap-4 text-sm font-bold flex-wrap justify-end">
             <button data-action="showSection" data-section="plan" class="hover:text-blue-300 border-b-2 border-transparent transition text-blue-300 border-blue-300">Planung</button>
             <button data-action="showSection" data-section="stations" class="hover:text-blue-300 transition">Stationen</button>
             <button data-action="showSection" data-section="stats" class="hover:text-blue-300 transition">Statistik</button>
             <button data-action="showSection" data-section="validation" class="hover:text-blue-300 transition">Validierung</button>
-            <button data-action="showSection" data-section="wishes" class="hover:text-blue-300 transition">Wuensche</button>
+            <button data-action="showSection" data-section="wishes" class="hover:text-blue-300 transition">Wünsche</button>
             <button data-action="showSection" data-section="personal" class="hover:text-blue-300 transition">System</button>
         </nav>
     </header>
@@ -61,15 +64,9 @@
                     <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Stationsbesetzung MED I</h2>
                     <div class="flex gap-2 no-print">
                         <button data-action="clearStationPlan" class="bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Stationen leeren</button>
-                        <button data-action="autoStationPlan" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded font-bold shadow-lg hover:scale-105 transition">Autoplaner</button>
                         <button data-action="printStations" class="bg-slate-800 text-white px-4 py-2 rounded font-bold shadow hover:bg-slate-700 transition">Drucken</button>
                         <button data-action="runAutoStationPlaner" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded font-bold shadow-lg hover:scale-105 transition">Autoplaner</button>
                     </div>
-                    <h2 id="printHeaderStationTitle" class="hidden print:block text-2xl font-bold mb-4">Stationsbesetzung</h2>
-                    <table class="w-full border-collapse text-[11px] print:text-[9px]">
-                        <thead id="stationHeader"></thead>
-                        <tbody id="stationBody"></tbody>
-                    </table>
                 </div>
                 <h2 id="printHeaderStationTitle" class="hidden print:block text-2xl font-bold mb-4">Stationsbesetzung</h2>
                 <div class="flex flex-col xl:flex-row gap-6">
@@ -115,11 +112,10 @@
         </section>
 
         <section id="section-personal" class="section-content hidden no-print">
-            <div class="grid grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <div class="bg-white p-6 rounded shadow border">
                     <div class="flex justify-between items-center border-b mb-4 pb-2">
                         <h3 class="font-bold text-slate-800 uppercase">Mitarbeiter & Matrix</h3>
-                        <button data-action="clearWishes" class="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600 transition">Wuensche leeren (Monat)</button>
                     </div>
                     <div class="grid grid-cols-4 gap-2 mb-2">
                         <input type="text" id="pName" placeholder="Name" class="border p-2 rounded text-sm">
@@ -180,11 +176,46 @@
                         <button data-action="exportAtossCSV" class="bg-slate-800 text-white py-2 rounded font-bold">Atoss CSV</button>
                     </div>
                 </div>
+
+                <div class="bg-white p-6 rounded shadow border xl:col-span-2">
+                    <div class="flex justify-between items-center border-b mb-4 pb-2">
+                        <h3 class="font-bold text-slate-800 uppercase">Stations-Layout Editor</h3>
+                        <button data-action="resetStationLayout" class="bg-slate-200 text-slate-700 px-3 py-1 rounded text-xs font-bold hover:bg-slate-300 transition">Auf Standard zurücksetzen</button>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="flex-1">
+                            <div class="grid grid-cols-3 gap-2 mb-2 items-end">
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase">ID (intern)</label>
+                                    <input type="text" id="sId" placeholder="z.B. s71_1" class="border p-2 rounded text-sm w-full">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase">Anzeigename</label>
+                                    <input type="text" id="sName" placeholder="Zimmer 1-4" class="border p-2 rounded text-sm w-full">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase">Kategorie / Gruppe</label>
+                                    <input type="text" id="sCategory" placeholder="Station 7 - 1" class="border p-2 rounded text-sm w-full">
+                                </div>
+                            </div>
+                            <button data-action="saveStationNode" class="w-full bg-blue-600 text-white py-2 rounded font-bold shadow hover:bg-blue-700 transition">Station hinzufügen / ändern</button>
+                        </div>
+                        <div class="flex-1 border bg-slate-50 rounded p-2 overflow-y-auto max-h-64" id="stationLayoutList">
+                            <!-- JS wird hier die Liste aufbauen -->
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
         <section id="section-wishes" class="section-content hidden no-print">
-            <div class="bg-white p-6 rounded shadow border overflow-x-auto" id="wishTableContainer"></div>
+            <div class="bg-white p-6 rounded shadow border">
+                <div class="flex justify-between items-center border-b mb-4 pb-4">
+                    <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Wünsche & Sperren</h2>
+                    <button data-action="clearWishes" class="bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Wünsche leeren (Monat)</button>
+                </div>
+                <div class="overflow-x-auto" id="wishTableContainer"></div>
+            </div>
         </section>
     </main>
 

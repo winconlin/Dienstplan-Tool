@@ -1,5 +1,5 @@
 
-import { showSection, removePerson, savePerson, toggleWish, loadPerson } from './management-ui.js';
+import { showSection, removePerson, savePerson, toggleWish, loadPerson, saveStationNode, loadStationNode, moveStationNodeUp, moveStationNodeDown, deleteStationNode, resetStationLayout } from './management-ui.js';
 import { clearMonth, clearWishes, clearStationPlan } from './planning-actions.js';
 import { exportAllICS, backupExport, backupImport, exportAtossCSV } from './export.js';
 import { saveHolidaySeasonMode, saveAtossHours, createUndoSnapshot, restoreLatestSnapshot } from './storage.js';
@@ -135,11 +135,47 @@ export function setupEventListeners() {
         } else if (action === "backupImport") {
             backupImport(e);
         }
+        else if (action === "saveStationNode") saveStationNode();
+        else if (action === "loadStationNode") loadStationNode(Number(target.dataset.index));
+        else if (action === "moveStationNodeUp") moveStationNodeUp(Number(target.dataset.index));
+        else if (action === "moveStationNodeDown") moveStationNodeDown(Number(target.dataset.index));
+        else if (action === "deleteStationNode") deleteStationNode(Number(target.dataset.index));
+        else if (action === "resetStationLayout") resetStationLayout();
     });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     setupEventListeners();
+
+    // Auto-Save Snapshot every 15 minutes to prevent data loss
+    setInterval(() => {
+        const d = new Date();
+        createUndoSnapshot(`Auto-Save ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`);
+    }, 15 * 60 * 1000);
+
+    // Auto-Save on tab close
+    window.addEventListener("beforeunload", () => {
+        createUndoSnapshot(`Vor Beenden`);
+    });
+
+    // Dark mode toggle setup
+    const toggleBtn = document.getElementById("darkModeToggle");
+    if (toggleBtn) {
+        if (localStorage.getItem("theme") === "dark") {
+            document.documentElement.classList.add("dark");
+            toggleBtn.textContent = "☀️";
+        }
+        toggleBtn.addEventListener("click", () => {
+            document.documentElement.classList.toggle("dark");
+            if (document.documentElement.classList.contains("dark")) {
+                localStorage.setItem("theme", "dark");
+                toggleBtn.textContent = "☀️";
+            } else {
+                localStorage.setItem("theme", "light");
+                toggleBtn.textContent = "🌙";
+            }
+        });
+    }
 });
 
 

@@ -19,6 +19,12 @@
         table-layout: fixed !important;
         font-size: 7.5pt !important;
         border-collapse: collapse;
+        page-break-inside: avoid;
+    }
+
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
     }
 
     th,

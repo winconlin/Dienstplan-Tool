@@ -21,7 +21,7 @@ async function build() {
     const finalCss = tailwindCssContent + '\n' + customCssContent;
 
     console.log('Generating inline HTML...');
-    const htmlContent = fs.readFileSync('index.html', 'utf8');
+    const htmlContent = fs.readFileSync('template.html', 'utf8');
     const dom = new JSDOM(htmlContent);
     const document = dom.window.document;
 

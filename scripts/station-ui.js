@@ -60,7 +60,7 @@ export function renderStationPlan() {
             if (currentValue) assignedPerWeek[week.key].add(currentValue);
 
             const allowedRoles = [];
-            if (row.category === "Oberaerzte") allowedRoles.push("OA");
+            if (row.category === "Oberaerzte") allowedRoles.push("OA_STATION");
             else if (row.category === "EPU") allowedRoles.push("EPU");
             else if (row.category.includes("Urlaub") || row.category.includes("Zeitausgleich")) allowedRoles.push("ALL");
             else allowedRoles.push("AA");
@@ -75,8 +75,8 @@ export function renderStationPlan() {
                     ${currentValue ?
                         `<div class="w-full p-2 text-[11px] font-bold text-center cursor-move draggable-doctor"
                               draggable="true"
-                              ondragstart="window.handleDragStartStation(event, '${currentValue}', '${cellKey}')">
-                            ${currentValue}
+                              ondragstart="window.handleDragStartStation(event, '${String(currentValue).replace(/'/g, '&#39;').replace(/"/g, '&quot;')}', '${cellKey}')">
+                            ${String(currentValue).replace(/'/g, '&#39;').replace(/"/g, '&quot;')}
                             <span class="absolute top-0 right-1 text-[8px] text-red-500 cursor-pointer" data-action="saveStationPlan" data-cell="${cellKey}" data-value="">x</span>
                         </div>`
                         : '<div class="w-full p-2 h-full min-h-[30px]"></div>'}
@@ -95,18 +95,21 @@ export function renderStationPlan() {
             <h4 class="font-bold text-[10px] border-b pb-1 mb-1">KW ${week.kw}</h4>
             <div class="flex flex-wrap gap-1">`;
 
+        // Escape specific string quotes for HTML insertion
+        const escapeQuote = (str) => String(str).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+
         appState.staff.forEach(person => {
             if (!assignedPerWeek[week.key].has(person.name)) {
                 const roles = [];
                 if (matchesRole(person, "AA")) roles.push("AA");
-                if (matchesRole(person, "OA")) roles.push("OA");
+                if (matchesRole(person, "OA_STATION")) roles.push("OA_STATION");
                 if (matchesRole(person, "EPU")) roles.push("EPU");
 
                 unassignedHtml += `<div class="px-2 py-1 bg-slate-200 text-[10px] rounded cursor-move hover:bg-slate-300 transition"
                     draggable="true"
                     data-role="${roles.join(",")}"
-                    ondragstart="window.handleDragStartStation(event, '${person.name}', 'unassigned')">
-                    ${person.name}
+                    ondragstart="window.handleDragStartStation(event, '${escapeQuote(person.name)}', 'unassigned')">
+                    ${escapeQuote(person.name)}
                 </div>`;
             }
         });
