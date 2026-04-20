@@ -194,7 +194,7 @@ export function fillStationPlanMonth(monthValue) {
 
             let doctor = null;
             if (row.id.startsWith("epu_")) doctor = getAvailableDoctor((person) => matchesRole(person, "EPU"));
-            else if (row.id.startsWith("oa_")) doctor = getAvailableDoctor((person) => matchesRole(person, "OA"));
+            else if (row.id.startsWith("oa_")) doctor = getAvailableDoctor((person) => matchesRole(person, "OA_STATION"));
             else if (row.category.includes("Station") || row.id === "cpu" || row.id === "tk") {
                 doctor = getAvailableDoctor((person) => matchesRole(person, "AA"));
             }
