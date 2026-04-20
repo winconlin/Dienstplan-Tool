@@ -17,9 +17,13 @@ export function initializeState(readStorageFn) {
     appState.plan = readStorageFn("mp_plan", {});
     appState.wishes = readStorageFn("mp_wishes", {});
     appState.stationPlan = readStorageFn("mp_station", {});
+    appState.stationLayout = readStorageFn("mp_station_layout", null);
     appState.holidaySeasonMode = readStorageFn("mp_holiday_mode", false);
     appState.atossHours = readStorageFn("mp_atoss_hours", appState.atossHours);
     appState.undoSnapshots = readStorageFn("mp_undo_snapshots", []);
+    if (appState.stationLayout && Array.isArray(appState.stationLayout)) {
+        updateStationLayout(appState.stationLayout);
+    }
 }
 
 // Shared domain constants and pure helper functions.
@@ -39,7 +43,7 @@ export const roleLabels = {
 export const planRoles = ["AA", "VISITE", "OA"];
 export const autoAdjacentDayBlockRoles = ["AA", "VISITE"];
 
-export const stationLayout = [
+export const defaultStationLayout = [
     { id: "s71_1", name: "Zimmer 1-4", category: "Station 7 - 1" },
     { id: "s71_2", name: "Zimmer 5-8", category: "Station 7 - 1" },
     { id: "s71_3", name: "Zimmer 13-18", category: "Station 7 - 1" },
@@ -67,6 +71,12 @@ export const stationLayout = [
     { id: "u5", name: "Urlaub / Zeitausgleich", category: "Urlaub / Zeitausgleich" },
     { id: "u6", name: "Urlaub / Zeitausgleich", category: "Urlaub / Zeitausgleich" }
 ];
+
+export let stationLayout = [...defaultStationLayout];
+
+export function updateStationLayout(newLayout) {
+    stationLayout = newLayout;
+}
 
 export function matchesRole(person, role) {
     if (role === "OA") return person.role === "OA";

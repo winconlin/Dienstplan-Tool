@@ -17,7 +17,10 @@ export function showSection(id) {
         }
     });
 
-    if (id === "personal") renderStaff();
+    if (id === "personal") {
+        renderStaff();
+        renderStationLayoutEditor();
+    }
     if (id === "validation") renderValidation();
 }
 
@@ -127,7 +130,11 @@ export function renderStaff() {
             ? ' <span class="text-red-600 font-bold">Atoss-ID doppelt</span>'
             : "";
 
-        return `<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1 hover:bg-slate-100 cursor-pointer transition" data-action="loadPerson" data-index="${index}"><span><span class="font-bold">${person.name}</span> <span class="text-slate-500">(${details.join(" | ")})</span>${duplicateBadge}</span><button data-action="removePerson" data-index="${index}" class="text-red-500 font-bold px-2 hover:bg-red-100 rounded">X</button></div>`;
+        // Escape name to prevent XSS
+        const escapeHtml = (text) => document.createElement('div').appendChild(document.createTextNode(text)).parentNode.innerHTML;
+        const safeName = escapeHtml(person.name);
+
+        return `<div class="bg-slate-50 p-1 border rounded flex justify-between text-[10px] items-center mb-1 hover:bg-slate-100 cursor-pointer transition" data-action="loadPerson" data-index="${index}"><span><span class="font-bold">${safeName}</span> <span class="text-slate-500">(${details.join(" | ")})</span>${duplicateBadge}</span><button data-action="removePerson" data-index="${index}" class="text-red-500 font-bold px-2 hover:bg-red-100 rounded">X</button></div>`;
     }).join("");
 }
 
@@ -170,4 +177,109 @@ export function toggleWish(dateKey, name) {
         ? appState.wishes[dateKey].filter((item) => item !== name)
         : [...appState.wishes[dateKey], name];
     saveAndRenderCalendarView();
+}
+
+import { stationLayout, defaultStationLayout, updateStationLayout } from './core.js';
+import { saveAndRenderStationView } from './ui-common.js';
+
+export function renderStationLayoutEditor() {
+    const listEl = document.getElementById("stationLayoutList");
+    if (!listEl) return;
+
+    let html = "";
+    const escapeHtml = (text) => document.createElement('div').appendChild(document.createTextNode(text)).parentNode.innerHTML;
+
+    stationLayout.forEach((node, index) => {
+        html += `
+        <div class="flex justify-between items-center bg-white p-2 mb-1 border rounded shadow-sm hover:shadow transition">
+            <div class="flex-1 cursor-pointer" data-action="loadStationNode" data-index="${index}">
+                <span class="font-bold text-xs text-slate-800">${escapeHtml(node.name)}</span>
+                <span class="text-[10px] text-slate-500 ml-2">(${escapeHtml(node.category)}) [${escapeHtml(node.id)}]</span>
+            </div>
+            <div class="flex gap-1">
+                <button data-action="moveStationNodeUp" data-index="${index}" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 rounded text-xs" ${index === 0 ? "disabled" : ""}>↑</button>
+                <button data-action="moveStationNodeDown" data-index="${index}" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 rounded text-xs" ${index === stationLayout.length - 1 ? "disabled" : ""}>↓</button>
+                <button data-action="deleteStationNode" data-index="${index}" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-600 rounded text-xs">X</button>
+            </div>
+        </div>`;
+    });
+
+    listEl.innerHTML = html;
+}
+
+export function loadStationNode(index) {
+    const node = stationLayout[index];
+    if (!node) return;
+
+    document.getElementById("sId").value = node.id;
+    document.getElementById("sName").value = node.name;
+    document.getElementById("sCategory").value = node.category;
+}
+
+export function saveStationNode() {
+    const id = document.getElementById("sId").value.trim();
+    const name = document.getElementById("sName").value.trim();
+    const category = document.getElementById("sCategory").value.trim();
+
+    if (!id || !name || !category) {
+        showToast("Bitte ID, Name und Kategorie angeben.", "error");
+        return;
+    }
+
+    const existingIndex = stationLayout.findIndex(n => n.id === id);
+    if (existingIndex >= 0) {
+        stationLayout[existingIndex] = { id, name, category };
+        showToast("Station aktualisiert.");
+    } else {
+        stationLayout.push({ id, name, category });
+        showToast("Station hinzugefügt.");
+    }
+
+    document.getElementById("sId").value = "";
+    document.getElementById("sName").value = "";
+    document.getElementById("sCategory").value = "";
+
+    appState.stationLayout = stationLayout;
+    saveAndRenderAllDataViews();
+    renderStationLayoutEditor();
+}
+
+export function moveStationNodeUp(index) {
+    if (index <= 0) return;
+    const temp = stationLayout[index - 1];
+    stationLayout[index - 1] = stationLayout[index];
+    stationLayout[index] = temp;
+
+    appState.stationLayout = stationLayout;
+    saveAndRenderAllDataViews();
+    renderStationLayoutEditor();
+}
+
+export function moveStationNodeDown(index) {
+    if (index >= stationLayout.length - 1) return;
+    const temp = stationLayout[index + 1];
+    stationLayout[index + 1] = stationLayout[index];
+    stationLayout[index] = temp;
+
+    appState.stationLayout = stationLayout;
+    saveAndRenderAllDataViews();
+    renderStationLayoutEditor();
+}
+
+export function deleteStationNode(index) {
+    if (!confirm(`Soll der Knoten '${stationLayout[index].name}' wirklich gelöscht werden?`)) return;
+
+    stationLayout.splice(index, 1);
+    appState.stationLayout = stationLayout;
+    saveAndRenderAllDataViews();
+    renderStationLayoutEditor();
+}
+
+export function resetStationLayout() {
+    if (!confirm("Soll das Layout wirklich auf den Standard zurückgesetzt werden? Alle eigenen Anpassungen gehen verloren.")) return;
+
+    updateStationLayout([...defaultStationLayout]);
+    appState.stationLayout = stationLayout;
+    saveAndRenderAllDataViews();
+    renderStationLayoutEditor();
 }

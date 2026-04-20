@@ -1,6 +1,6 @@
 import { appState } from './state.js';
 import { matchesRole, isHoliday, isRoleActiveOnDateKey, shiftDateKey, createPlanEntry, hasVacationDutyConflict, syncDienstRowsFromPlan } from './core.js';
-import { renderValidation } from './validation.js';
+import { renderValidation, getValidationIssues } from './validation.js';
 
 import { getSelectedMonthValue, saveAndRenderPlanningViews } from './ui-common.js';
 import { getWeeksInMonth } from './planning-engine.js';
@@ -31,6 +31,8 @@ export function renderCalendar() {
     monthTitleEl.innerText = monthLabel;
     printTitleEl.innerText = `Dienstplan - ${monthLabel}`;
 
+    const validationIssues = getValidationIssues(monthValue);
+
     let html = "";
     for (let day = 1; day <= daysInMonth; day += 1) {
         const date = new Date(year, month - 1, day);
@@ -42,19 +44,28 @@ export function renderCalendar() {
         const checkCellClass = (role) => {
             const value = appState.plan[dateKey]?.[role] || "";
             if (!value) return "";
+
+            const hasIssue = validationIssues.some(issue => issue.reference === `${dateKey} ${role}` || issue.message.includes(`${dateKey} hat ${value}`));
+            if (hasIssue) return "conflict-red border-2 border-red-500";
+
             if (hasVacationDutyConflict(value, dateKey, weeks)) return "conflict-red";
             if ((appState.wishes[dateKey] || []).includes(value)) return "wish-conflict";
-            if (appState.plan[yesterdayKey] && Object.values(appState.plan[yesterdayKey]).includes(value)) return "conflict-red";
+            if (appState.plan[yesterdayKey] && Object.values(appState.plan[yesterdayKey]).includes(value)) return "conflict-red border-2 border-red-500";
             return "";
         };
 
+        const checkRowIssue = () => {
+             const issue = validationIssues.find(issue => issue.reference.startsWith(dateKey) && issue.severity === "warning");
+             return issue ? `title="${issue.message}"` : "";
+        };
+
         html += `
-            <tr class="${isSpecialDay ? "holiday-bg" : ""} border-b text-xs">
+            <tr class="${isSpecialDay ? "holiday-bg" : ""} border-b text-xs hover:bg-slate-50" ${checkRowIssue()}>
                 <td class="p-1 text-center font-bold text-slate-500">${date.toLocaleDateString("de-DE", { weekday: "short" })}</td>
                 <td class="p-1 text-center font-bold border-l border-r">${day}.${holidayName ? `<br><span class="text-[7px] text-red-600 font-normal leading-tight">${holidayName}</span>` : ""}</td>
-                <td class="p-0 ${checkCellClass("AA")}">${createSelect(dateKey, "AA")}</td>
-                <td class="p-0 ${checkCellClass("VISITE")}">${createSelect(dateKey, "VISITE")}</td>
-                <td class="p-0 ${checkCellClass("OA")}">${createSelect(dateKey, "OA")}</td>
+                <td class="p-0 relative ${checkCellClass("AA")}">${createSelect(dateKey, "AA")}</td>
+                <td class="p-0 relative ${checkCellClass("VISITE")}">${createSelect(dateKey, "VISITE")}</td>
+                <td class="p-0 relative ${checkCellClass("OA")}">${createSelect(dateKey, "OA")}</td>
             </tr>`;
     }
 

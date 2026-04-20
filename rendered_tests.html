@@ -747,7 +747,7 @@
                             holidaySeasonMode: false
                         });
 
-                        assertTrue(/<td class="p-0 conflict-red"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(html), "AA-Zelle rot markiert");
+                        assertTrue(/<td class="p-0 relative conflict-red"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(html) || /<td class="p-0 relative conflict-red border-2 border-red-500"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(html), "AA-Zelle rot markiert");
                     }
                 },
                 {
@@ -767,7 +767,7 @@
                             holidaySeasonMode: false
                         });
 
-                        assertTrue(/<td class="p-0 conflict-red"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(html), "AA-Zelle am Monatsanfang rot markiert");
+                        assertTrue(/<td class="p-0 relative conflict-red"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(html) || /<td class="p-0 relative conflict-red border-2 border-red-500"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(html), "AA-Zelle am Monatsanfang rot markiert");
                     }
                 },
                 {
@@ -789,7 +789,7 @@
                             holidaySeasonMode: false
                         });
 
-                        assertTrue(/<td class="p-0 conflict-red"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(result.calendarHtml), "AA-Zelle wird nach Stationsaenderung rot markiert");
+                        assertTrue(/<td class="p-0 relative conflict-red"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(html) || /<td class="p-0 relative conflict-red border-2 border-red-500"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(html), "AA-Zelle wird nach Stationsaenderung rot markiert");
                     }
                 }
             ];

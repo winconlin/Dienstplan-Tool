@@ -26,6 +26,12 @@
         table-layout: fixed !important;
         font-size: 7.5pt !important;
         border-collapse: collapse;
+        page-break-inside: avoid;
+    }
+
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
     }
 
     th,
@@ -191,10 +197,13 @@
     font-size: 0.8rem;
 }
 </style></head>
-<body class="bg-slate-100 text-slate-800 font-sans h-screen flex flex-col">
+<body class="bg-slate-100 text-slate-800 font-sans h-screen flex flex-col transition-colors duration-200 dark:bg-slate-800 dark:text-slate-200">
 
     <header class="bg-slate-900 text-white shadow-md p-4 flex justify-between items-center no-print">
-        <h1 class="text-2xl font-black italic tracking-wider text-blue-400">Medi<span class="text-white">Plan</span> <span class="text-sm font-normal text-slate-400">Klinik</span></h1>
+        <h1 class="text-2xl font-black italic tracking-wider text-blue-400 flex items-center gap-2">
+            Medi<span class="text-white">Plan</span> <span class="text-sm font-normal text-slate-400">Klinik</span>
+            <button id="darkModeToggle" class="ml-4 text-xs bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded transition">🌙</button>
+        </h1>
         <nav class="flex gap-4 text-sm font-bold flex-wrap justify-end">
             <button data-action="showSection" data-section="plan" class="hover:text-blue-300 border-b-2 border-transparent transition text-blue-300 border-blue-300">Planung</button>
             <button data-action="showSection" data-section="stations" class="hover:text-blue-300 transition">Stationen</button>
@@ -293,7 +302,7 @@
         </section>
 
         <section id="section-personal" class="section-content hidden no-print">
-            <div class="grid grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <div class="bg-white p-6 rounded shadow border">
                     <div class="flex justify-between items-center border-b mb-4 pb-2">
                         <h3 class="font-bold text-slate-800 uppercase">Mitarbeiter &amp; Matrix</h3>
@@ -357,6 +366,35 @@
                         <button data-action="exportAtossCSV" class="bg-slate-800 text-white py-2 rounded font-bold">Atoss CSV</button>
                     </div>
                 </div>
+
+                <div class="bg-white p-6 rounded shadow border xl:col-span-2">
+                    <div class="flex justify-between items-center border-b mb-4 pb-2">
+                        <h3 class="font-bold text-slate-800 uppercase">Stations-Layout Editor</h3>
+                        <button data-action="resetStationLayout" class="bg-slate-200 text-slate-700 px-3 py-1 rounded text-xs font-bold hover:bg-slate-300 transition">Auf Standard zurücksetzen</button>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="flex-1">
+                            <div class="grid grid-cols-3 gap-2 mb-2 items-end">
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase">ID (intern)</label>
+                                    <input type="text" id="sId" placeholder="z.B. s71_1" class="border p-2 rounded text-sm w-full">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase">Anzeigename</label>
+                                    <input type="text" id="sName" placeholder="Zimmer 1-4" class="border p-2 rounded text-sm w-full">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase">Kategorie / Gruppe</label>
+                                    <input type="text" id="sCategory" placeholder="Station 7 - 1" class="border p-2 rounded text-sm w-full">
+                                </div>
+                            </div>
+                            <button data-action="saveStationNode" class="w-full bg-blue-600 text-white py-2 rounded font-bold shadow hover:bg-blue-700 transition">Station hinzufügen / ändern</button>
+                        </div>
+                        <div class="flex-1 border bg-slate-50 rounded p-2 overflow-y-auto max-h-64" id="stationLayoutList">
+                            <!-- JS wird hier die Liste aufbauen -->
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -395,33 +433,33 @@
                     ondragover="event.preventDefault(); this.classList.add('bg-blue-50')"
                     ondragleave="this.classList.remove('bg-blue-50')"
                     ondrop="window.handleDropStation(event)">
-                    ${A?`<div class="w-full p-2 text-[11px] font-bold text-center cursor-move draggable-doctor"
+                    ${b?`<div class="w-full p-2 text-[11px] font-bold text-center cursor-move draggable-doctor"
                               draggable="true"
-                              ondragstart="window.handleDragStartStation(event, '${A}', '${S}')">
-                            ${A}
+                              ondragstart="window.handleDragStartStation(event, '${b}', '${S}')">
+                            ${b}
                             <span class="absolute top-0 right-1 text-[8px] text-red-500 cursor-pointer" data-action="saveStationPlan" data-cell="${S}" data-value="">x</span>
                         </div>`:'<div class="w-full p-2 h-full min-h-[30px]"></div>'}
                 </td>`}),b+="</tr>",f+=b}),n.innerHTML=f;let h=`<div class="grid grid-cols-1 md:grid-cols-${c.length} gap-2">`;c.forEach(s=>{h+=`<div class="border p-2 rounded bg-white">
             <h4 class="font-bold text-[10px] border-b pb-1 mb-1">KW ${s.kw}</h4>
             <div class="flex flex-wrap gap-1">`,a.staff.forEach(g=>{if(!m[s.key].has(g.name)){let b=[];D(g,"AA")&&b.push("AA"),D(g,"OA_STATION")&&b.push("OA_STATION"),D(g,"EPU")&&b.push("EPU"),h+=`<div class="px-2 py-1 bg-slate-200 text-[10px] rounded cursor-move hover:bg-slate-300 transition"
                     draggable="true"
-                    data-role="${b.join(",")}"
-                    ondragstart="window.handleDragStartStation(event, '${g.name}', 'unassigned')">
-                    ${g.name}
-                </div>`}}),h+="</div></div>"}),h+="</div>",r.innerHTML=h,H()}function J(e,t){let n=k(),{rowId:o}=Ce(e);t?a.stationPlan[e]=t:delete a.stationPlan[e],(o==="da_1"||o==="da_2")&&n&&(t&&Ke(n,e,t),C(n,{preserveExisting:!1})),z()}function he(e,t,n){if(n<=t)return"transparent";let o=(e-t)/(n-t);return o<.5?`rgba(${Math.floor(255*o*2)}, 255, 0, 0.3)`:`rgba(255, ${Math.floor(255*(2-o*2))}, 0, 0.3)`}function $(){let e=k(),t=document.getElementById("displayMonth"),n=document.getElementById("printHeaderTitle"),o=document.getElementById("calendarBody");if(!e||!t||!n||!o)return;let[r,i]=e.split("-").map(Number),d=new Date(r,i-1,1).toLocaleString("de-DE",{month:"long",year:"numeric"}),p=new Date(r,i,0).getDate(),c=P(r,i);t.innerText=d,n.innerText=`Dienstplan - ${d}`;let f="";for(let u=1;u<=p;u+=1){let l=new Date(r,i-1,u),m=`${r}-${String(i).padStart(2,"0")}-${String(u).padStart(2,"0")}`,h=_e(m,-1),s=Ye(l),g=!!s||l.getDay()===0||l.getDay()===6,b=E=>{let w=a.plan[m]?.[E]||"";return w?Qe(w,m,c)?"conflict-red":(a.wishes[m]||[]).includes(w)?"wish-conflict":a.plan[h]&&Object.values(a.plan[h]).includes(w)?"conflict-red":"":""};f+=`
-            <tr class="${g?"holiday-bg":""} border-b text-xs">
-                <td class="p-1 text-center font-bold text-slate-500">${l.toLocaleDateString("de-DE",{weekday:"short"})}</td>
-                <td class="p-1 text-center font-bold border-l border-r">${u}.${s?`<br><span class="text-[7px] text-red-600 font-normal leading-tight">${s}</span>`:""}</td>
-                <td class="p-0 ${b("AA")}">${Le(m,"AA")}</td>
-                <td class="p-0 ${b("VISITE")}">${Le(m,"VISITE")}</td>
-                <td class="p-0 ${b("OA")}">${Le(m,"OA")}</td>
-            </tr>`}o.innerHTML=f,Mt(),Xe(),H()}function Mt(){let e=k(),t=document.getElementById("statsTableAA"),n=document.getElementById("statsTableOA");if(!e||!t||!n)return;let[o,r]=e.split("-").map(Number);["AA","OA"].forEach(i=>{let d=a.staff.filter(s=>D(s,i)).map(s=>{let g=0,b=0,E=0,w=0;for(let x=0;x<6;x+=1){let y=new Date(o,r-1-x,1),S=`${y.getFullYear()}-${String(y.getMonth()+1).padStart(2,"0")}`;Object.keys(a.plan).forEach(A=>{A.startsWith(S)&&((a.plan[A].AA===s.name||a.plan[A].OA===s.name)&&(E+=1,x===0&&(g+=1)),F("VISITE",A)&&a.plan[A].VISITE===s.name&&(w+=1,x===0&&(b+=1)))})}return{name:s.name,monthDuty:g,monthVisit:b,sixMonthDuty:E,sixMonthVisit:w}}),p=document.getElementById(`statsTable${i}`);if(!d.length){p.innerHTML='<p class="text-sm text-slate-500">Keine Mitarbeiter in dieser Rolle angelegt.</p>';return}let c=s=>({max:Math.max(...d.map(g=>g[s]),1),min:Math.min(...d.map(g=>g[s]))}),f=c("monthDuty"),u=c("monthVisit"),l=c("sixMonthDuty"),m=c("sixMonthVisit"),h='<table class="w-full border-collapse border text-xs text-center"><thead><tr class="bg-slate-100"><th class="p-2 border text-left">Arzt</th><th class="p-2 border">24h (M)</th><th class="p-2 border">Visite (M)</th><th class="p-2 border">24h (6M)</th><th class="p-2 border">Visite (6M)</th></tr></thead><tbody>';d.forEach(s=>{h+=`<tr>
-                <td class="p-2 border text-left font-bold">${s.name}</td>
-                <td class="p-2 border" style="background:${he(s.monthDuty,f.min,f.max)}">${s.monthDuty}</td>
-                <td class="p-2 border" style="background:${he(s.monthVisit,u.min,u.max)}">${s.monthVisit}</td>
-                <td class="p-2 border" style="background:${he(s.sixMonthDuty,l.min,l.max)}">${s.sixMonthDuty}</td>
-                <td class="p-2 border" style="background:${he(s.sixMonthVisit,m.min,m.max)}">${s.sixMonthVisit}</td>
-            </tr>`}),p.innerHTML=`${h}</tbody></table>`})}function Le(e,t){let n=a.plan[e]?.[t]||"";if(!F(t,e))return n?`<select data-action="savePlan" data-date="${e}" data-role="${t}" class="w-full bg-amber-50 p-1 outline-none text-[10px] text-amber-700 print:font-bold">
+                    data-role="${A.join(",")}"
+                    ondragstart="window.handleDragStartStation(event, '${y.name}', 'unassigned')">
+                    ${y.name}
+                </div>`}}),m+="</div></div>"}),m+="</div>",r.innerHTML=m,N()}function Y(e,t){let n=D(),{rowId:a}=Ce(e);t?o.stationPlan[e]=t:delete o.stationPlan[e],(a==="da_1"||a==="da_2")&&n&&(t&&Xe(n,e,t),R(n,{preserveExisting:!1})),Z()}function ge(e,t,n){if(n<=t)return"transparent";let a=(e-t)/(n-t);return a<.5?`rgba(${Math.floor(255*a*2)}, 255, 0, 0.3)`:`rgba(255, ${Math.floor(255*(2-a*2))}, 0, 0.3)`}function O(){let e=D(),t=document.getElementById("displayMonth"),n=document.getElementById("printHeaderTitle"),a=document.getElementById("calendarBody");if(!e||!t||!n||!a)return;let[r,s]=e.split("-").map(Number),d=new Date(r,s-1,1).toLocaleString("de-DE",{month:"long",year:"numeric"}),p=new Date(r,s,0).getDate(),c=M(r,s);t.innerText=d,n.innerText=`Dienstplan - ${d}`;let f=Q(e),u="";for(let l=1;l<=p;l+=1){let h=new Date(r,s-1,l),m=`${r}-${String(s).padStart(2,"0")}-${String(l).padStart(2,"0")}`,i=_e(m,-1),y=et(h),A=!!y||h.getDay()===0||h.getDay()===6,E=x=>{let g=o.plan[m]?.[x]||"";return g?f.some(b=>b.reference===`${m} ${x}`||b.message.includes(`${m} hat ${g}`))?"conflict-red border-2 border-red-500":tt(g,m,c)?"conflict-red":(o.wishes[m]||[]).includes(g)?"wish-conflict":o.plan[i]&&Object.values(o.plan[i]).includes(g)?"conflict-red border-2 border-red-500":"":""};u+=`
+            <tr class="${A?"holiday-bg":""} border-b text-xs hover:bg-slate-50" ${(()=>{let x=f.find(g=>g.reference.startsWith(m)&&g.severity==="warning");return x?`title="${x.message}"`:""})()}>
+                <td class="p-1 text-center font-bold text-slate-500">${h.toLocaleDateString("de-DE",{weekday:"short"})}</td>
+                <td class="p-1 text-center font-bold border-l border-r">${l}.${y?`<br><span class="text-[7px] text-red-600 font-normal leading-tight">${y}</span>`:""}</td>
+                <td class="p-0 relative ${E("AA")}">${Re(m,"AA")}</td>
+                <td class="p-0 relative ${E("VISITE")}">${Re(m,"VISITE")}</td>
+                <td class="p-0 relative ${E("OA")}">${Re(m,"OA")}</td>
+            </tr>`}a.innerHTML=u,jt(),nt(),N()}function jt(){let e=D(),t=document.getElementById("statsTableAA"),n=document.getElementById("statsTableOA");if(!e||!t||!n)return;let[a,r]=e.split("-").map(Number);["AA","OA"].forEach(s=>{let d=o.staff.filter(i=>I(i,s)).map(i=>{let y=0,A=0,E=0,k=0;for(let x=0;x<6;x+=1){let g=new Date(a,r-1-x,1),S=`${g.getFullYear()}-${String(g.getMonth()+1).padStart(2,"0")}`;Object.keys(o.plan).forEach(b=>{b.startsWith(S)&&((o.plan[b].AA===i.name||o.plan[b].OA===i.name)&&(E+=1,x===0&&(y+=1)),J("VISITE",b)&&o.plan[b].VISITE===i.name&&(k+=1,x===0&&(A+=1)))})}return{name:i.name,monthDuty:y,monthVisit:A,sixMonthDuty:E,sixMonthVisit:k}}),p=document.getElementById(`statsTable${s}`);if(!d.length){p.innerHTML='<p class="text-sm text-slate-500">Keine Mitarbeiter in dieser Rolle angelegt.</p>';return}let c=i=>({max:Math.max(...d.map(y=>y[i]),1),min:Math.min(...d.map(y=>y[i]))}),f=c("monthDuty"),u=c("monthVisit"),l=c("sixMonthDuty"),h=c("sixMonthVisit"),m='<table class="w-full border-collapse border text-xs text-center"><thead><tr class="bg-slate-100"><th class="p-2 border text-left">Arzt</th><th class="p-2 border">24h (M)</th><th class="p-2 border">Visite (M)</th><th class="p-2 border">24h (6M)</th><th class="p-2 border">Visite (6M)</th></tr></thead><tbody>';d.forEach(i=>{m+=`<tr>
+                <td class="p-2 border text-left font-bold">${i.name}</td>
+                <td class="p-2 border" style="background:${ge(i.monthDuty,f.min,f.max)}">${i.monthDuty}</td>
+                <td class="p-2 border" style="background:${ge(i.monthVisit,u.min,u.max)}">${i.monthVisit}</td>
+                <td class="p-2 border" style="background:${ge(i.sixMonthDuty,l.min,l.max)}">${i.sixMonthDuty}</td>
+                <td class="p-2 border" style="background:${ge(i.sixMonthVisit,h.min,h.max)}">${i.sixMonthVisit}</td>
+            </tr>`}),p.innerHTML=`${m}</tbody></table>`})}function Re(e,t){let n=o.plan[e]?.[t]||"";if(!J(t,e))return n?`<select data-action="savePlan" data-date="${e}" data-role="${t}" class="w-full bg-amber-50 p-1 outline-none text-[10px] text-amber-700 print:font-bold">
             <option value="${n}" selected>${n} (nur entfernen)</option>
             <option value="">-</option>
         </select>`:'<div class="w-full p-1 text-center text-[10px] text-slate-300 print:text-slate-500">-</div>';let o='<option value="">-</option>';return a.staff.filter(r=>D(r,t)).forEach(r=>{let i=(a.wishes[e]||[]).includes(r.name),d=r.name+(i?" (!)":"");o+=`<option value="${r.name}" ${n===r.name?"selected":""}>${d}</option>`}),`<select data-action="savePlan" data-date="${e}" data-role="${t}" class="w-full bg-transparent p-1 outline-none text-[10px] print:font-bold">${o}</select>`}function ge(e,t,n){a.plan[e]||(a.plan[e]=Ne()),a.plan[e][t]=F(t,e)?n:"",t==="AA"&&F("VISITE",e)&&(a.plan[e].VISITE?n||(a.plan[e].VISITE=""):a.plan[e].VISITE=n),C(e.slice(0,7),{preserveExisting:!1}),z()}function Te(){let e=document.getElementById("loadingOverlay");e&&e.classList.remove("hidden","flex-col"),e&&e.classList.add("flex","flex-col")}function Ve(){let e=document.getElementById("loadingOverlay");e&&e.classList.add("hidden"),e&&e.classList.remove("flex")}function K(e,t="info"){let n=document.getElementById("toastContainer");if(!n)return;let o=document.createElement("div"),r={info:"bg-blue-600",success:"bg-green-600",warning:"bg-orange-500",error:"bg-red-600"};o.className=`${r[t]} text-white px-4 py-2 rounded shadow-lg text-sm transition-opacity duration-300 opacity-0`,o.innerText=e,n.appendChild(o),requestAnimationFrame(()=>o.classList.remove("opacity-0")),setTimeout(()=>{o.classList.add("opacity-0"),setTimeout(()=>o.remove(),300)},3e3)}function k(){return document.getElementById("monthPicker")?.value||""}function ye(){$(),B()}function z(e={}){let t=T(e);return ye(),t}function Se(e={}){let t=T(e);return $(),t}function fe(e={}){let t=T(e);return B(),t}function Ot(){ye(),ae(),H(),Q()}function Y(e={}){let t=T(e);return Ot(),t}function L(e){if(!V(e))return{ok:!1,error:"Backup muss ein JSON-Objekt sein."};if("staff"in e&&!Array.isArray(e.staff))return{ok:!1,error:"Backup enthaelt eine ungueltige Personal-Liste."};if("plan"in e&&!V(e.plan))return{ok:!1,error:"Backup enthaelt einen ungueltigen Dienstplan."};if("wishes"in e&&!V(e.wishes))return{ok:!1,error:"Backup enthaelt ungueltige Wunschdaten."};if("stationPlan"in e&&!V(e.stationPlan))return{ok:!1,error:"Backup enthaelt einen ungueltigen Stationsplan."};if("atossHours"in e&&!V(e.atossHours))return{ok:!1,error:"Backup enthaelt ungueltige Atoss-Stunden."};let t={staff:Array.isArray(e.staff)?e.staff.map(r=>({name:String(r?.name||"").trim(),id:_(r?.id),role:r?.role||"AA",work:I(r||{})})):[],plan:V(e.plan)?e.plan:{},wishes:V(e.wishes)?e.wishes:{},stationPlan:V(e.stationPlan)?e.stationPlan:{},holidaySeasonMode:!!e.holidaySeasonMode,atossHours:ee(e.atossHours)};return t.staff.find(r=>!r.name)?{ok:!1,error:"Backup enthaelt Personal ohne Namen."}:t.staff.filter((r,i)=>t.staff.findIndex(d=>d.name.toLowerCase()===r.name.toLowerCase())!==i).length?{ok:!1,error:"Backup enthaelt doppelte Personennamen."}:{ok:!0,normalized:t}}function se(e,t={}){if(!e)return[];let n=t.staff||a.staff,o=t.plan||a.plan,r=t.wishes||a.wishes,i=t.stationPlan||a.stationPlan,d=Object.prototype.hasOwnProperty.call(t,"holidaySeasonMode")?t.holidaySeasonMode:a.holidaySeasonMode,p=Object.fromEntries(n.map(s=>[s.name,s])),c=[],[f,u]=e.split("-").map(Number),l=P(f,u),m=we(n);q(e).forEach(s=>{let g=Z(s),b=o[s]||{},E=xe(s,l,i);[{key:"AA",label:re.AA,required:!0,blocks:["ics","atoss"]},{key:"OA",label:re.OA,required:!0,blocks:["ics","atoss"]},{key:"VISITE",label:re.VISITE,required:be("VISITE",g,d),blocks:["ics","atoss"]}].forEach(y=>{let S=b[y.key];if(!be(y.key,g,d)&&S){c.push({severity:"error",area:"Planung",reference:X(s),message:`${y.label} ist an diesem Tag nicht vorgesehen, hat aber mit ${S} eine Belegung.`,blocks:y.blocks});return}if(y.required&&!S){c.push({severity:"error",area:"Planung",reference:X(s),message:`${y.label} ist nicht besetzt.`,blocks:y.blocks});return}if(!S)return;if(!p[S]){c.push({severity:"error",area:"Planung",reference:X(s),message:`${y.label} verweist auf "${S}", aber die Person ist nicht im Personalstamm.`,blocks:y.blocks});return}(r[s]||[]).includes(S)&&c.push({severity:"warning",area:"Planung",reference:X(s),message:`${S} ist fuer ${y.label} eingeteilt, obwohl Wunschfrei/Sperre hinterlegt ist.`,blocks:[]}),E.has(S)&&c.push({severity:"error",area:"Korrelation",reference:X(s),message:`${S} ist im Stationsplan fuer diese Woche als Urlaub/Zeitausgleich markiert, wird aber fuer ${y.label} verwendet.`,blocks:y.blocks})});let x={};["AA","VISITE","OA"].forEach(y=>{let S=b[y];S&&(x[S]||(x[S]=[]),x[S].push(re[y]))}),Object.entries(x).forEach(([y,S])=>{S.length<2||c.push({severity:"warning",area:"Planung",reference:X(s),message:`${y} ist mehrfach eingeteilt: ${S.join(", ")}.`,blocks:[]})})}),l.forEach(s=>{let g={},b=new Set,E=i[`${s.key}_da_1`]||"",w=i[`${s.key}_da_2`]||"",x=j(s.dienstGroupA,"AA",o),y=j(s.dienstGroupB,"AA",o);if(M.forEach(S=>{let A=i[`${s.key}_${S.id}`];if(!A)return;let G=S.name!==S.category?`${S.category}: ${S.name}`:S.category;if(S.category.includes("Urlaub")||S.category.includes("Zeitausgleich")){b.add(A);return}g[A]||(g[A]=[]),g[A].push(G)}),Object.entries(g).forEach(([S,A])=>{A.length>1&&c.push({severity:"warning",area:"Stationen",reference:s.key,message:`${S} ist mehrfach im Stationsplan eingetragen: ${A.join(", ")}.`,blocks:[]}),b.has(S)&&c.push({severity:"warning",area:"Stationen",reference:s.key,message:`${S} ist gleichzeitig im Urlaub/Zeitausgleich und im Stationsplan eingeteilt.`,blocks:[]})}),x===!1){let S=Ae(s.dienstGroupA,"AA",o);c.push({severity:"warning",area:"Korrelation",reference:s.key,message:`Die Dienstarzt-Gruppe Mo/Mi/Fr ist im Dienstplan nicht eindeutig: ${S.join(", ")}.`,blocks:[]})}else x&&E&&E!==x?c.push({severity:"warning",area:"Korrelation",reference:s.key,message:`Stationsplan Mo/Mi/Fr verweist auf ${E}, im Dienstplan ist jedoch ${x} hinterlegt.`,blocks:[]}):x&&!E&&c.push({severity:"warning",area:"Korrelation",reference:s.key,message:`Die Dienstarzt-Zeile Mo/Mi/Fr ist leer, obwohl im Dienstplan ${x} hinterlegt ist.`,blocks:[]});if(y===!1){let S=Ae(s.dienstGroupB,"AA",o);c.push({severity:"warning",area:"Korrelation",reference:s.key,message:`Die Dienstarzt-Gruppe So/Di/Do ist im Dienstplan nicht eindeutig: ${S.join(", ")}.`,blocks:[]})}else y&&w&&w!==y?c.push({severity:"warning",area:"Korrelation",reference:s.key,message:`Stationsplan So/Di/Do verweist auf ${w}, im Dienstplan ist jedoch ${y} hinterlegt.`,blocks:[]}):y&&!w&&c.push({severity:"warning",area:"Korrelation",reference:s.key,message:`Die Dienstarzt-Zeile So/Di/Do ist leer, obwohl im Dienstplan ${y} hinterlegt ist.`,blocks:[]})});let h={error:0,warning:1,info:2};return c.sort((s,g)=>{let b=h[s.severity]-h[g.severity];if(b!==0)return b;let E=s.area.localeCompare(g.area,"de-DE");return E!==0?E:s.reference.localeCompare(g.reference,"de-DE")}),c}function H(){let e=k(),t=document.getElementById("validationSummary"),n=document.getElementById("validationList");if(!t||!n)return;if(!e){t.innerHTML="",n.innerHTML='<div class="validation-empty">Bitte zuerst einen Monat auswaehlen.</div>';return}let o=se(e),r=o.filter(f=>f.severity==="error").length,i=o.filter(f=>f.severity==="warning").length,d=o.filter(f=>f.blocks&&f.blocks.length).length;if(t.innerHTML=`
@@ -430,13 +468,13 @@
             <span>Fehler</span>
         </div>
         <div class="validation-card validation-card-warning">
-            <strong>${i}</strong>
+            <strong>${s}</strong>
             <span>Warnungen</span>
         </div>
         <div class="validation-card ${d?"validation-card-warning":"validation-card-ok"}">
             <strong>${d}</strong>
             <span>Export-relevante Punkte</span>
-        </div>`,!o.length){n.innerHTML='<div class="validation-empty">Keine offenen Validierungsprobleme im gewaehlten Monat gefunden.</div>';return}let p={error:"validation-badge validation-badge-error",warning:"validation-badge validation-badge-warning",info:"validation-badge validation-badge-info"},c=o.map(f=>{let u=f.blocks?.length?`Blockiert: ${f.blocks.join(", ").toUpperCase()}`:"Nur Hinweis";return`
+        </div>`,!a.length){n.innerHTML='<div class="validation-empty">Keine offenen Validierungsprobleme im gewaehlten Monat gefunden.</div>';return}let p={error:"validation-badge validation-badge-error",warning:"validation-badge validation-badge-warning",info:"validation-badge validation-badge-info"},c=a.map(f=>{let u=f.blocks?.length?`Blockiert: ${f.blocks.join(", ").toUpperCase()}`:"Nur Hinweis";return`
             <tr class="validation-row-${f.severity}">
                 <td><span class="${p[f.severity]}">${f.severity==="error"?"Fehler":f.severity==="warning"?"Warnung":"Hinweis"}</span></td>
                 <td>${f.area}</td>
