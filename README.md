@@ -28,7 +28,7 @@ Das Tool verzichtet komplett auf ein serverseitiges Backend und speichert alle D
 
 Das Projekt ist mit einem modernen "Vanilla"-Ansatz umgesetzt. Um Konflikte mit Browser-Restriktionen für ES-Module über das `file://` Protokoll zu umgehen, gibt es eine Zweiteilung:
 
-- **Produktiv-Version (`index.html` & `app.js`):** Die gesamte Logik ist in einer einzigen monolithischen Datei (`app.js`) gebündelt. Diese nutzt `LocalStorage` für die Datenhaltung. Dadurch gibt es keine CORS/Modul-Einschränkungen.
+- **Produktiv-Version (`index.html` / `Dienstplan.html`):** Die Build-Pipeline erzeugt eine vollständig gebündelte Ein-Datei-Version mit inline CSS und JavaScript. Diese nutzt `LocalStorage` für die Datenhaltung und läuft direkt über `file://` ohne CORS/Modul-Einschränkungen.
 - **Entwicklungs-Version (`scripts/`):** Der Quellcode ist modularisiert in ES-Module (z.B. `core.js`, `storage.js`) aufgeteilt und nutzt teilweise `IndexedDB`. Dies wird hauptsächlich für die Testsuite (`tests.html`) verwendet.
 - **Styling:** Tailwind CSS (via CDN) und `styles.css`.
 
@@ -38,13 +38,14 @@ Es wird keine serverseitige Logik (Node.js, PHP, etc.) oder externe Datenbank be
 
 Das Tool ist extrem leichtgewichtig und erfordert **keine Installation** oder einen Webserver.
 
-- Einfach die Datei `index.html` per Doppelklick in einem beliebigen modernen Browser (Chrome, Firefox, Edge, Safari) öffnen.
-- Die Anwendung läuft dank der gebündelten `app.js` direkt und fehlerfrei lokal über das `file://` Protokoll.
+- Einfach die Datei `index.html` (oder alternativ `Dienstplan.html`) per Doppelklick in einem beliebigen modernen Browser (Chrome, Firefox, Edge, Safari) öffnen.
+- Beide Dateien sind komplett eigenständig (HTML + CSS + JS inline) und laufen direkt lokal über das `file://`-Protokoll ohne zusätzliche Einrichtung.
 
 ## Projektstruktur
 
-- `index.html`: Haupt-Einstiegspunkt für den Endnutzer (lädt die gebündelte `app.js`).
-- `app.js`: Monolithische JavaScript-Datei für die direkte Ausführung im Browser ohne Server.
+- `index.html`: Haupt-Einstiegspunkt für den Endnutzer (vollständig gebündelt, inline Assets).
+- `Dienstplan.html`: Zweiter, inhaltlich gleicher gebündelter Einstiegspunkt (historische Kompatibilität).
+- `template.html`: Build-Template für die gebündelten HTML-Ausgaben.
 - `scripts/`: Ordner mit den aufgeteilten ES-Modulen für Entwicklung und Tests.
   - `app-init.js`: Bootstrapping.
   - `state.js`: Zentrales App-State Objekt.
