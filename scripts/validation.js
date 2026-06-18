@@ -1,5 +1,5 @@
 import { appState } from './state.js';
-import { getWorkPercent, normalizeAtossId, normalizeAtossHours, getDuplicateAtossAssignments, getMonthDayKeys, getDateFromKey, formatDateKey, isRoleActiveOnDate, isPlainObject, getAssignedNamesForDates, getUniqueAssignedName, getVacationDoctorsForDate, roleLabels, stationLayout } from './core.js';
+import { getWorkPercent, normalizeAtossId, normalizeAtossHours, getDuplicateAtossAssignments, getMonthDayKeys, getDateFromKey, formatDateKey, isRoleActiveOnDate, isPlainObject, getAssignedNamesForDates, getUniqueAssignedName, getVacationDoctorsForDate, roleLabels, stationLayout, shiftDateKey } from './core.js';
 
 import { getSelectedMonthValue } from './ui-common.js';
 import { getWeeksInMonth } from './planning-engine.js';
@@ -154,6 +154,9 @@ export function getValidationIssues(monthValue, source = {}) {
             }
         });
 
+        // Hard conflict: same person in multiple roles on the same day.
+        // AA + VISITE is physically impossible (doctor can't be on-site for
+        // 24h duty and simultaneously run visit rounds). Blocks export.
         const assignmentsByName = {};
         ["AA", "VISITE", "OA"].forEach((roleKey) => {
             const assignedName = entry[roleKey];
@@ -165,12 +168,33 @@ export function getValidationIssues(monthValue, source = {}) {
         Object.entries(assignmentsByName).forEach(([name, rolesForPerson]) => {
             if (rolesForPerson.length < 2) return;
             issues.push({
-                severity: "warning",
+                severity: "error",
                 area: "Planung",
                 reference: formatDateKey(dateKey),
-                message: `${name} ist mehrfach eingeteilt: ${rolesForPerson.join(", ")}.`,
-                blocks: []
+                message: `${name} ist mehrfach eingeteilt (${rolesForPerson.join(", ")}) – das ist ein harter Planungskonflikt und blockiert den Export.`,
+                blocks: ["ics", "atoss"]
             });
+        });
+
+        // Hard conflict: person assigned to a 24h shift on consecutive days
+        // violates mandatory rest time. Check if the same person who held
+        // the AA or OA slot yesterday appears in AA or OA today.
+        const [prevDateKey] = [shiftDateKey(dateKey, -1)];
+        const prevEntry = dataPlan[prevDateKey] || {};
+        const todayDutyNames = new Set(
+            ["AA", "OA"].map((r) => entry[r]).filter(Boolean)
+        );
+        ["AA", "OA"].forEach((r) => {
+            const prevName = prevEntry[r];
+            if (prevName && todayDutyNames.has(prevName)) {
+                issues.push({
+                    severity: "error",
+                    area: "Planung",
+                    reference: formatDateKey(dateKey),
+                    message: `${prevName} leistet an zwei aufeinanderfolgenden Tagen (${formatDateKey(prevDateKey)} und ${formatDateKey(dateKey)}) Dienst – Ruhezeit nicht eingehalten. Export blockiert.`,
+                    blocks: ["ics", "atoss"]
+                });
+            }
         });
     });
 

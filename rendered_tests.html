@@ -389,6 +389,53 @@
                     }
                 },
                 {
+                    name: "B5: Multi-Rollen-Konflikt blockiert Export",
+                    fn() {
+                        const issues = api.getValidationIssues("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-05": { AA: "Anna", OA: "OA Mueller", VISITE: "Anna" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+                        const conflict = issues.find((i) => i.message.includes("Anna") && i.message.includes("mehrfach"));
+                        assertTrue(Boolean(conflict), "Konflikt vorhanden");
+                        assertEqual(conflict.severity, "error", "Schweregrad ist error");
+                        assertTrue(conflict.blocks.includes("ics"), "Blockiert ICS");
+                        assertTrue(conflict.blocks.includes("atoss"), "Blockiert Atoss");
+                    }
+                },
+                {
+                    name: "B5: Ruhezeit-Verletzung an aufeinanderfolgenden Tagen blockiert Export",
+                    fn() {
+                        const issues = api.getValidationIssues("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" },
+                                "2026-04-02": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+                        const restViolation = issues.find((i) => i.message.includes("aufeinanderfolgenden"));
+                        assertTrue(Boolean(restViolation), "Ruhezeit-Fehler vorhanden");
+                        assertEqual(restViolation.severity, "error", "Schweregrad ist error");
+                        assertTrue(restViolation.blocks.includes("ics"), "Blockiert ICS");
+                        assertTrue(restViolation.blocks.includes("atoss"), "Blockiert Atoss");
+                        assertTrue(restViolation.message.includes("2026-04-01"), "Datum des Vortags in Nachricht");
+                        assertTrue(restViolation.message.includes("2026-04-02"), "Datum des Folgetags in Nachricht");
+                    }
+                },
+                {
                     name: "Autoplaner erhaelt manuelle Dienste",
                     fn() {
                         const result = api.runAutoPlanSimulation("2026-04", {

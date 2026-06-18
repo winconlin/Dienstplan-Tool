@@ -91,16 +91,25 @@ export function renderStats() {
             let sixMonthVisit = 0;
 
             for (let offset = 0; offset < 6; offset += 1) {
+                // JavaScript's Date constructor rolls negative months into the
+                // previous year correctly (e.g. new Date(2026,-1,1) = Dec 2025).
                 const currentMonth = new Date(year, month - 1 - offset, 1);
                 const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}`;
 
                 Object.keys(appState.plan).forEach((dateKey) => {
                     if (!dateKey.startsWith(monthKey)) return;
-                    if (appState.plan[dateKey].AA === person.name || appState.plan[dateKey].OA === person.name) {
+                    const entry = appState.plan[dateKey];
+
+                    // Count 24h-Dienst only against the matching slot for this
+                    // role to avoid double-counting when corrupted data has the
+                    // same person in both AA and OA on the same day.
+                    const hasDuty = entry[role] === person.name;
+                    if (hasDuty) {
                         sixMonthDuty += 1;
                         if (offset === 0) monthDuty += 1;
                     }
-                    if (isRoleActiveOnDateKey("VISITE", dateKey) && appState.plan[dateKey].VISITE === person.name) {
+
+                    if (isRoleActiveOnDateKey("VISITE", dateKey) && entry.VISITE === person.name) {
                         sixMonthVisit += 1;
                         if (offset === 0) monthVisit += 1;
                     }
