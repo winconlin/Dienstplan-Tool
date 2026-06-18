@@ -249,9 +249,78 @@ export function isRoleActiveOnDateKey(role, dateKey, holidayMode = appState.holi
     return isRoleActiveOnDate(role, getDateFromKey(dateKey), holidayMode);
 }
 
+// Shift time windows (start + duration) per role and day type.
+// durationMinutes describes the real shift length so that Atoss hours can be
+// split correctly across midnight and ICS end times land on the right day.
+//   Mo-Do  15:00 - 08:00 (17h)
+//   Fr     15:00 - 09:00 (18h)
+//   Sa     09:00 - 08:30 (23.5h, 24h-Dienst)
+//   So/FT  08:30 - 08:00 (23.5h, 24h-Dienst)
+//   Visite 09:00 - 14:00 (5h, kein Mitternachtsübergang)
+export function getShiftWindow(dateKey, role, holidayMode = appState.holidaySeasonMode) {
+    if (role === "VISITE") return { startMinutes: 9 * 60, durationMinutes: 5 * 60 };
+
+    const date = getDateFromKey(dateKey);
+    const day = date.getDay();
+    const isHolidayDay = Boolean(getHolidayName(date, holidayMode));
+
+    if (isHolidayDay || day === 0) return { startMinutes: 8 * 60 + 30, durationMinutes: 23.5 * 60 };
+    if (day === 6) return { startMinutes: 9 * 60, durationMinutes: 23.5 * 60 };
+    if (day === 5) return { startMinutes: 15 * 60, durationMinutes: 18 * 60 };
+    return { startMinutes: 15 * 60, durationMinutes: 17 * 60 };
+}
+
+export function minutesToICSTime(totalMinutes) {
+    const normalized = ((totalMinutes % 1440) + 1440) % 1440;
+    const hours = Math.floor(normalized / 60);
+    const minutes = normalized % 60;
+    return `${String(hours).padStart(2, "0")}${String(minutes).padStart(2, "0")}00`;
+}
+
 export function getICSStartTime(dateKey, role, holidayMode = appState.holidaySeasonMode) {
-    if (role === "VISITE") return "090000";
-    return isWeekendOrHoliday(getDateFromKey(dateKey), holidayMode) ? "090000" : "150000";
+    return minutesToICSTime(getShiftWindow(dateKey, role, holidayMode).startMinutes);
+}
+
+// Returns the ICS end timestamp { dateKey, time } accounting for shifts that
+// cross midnight (the end then lands on the following calendar day).
+export function getICSEnd(dateKey, role, holidayMode = appState.holidaySeasonMode) {
+    const { startMinutes, durationMinutes } = getShiftWindow(dateKey, role, holidayMode);
+    const endTotal = startMinutes + durationMinutes;
+    const dayOffset = Math.floor(endTotal / 1440);
+    return {
+        dateKey: dayOffset ? shiftDateKey(dateKey, dayOffset) : dateKey,
+        time: minutesToICSTime(endTotal)
+    };
+}
+
+// Splits a shift's configured total hours across the midnight boundary so each
+// calendar day gets its own record. The portion after midnight is fixed by the
+// shift's clock end time (e.g. shift ending 08:00 -> 8.0h on the next day); the
+// remainder stays on the start date. This matches the Atoss spec examples:
+//   Werktag  15:00-08:00 (17h)   -> 9.0 + 8.0
+//   WE/FT    08:30-08:00 (23.5h) -> 15.5 + 8.0
+//   Sa       09:00-08:30 (23.5h) -> 15.0 + 8.5
+// Shifts that do not cross midnight (e.g. Visite) yield a single record.
+// Returns [{ dateKey, hours }] (one or two entries).
+export function getAtossHourSegments(dateKey, role, settingsHours, holidayMode = appState.holidaySeasonMode) {
+    const { startMinutes, durationMinutes } = getShiftWindow(dateKey, role, holidayMode);
+    const total = Number(settingsHours) || 0;
+    if (total <= 0) return [];
+
+    const roundHours = (value) => Math.round(value * 100) / 100;
+    const afterMidnightMinutes = startMinutes + durationMinutes - 1440;
+
+    if (afterMidnightMinutes <= 0) {
+        // Shift stays within the same calendar day.
+        return [{ dateKey, hours: roundHours(total) }];
+    }
+
+    const hoursAfter = roundHours(Math.min(total, afterMidnightMinutes / 60));
+    const hoursBefore = roundHours(total - hoursAfter);
+    const segments = [];
+    if (hoursBefore > 0) segments.push({ dateKey, hours: hoursBefore });
+    if (hoursAfter > 0) segments.push({ dateKey: shiftDateKey(dateKey, 1), hours: hoursAfter });
+    return segments;
 }
 
 export function escapeICSText(value) {

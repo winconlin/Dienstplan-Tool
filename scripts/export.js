@@ -1,5 +1,5 @@
 import { appState } from './state.js';
-import { normalizeAtossId, isRoleActiveOnDateKey, getICSStartTime, escapeICSText, withTemporaryState } from './core.js';
+import { normalizeAtossId, isRoleActiveOnDateKey, getICSStartTime, getICSEnd, getAtossHourSegments, escapeICSText, withTemporaryState } from './core.js';
 import { validateBackupPayload, getValidationIssues, renderValidation } from './validation.js';
 import { syncConfigControls, getAtossHoursForDate, applyNormalizedAppState, createUndoSnapshot } from './storage.js';
 import { getSelectedMonthValue, saveAndRenderAllDataViews } from './ui-common.js';
@@ -58,19 +58,30 @@ export function maybeBlockExport(exportType, label) {
     return !confirm(`${label}: ${blockingIssues.length} blockierende Punkte gefunden. Trotzdem exportieren?`);
 }
 
-export function exportAllICS() {
-    const monthValue = getSelectedMonthValue();
-    if (!monthValue) return;
-    if (maybeBlockExport("ics", "ICS-Export")) return;
+// IANA timezone used for all ICS timestamps. Calendar clients (Apple/Google/
+// Outlook) resolve TZID=Europe/Berlin including DST, avoiding floating times.
+export const ICS_TIMEZONE = "Europe/Berlin";
 
+// Triggers a browser download for a single in-memory file and frees the URL.
+function triggerDownload(filename, content, mimeType) {
+    const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    // Revoke shortly after to keep the click alive but avoid leaking the URL.
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Builds the per-person ICS payloads for the given month without touching DOM.
+function buildICSFiles(monthValue) {
     const monthEntries = Object.keys(appState.plan).filter((dateKey) => dateKey.startsWith(monthValue)).sort();
-    if (!monthEntries.length) {
-        alert("Keine Dienste im gewaehlten Monat gefunden.");
-        return;
-    }
+    if (!monthEntries.length) return [];
 
     const timestamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
-    let exportedFiles = 0;
+    const files = [];
 
     appState.staff.forEach((person) => {
         const events = [];
@@ -85,14 +96,15 @@ export function exportAllICS() {
                 if (appState.plan[dateKey]?.[role] !== person.name) return;
 
                 const startTime = getICSStartTime(dateKey, role);
+                const end = getICSEnd(dateKey, role);
                 const uid = `${dateKey}-${role}-${person.name}`.replace(/\s+/g, "-");
                 events.push([
                     "BEGIN:VEVENT",
                     `UID:${uid}@mediplan`,
                     `DTSTAMP:${timestamp}`,
                     `SUMMARY:${escapeICSText(label)}`,
-                    `DTSTART:${dateKey.replace(/-/g, "")}T${startTime}`,
-                    `DTEND:${dateKey.replace(/-/g, "")}T235900`,
+                    `DTSTART;TZID=${ICS_TIMEZONE}:${dateKey.replace(/-/g, "")}T${startTime}`,
+                    `DTEND;TZID=${ICS_TIMEZONE}:${end.dateKey.replace(/-/g, "")}T${end.time}`,
                     "END:VEVENT"
                 ].join("\r\n"));
             });
@@ -108,19 +120,74 @@ export function exportAllICS() {
             "END:VCALENDAR"
         ];
 
-        const anchor = document.createElement("a");
-        anchor.href = URL.createObjectURL(new Blob([lines.join("\r\n")], { type: "text/calendar" }));
-        anchor.download = `Dienst_${person.name}.ics`;
-        anchor.click();
-        exportedFiles += 1;
+        files.push({ filename: `Dienst_${person.name}.ics`, content: lines.join("\r\n") });
     });
 
-    if (!exportedFiles) {
+    return files;
+}
+
+// Batch-downloads one .ics file per doctor. Downloads run through an async
+// queue with a small delay so browsers do not block/drop rapid-fire downloads.
+export async function exportAllICS() {
+    const monthValue = getSelectedMonthValue();
+    if (!monthValue) return;
+    if (maybeBlockExport("ics", "ICS-Export")) return;
+
+    if (!Object.keys(appState.plan).some((dateKey) => dateKey.startsWith(monthValue))) {
+        alert("Keine Dienste im gewaehlten Monat gefunden.");
+        return;
+    }
+
+    const files = buildICSFiles(monthValue);
+    if (!files.length) {
         alert("Fuer den gewaehlten Monat gibt es keine exportierbaren Dienste.");
+        return;
+    }
+
+    for (let index = 0; index < files.length; index += 1) {
+        triggerDownload(files[index].filename, files[index].content, "text/calendar");
+        if (index < files.length - 1) await delay(300);
     }
 }
 
-export function buildAtossExportRows(monthValue, source = {}) {
+// Atoss CSV layout is configured per clinic. This object centralizes the
+// column order, separators, date format, decimal style and Lohnart mapping so
+// the interface can be adapted without touching the generator logic.
+export const atossExportConfig = {
+    delimiter: ";",
+    decimalSeparator: ",",
+    // Field order of each output row. Supported keys: personalnummer, datum,
+    // stunden, lohnart. Reorder/trim to match the target Atoss configuration.
+    columns: ["personalnummer", "datum", "stunden", "lohnart"],
+    columnLabels: {
+        personalnummer: "Personalnummer",
+        datum: "Datum",
+        stunden: "Stunden",
+        lohnart: "Lohnart"
+    },
+    // Date output format. Tokens: YYYY, MM, DD.
+    dateFormat: "YYYY-MM-DD",
+    // Lohnart per role; falls back to `default` for any unmapped role.
+    lohnart: {
+        default: "BD",
+        VISITE: "VIS"
+    }
+};
+
+function formatAtossDate(dateKey, config) {
+    const [year, month, day] = dateKey.split("-");
+    return config.dateFormat.replace("YYYY", year).replace("MM", month).replace("DD", day);
+}
+
+function formatAtossHours(hours, config) {
+    return hours.toFixed(1).replace(".", config.decimalSeparator);
+}
+
+function getAtossLohnart(role, config) {
+    return config.lohnart[role] || config.lohnart.default;
+}
+
+export function buildAtossExportRows(monthValue, source = {}, config = atossExportConfig) {
     return withTemporaryState(source, () => {
         if (!monthValue) return [];
 
@@ -133,8 +200,18 @@ export function buildAtossExportRows(monthValue, source = {}) {
                 const normalizedId = normalizeAtossId(person?.id);
                 if (!normalizedId) return;
 
-                const hours = getAtossHoursForDate(dateKey, role, appState.holidaySeasonMode, appState.atossHours);
-                rows.push(`${normalizedId};${dateKey};${hours}`);
+                const totalHours = getAtossHoursForDate(dateKey, role, appState.holidaySeasonMode, appState.atossHours);
+                const lohnart = getAtossLohnart(role, config);
+                // Split overnight shifts into one record per calendar day.
+                getAtossHourSegments(dateKey, role, totalHours, appState.holidaySeasonMode).forEach((segment) => {
+                    const values = {
+                        personalnummer: normalizedId,
+                        datum: formatAtossDate(segment.dateKey, config),
+                        stunden: formatAtossHours(segment.hours, config),
+                        lohnart
+                    };
+                    rows.push(config.columns.map((column) => values[column]).join(config.delimiter));
+                });
             });
         });
 
@@ -142,20 +219,18 @@ export function buildAtossExportRows(monthValue, source = {}) {
     });
 }
 
-export function exportAtossCSV() {
+export function exportAtossCSV(config = atossExportConfig) {
     const monthValue = getSelectedMonthValue();
     if (!monthValue) return;
     if (maybeBlockExport("atoss", "Atoss-Export")) return;
 
-    const rows = buildAtossExportRows(monthValue);
+    const rows = buildAtossExportRows(monthValue, {}, config);
     if (!rows.length) {
         alert("Fuer den gewaehlten Monat gibt es keine exportierbaren Atoss-Daten.");
         return;
     }
 
-    const csv = ["Personalnummer;Datum;Stunden", ...rows].join("\n");
-    const anchor = document.createElement("a");
-    anchor.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    anchor.download = "Atoss_Export.csv";
-    anchor.click();
+    const header = config.columns.map((column) => config.columnLabels[column] || column).join(config.delimiter);
+    const csv = [header, ...rows].join("\n");
+    triggerDownload("Atoss_Export.csv", csv, "text/csv");
 }

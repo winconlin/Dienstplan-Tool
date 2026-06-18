@@ -141,8 +141,9 @@
                 {
                     name: "ICS-Zeit an Feiertagen",
                     fn() {
+                        // 2026-04-06 ist Ostermontag (Feiertag) -> 24h-Dienst ab 08:30.
                         const time = api.getICSStartTime("2026-04-06", "AA", false);
-                        assertEqual(time, "090000", "Startzeit");
+                        assertEqual(time, "083000", "Startzeit");
                     }
                 },
                 {
@@ -354,8 +355,12 @@
                             }
                         });
 
-                        assertTrue(rows.includes("100;2026-04-01;13.5"), "AA-Werktag");
-                        assertTrue(rows.includes("200;2026-04-01;11"), "OA-Werktag");
+                        // Werktagsdienst 15:00-08:00 wird am Mitternachtsübergang gesplittet:
+                        // 8,0h fallen auf den Folgetag, der Rest auf den Starttag.
+                        assertTrue(rows.includes("100;2026-04-01;5,5;BD"), "AA-Werktag Start");
+                        assertTrue(rows.includes("100;2026-04-02;8,0;BD"), "AA-Werktag Folgetag");
+                        assertTrue(rows.includes("200;2026-04-01;3,0;BD"), "OA-Werktag Start");
+                        assertTrue(rows.includes("200;2026-04-02;8,0;BD"), "OA-Werktag Folgetag");
                     }
                 },
                 {
@@ -380,9 +385,13 @@
                             }
                         });
 
-                        assertTrue(rows.includes("100;2026-04-05;21"), "AA-WE");
-                        assertTrue(rows.includes("102;2026-04-05;6.5"), "VISITE-WE");
-                        assertTrue(rows.includes("200;2026-04-05;19.5"), "OA-WE");
+                        // 2026-04-05 ist ein Sonntag (24h-Dienst 08:30-08:00): 8,0h auf den
+                        // Folgetag, Rest auf den Starttag. Visite (09:00-14:00) bleibt ungeteilt.
+                        assertTrue(rows.includes("100;2026-04-05;13,0;BD"), "AA-WE Start");
+                        assertTrue(rows.includes("100;2026-04-06;8,0;BD"), "AA-WE Folgetag");
+                        assertTrue(rows.includes("102;2026-04-05;6,5;VIS"), "VISITE-WE");
+                        assertTrue(rows.includes("200;2026-04-05;11,5;BD"), "OA-WE Start");
+                        assertTrue(rows.includes("200;2026-04-06;8,0;BD"), "OA-WE Folgetag");
                     }
                 },
                 {
