@@ -25,7 +25,7 @@ export function backupImport(event) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (loadEvent) => {
+    reader.onload = async (loadEvent) => {
         try {
             const data = JSON.parse(loadEvent.target.result);
             const validation = validateBackupPayload(data);
@@ -35,8 +35,10 @@ export function backupImport(event) {
             applyNormalizedAppState(validation.normalized);
             syncConfigControls();
 
-            const saveResult = saveAndRenderAllDataViews();
+            // Confirm success only after the imported data is durably persisted.
+            const saveResult = await saveAndRenderAllDataViews();
             if (saveResult.ok) alert("Daten geladen!");
+            else alert(`${saveResult.message} Der Import wurde angezeigt, aber nicht dauerhaft gespeichert.`);
         } catch (error) {
             alert(error?.message || "Backup konnte nicht gelesen werden.");
         } finally {

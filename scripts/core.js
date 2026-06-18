@@ -202,12 +202,12 @@ export function getHolidayName(date, holidayMode = appState.holidaySeasonMode) {
     };
 
     if (holidayMode) {
-        const start = new Date(year, 11, 24);
-        while (start.getDay() !== 6) start.setDate(start.getDate() - 1);
-
-        const end = month === 1 && day <= 15 ? new Date(year, 0, 6) : new Date(year + 1, 0, 6);
-        while (end.getDay() !== 0) end.setDate(end.getDate() + 1);
-
+        // A date can belong to the season anchored on its own December
+        // (Nov/Dec dates) or to the season that started the previous December
+        // (January dates). Pick the correct anchor year to avoid the boundary
+        // bug where Jan dates were checked against a same-year start > end.
+        const seasonYear = month === 1 ? year - 1 : year;
+        const { start, end } = getWinterPlanRange(seasonYear);
         if (date >= start && date <= end) return "Winterplan";
     }
 
@@ -222,11 +222,30 @@ export function getHolidayName(date, holidayMode = appState.holidaySeasonMode) {
     if (diff === 50) return "Pfingstmontag";
     if (diff === 60) return "Fronleichnam";
 
-    const bussUndBettag = new Date(year, 10, 22);
-    while (bussUndBettag.getDay() !== 3) bussUndBettag.setDate(bussUndBettag.getDate() - 1);
-    if (day === bussUndBettag.getDate() && month === 11) return "Buss- & Bettag";
+    // Buss- & Bettag: the Wednesday on or before Nov 22 (i.e. before Nov 23).
+    const bussRef = new Date(year, 10, 22);
+    const bussDay = bussRef.getDate() - ((bussRef.getDay() - 3 + 7) % 7);
+    if (month === 11 && day === bussDay) return "Buss- & Bettag";
 
     return null;
+}
+
+// Computes the "Winterplan" interval for a season anchored in December of
+// seasonYear: from the Saturday on/before Dec 24 to the Sunday on/after Jan 6
+// of the following year. Uses pure weekday arithmetic (no while loops, no
+// endless-loop risk) and is robust for every calendar year.
+export function getWinterPlanRange(seasonYear) {
+    const dec24 = new Date(seasonYear, 11, 24);
+    const start = new Date(dec24);
+    start.setDate(dec24.getDate() - ((dec24.getDay() - 6 + 7) % 7));
+    start.setHours(0, 0, 0, 0);
+
+    const jan6 = new Date(seasonYear + 1, 0, 6);
+    const end = new Date(jan6);
+    end.setDate(jan6.getDate() + ((7 - jan6.getDay()) % 7));
+    end.setHours(23, 59, 59, 999);
+
+    return { start, end };
 }
 
 export function isHoliday(date) {

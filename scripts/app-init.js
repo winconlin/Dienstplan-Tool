@@ -11,7 +11,7 @@ import { autoPlan, autoStationPlan } from './planning-engine.js';
 import { appState } from './state.js';
 import { getPersonValidationError, getCurrentMonthValue, getEasterSunday, getHolidayName, getICSStartTime } from './core.js';
 import { validateBackupPayload, getValidationIssues } from './validation.js';
-import { persistAppStateToStorage, syncConfigControls, getAtossHoursForDate, renderSnapshotInfo } from './storage.js';
+import { persistAppStateToStorage, persistAppStateToStorageAsync, saveAsync, syncConfigControls, getAtossHoursForDate, renderSnapshotInfo } from './storage.js';
 import { renderPlanningViews } from './ui-common.js';
 import { getWeeksInMonth } from './planning-engine.js';
 import { runAutoPlanSimulation, runAutoStationPlanSimulation, runCalendarRenderSimulation, runPlanEditSimulation, runStationPlanEditSimulation, runUndoRestoreSimulation, runStorageFailureSimulation } from './test-helpers.js';
@@ -61,6 +61,8 @@ window.MediPlanTestApi = {
     getValidationIssues,
     buildAtossExportRows,
     persistAppStateToStorage,
+    persistAppStateToStorageAsync,
+    saveAsync,
     runAutoPlanSimulation,
     runAutoStationPlanSimulation,
     runCalendarRenderSimulation,

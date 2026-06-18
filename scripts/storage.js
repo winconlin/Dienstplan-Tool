@@ -78,49 +78,55 @@ async function idbGet(key) {
     });
 }
 
-// Ensure tests pass by supporting localStorage for sync test scenarios, but default to IDB in real app
+// Synchronous persistence for injected storages (used by the test harness).
+// Writes all entries with best-effort rollback on failure.
+function persistToSyncStorage(storage, entries) {
+    const rollbackEntries = [];
+    try {
+        entries.forEach(([key, value]) => {
+            const previousRaw = typeof storage.getItem === "function" ? storage.getItem(key) : null;
+            rollbackEntries.push([key, previousRaw]);
+            storage.setItem(key, value);
+        });
+        return { ok: true, message: "Lokale Speicherung aktiv." };
+    } catch (error) {
+        rollbackEntries.reverse().forEach(([key, previousRaw]) => {
+            try {
+                if (previousRaw === null || previousRaw === undefined) storage.removeItem?.(key);
+                else storage.setItem(key, previousRaw);
+            } catch {
+                // Best effort rollback only.
+            }
+        });
+        return { ok: false, message: getStorageErrorMessage(error) };
+    }
+}
+
+// Async persistence to IndexedDB (real-app default). Resolves only after the
+// transaction has committed, so callers can rely on durable persistence before
+// giving positive feedback or running follow-up actions. Never throws.
+export async function persistAppStateToStorageAsync(payload = buildAppStatePayload(), snapshots = appState.undoSnapshots) {
+    const entries = buildStorageEntries(payload, snapshots);
+    try {
+        await idbSetMany(entries);
+        return { ok: true, message: "Lokale Speicherung aktiv. (IndexedDB)" };
+    } catch (error) {
+        return { ok: false, message: getStorageErrorMessage(error) };
+    }
+}
+
+// Backwards-compatible entry point. For an injected synchronous storage it
+// writes synchronously and returns the result object (test path). For the
+// default localStorage it delegates to the async IndexedDB persistence and
+// returns a Promise resolving to the result object (real-app path).
 export function persistAppStateToStorage(storage = localStorage, payload = buildAppStatePayload(), snapshots = appState.undoSnapshots) {
     const entries = buildStorageEntries(payload, snapshots);
 
-    // Check if we're dealing with standard localStorage
     if (storage && storage.setItem && storage !== localStorage) {
-        const rollbackEntries = [];
-        try {
-            entries.forEach(([key, value]) => {
-                const previousRaw = typeof storage.getItem === "function" ? storage.getItem(key) : null;
-                rollbackEntries.push([key, previousRaw]);
-                storage.setItem(key, value);
-            });
-            return { ok: true, message: "Lokale Speicherung aktiv." };
-        } catch (error) {
-            rollbackEntries.reverse().forEach(([key, previousRaw]) => {
-                try {
-                    if (previousRaw === null || previousRaw === undefined) storage.removeItem?.(key);
-                    else storage.setItem(key, previousRaw);
-                } catch {
-                    // Best effort rollback only.
-                }
-            });
-            return { ok: false, message: getStorageErrorMessage(error) };
-        }
+        return persistToSyncStorage(storage, entries);
     }
 
-    // Otherwise use IndexedDB async (fire and forget for this sync function)
-    idbSetMany(entries).then(() => {
-        const statusEl = document.getElementById("storageStatus");
-        if (statusEl) {
-            statusEl.textContent = "IndexedDB Speicherung aktiv.";
-            statusEl.className = "mt-3 rounded border border-emerald-200 bg-emerald-50 p-2 text-[11px] text-emerald-800";
-        }
-    }).catch((error) => {
-        const statusEl = document.getElementById("storageStatus");
-        if (statusEl) {
-            statusEl.textContent = getStorageErrorMessage(error);
-            statusEl.className = "mt-3 rounded border border-red-200 bg-red-50 p-2 text-[11px] text-red-800";
-        }
-    });
-
-    return { ok: true, message: "Speicherung läuft..." };
+    return persistAppStateToStorageAsync(payload, snapshots);
 }
 
 export function renderStorageStatus() {
@@ -133,10 +139,10 @@ export function renderStorageStatus() {
         : "mt-3 rounded border border-red-200 bg-red-50 p-2 text-[11px] text-red-800";
 }
 
-export function save(options = {}) {
-    const { storage = localStorage, suppressAlert = false } = options;
-    const result = persistAppStateToStorage(storage);
-
+// Applies a finished persistence result to the app status and surfaces an
+// alert on failure. isLocalStorage gates the (real-app) failure alert so the
+// synchronous test path stays silent unless explicitly allowed.
+function finalizeSaveResult(result, { suppressAlert = false, isLocalStorage = true } = {}) {
     appState.storageStatus = { ok: result.ok, message: result.message };
     renderStorageStatus();
 
@@ -145,12 +151,35 @@ export function save(options = {}) {
         return result;
     }
 
-    if (!suppressAlert && storage === localStorage && result.message !== appState.lastStorageAlertMessage) {
+    if (!suppressAlert && isLocalStorage && result.message !== appState.lastStorageAlertMessage) {
         alert(`${result.message} Die Aenderungen bleiben nur in diesem Browser-Tab erhalten, bis die Speicherung wieder funktioniert.`);
         appState.lastStorageAlertMessage = result.message;
     }
 
     return result;
+}
+
+// Awaits durable persistence (IndexedDB) before updating status/feedback.
+// Use this whenever a follow-up action must only run once data is safely
+// persisted (positive toast/alert, export, irreversible state changes).
+export async function saveAsync(options = {}) {
+    const { suppressAlert = false } = options;
+    const result = await persistAppStateToStorageAsync();
+    return finalizeSaveResult(result, { suppressAlert, isLocalStorage: true });
+}
+
+// For an injected synchronous storage (tests) this returns the result object
+// synchronously. For the default localStorage (real app) it persists durably
+// via IndexedDB and returns a Promise resolving to the result object.
+export function save(options = {}) {
+    const { storage = localStorage, suppressAlert = false } = options;
+
+    if (storage && storage.setItem && storage !== localStorage) {
+        const result = persistAppStateToStorage(storage);
+        return finalizeSaveResult(result, { suppressAlert, isLocalStorage: false });
+    }
+
+    return saveAsync({ suppressAlert });
 }
 
 export function saveHolidaySeasonMode() {
@@ -279,7 +308,7 @@ export function createUndoSnapshot(label, payload = buildAppStatePayload()) {
     return appState.undoSnapshots[0];
 }
 
-export function restoreLatestSnapshot(options = {}) {
+export async function restoreLatestSnapshot(options = {}) {
     const { skipConfirm = false, skipAlert = false } = options;
     const latestSnapshot = appState.undoSnapshots[0];
 
@@ -301,7 +330,8 @@ export function restoreLatestSnapshot(options = {}) {
     appState.undoSnapshots = appState.undoSnapshots.slice(1);
     applyNormalizedAppState(validation.normalized);
     syncConfigControls();
-    const saveResult = saveAndRenderAllDataViews();
+    // Await durable persistence before confirming success to the user.
+    const saveResult = await saveAndRenderAllDataViews();
 
     if (!skipAlert && saveResult.ok) alert("Snapshot wiederhergestellt.");
     return true;

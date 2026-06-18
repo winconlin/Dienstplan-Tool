@@ -97,7 +97,7 @@
             }
         }
 
-        function runTests() {
+        async function runTests() {
             const api = window.MediPlanTestApi;
             const tests = [
                 {
@@ -843,6 +843,67 @@
 
                         assertTrue(/<td class="p-0 relative conflict-red"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(html) || /<td class="p-0 relative conflict-red border-2 border-red-500"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(html), "AA-Zelle wird nach Stationsaenderung rot markiert");
                     }
+                },
+                {
+                    name: "B4: Sync-Storage liefert synchrones Ergebnis (kein Promise)",
+                    fn() {
+                        const result = api.runStorageFailureSimulation({
+                            staff: [{ name: "Anna", id: "100", role: "AA", work: 100 }],
+                            plan: { "2026-04-01": { AA: "Anna", OA: "", VISITE: "" } },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        }, { failOnCall: 999 });
+                        assertEqual(result.result.ok, true, "Sync-Save erfolgreich");
+                        assertTrue(typeof result.result.then !== "function", "Ergebnis ist kein Promise");
+                        assertEqual(result.storageStatus.ok, true, "Status ok nach Sync-Save");
+                    }
+                },
+                {
+                    name: "B4: saveAsync wartet auf durable Persistierung und meldet Erfolg",
+                    async fn() {
+                        const result = await api.saveAsync({ suppressAlert: true });
+                        assertEqual(result.ok, true, "Durable Persistierung ok");
+                        assertEqual(typeof result.message, "string", "Statusmeldung vorhanden");
+                    }
+                },
+                {
+                    name: "B4: persistAppStateToStorageAsync gibt awaitbares Ergebnis zurueck",
+                    async fn() {
+                        const promise = api.persistAppStateToStorageAsync();
+                        assertTrue(typeof promise.then === "function", "Rueckgabe ist awaitbar");
+                        const result = await promise;
+                        assertEqual(result.ok, true, "Persistierung ok");
+                    }
+                },
+                {
+                    name: "B8: Weihnachts-Mode erkennt Januar-Tage der Saison",
+                    fn() {
+                        assertEqual(api.getHolidayName(new Date(2026, 0, 3), true), "Winterplan", "Jan 3 2026");
+                        assertEqual(api.getHolidayName(new Date(2027, 0, 3), true), "Winterplan", "Jan 3 2027");
+                    }
+                },
+                {
+                    name: "B8: Weihnachts-Mode deckt Dezember-Tage ab",
+                    fn() {
+                        assertEqual(api.getHolidayName(new Date(2025, 11, 24), true), "Winterplan", "24.12.2025");
+                        assertEqual(api.getHolidayName(new Date(2025, 11, 26), true), "Winterplan", "26.12.2025");
+                    }
+                },
+                {
+                    name: "B8: Weihnachts-Mode grenzt Tage ausserhalb der Saison korrekt ab",
+                    fn() {
+                        assertEqual(api.getHolidayName(new Date(2025, 11, 1), true), null, "1.12.2025 vor Saisonstart");
+                        assertEqual(api.getHolidayName(new Date(2026, 0, 31), true), null, "31.1.2026 nach Saisonende");
+                        assertEqual(api.getHolidayName(new Date(2026, 0, 3), false), null, "Jan 3 ohne Mode");
+                    }
+                },
+                {
+                    name: "B8: Buss- & Bettag wird mathematisch korrekt bestimmt",
+                    fn() {
+                        assertEqual(api.getHolidayName(new Date(2025, 10, 19), false), "Buss- & Bettag", "19.11.2025");
+                        assertEqual(api.getHolidayName(new Date(2026, 10, 18), false), "Buss- & Bettag", "18.11.2026");
+                    }
                 }
             ];
 
@@ -850,15 +911,17 @@
             const summaryEl = document.getElementById("summary");
             let passed = 0;
 
-            resultsEl.innerHTML = tests.map((test) => {
+            const rows = [];
+            for (const test of tests) {
                 try {
-                    test.fn();
+                    await test.fn();
                     passed += 1;
-                    return `<tr><td>${test.name}</td><td class="ok">OK</td><td>Bestanden</td></tr>`;
+                    rows.push(`<tr><td>${test.name}</td><td class="ok">OK</td><td>Bestanden</td></tr>`);
                 } catch (error) {
-                    return `<tr><td>${test.name}</td><td class="fail">Fehler</td><td>${error.message}</td></tr>`;
+                    rows.push(`<tr><td>${test.name}</td><td class="fail">Fehler</td><td>${error.message}</td></tr>`);
                 }
-            }).join("");
+            }
+            resultsEl.innerHTML = rows.join("");
 
             const failed = tests.length - passed;
             summaryEl.className = `summary ${failed ? "fail" : "ok"}`;

@@ -42,6 +42,11 @@ export function renderPlanningViews() {
     renderStationPlan();
 }
 
+// These wrappers render the in-memory state immediately (optimistic UI) and
+// return the save result/promise so callers can `await` durable persistence
+// before any positive feedback or follow-up action. In the real app `save`
+// resolves only after the IndexedDB write commits; the storage status is
+// updated truthfully on success/failure once persistence finishes.
 export function saveAndRenderPlanningViews(options = {}) {
     const saveResult = save(options);
     renderPlanningViews();
