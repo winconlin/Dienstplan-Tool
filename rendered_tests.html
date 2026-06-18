@@ -97,7 +97,7 @@
             }
         }
 
-        function runTests() {
+        async function runTests() {
             const api = window.MediPlanTestApi;
             const tests = [
                 {
@@ -139,8 +139,9 @@
                 {
                     name: "ICS-Zeit an Feiertagen",
                     fn() {
+                        // 2026-04-06 ist Ostermontag (Feiertag) -> 24h-Dienst ab 08:30.
                         const time = api.getICSStartTime("2026-04-06", "AA", false);
-                        assertEqual(time, "090000", "Startzeit");
+                        assertEqual(time, "083000", "Startzeit");
                     }
                 },
                 {
@@ -352,8 +353,10 @@
                             }
                         });
 
-                        assertTrue(rows.includes("100;2026-04-01;13.5"), "AA-Werktag");
-                        assertTrue(rows.includes("200;2026-04-01;11"), "OA-Werktag");
+                        assertTrue(rows.includes("100;2026-04-01;5,5;BD"), "AA-Werktag Start");
+                        assertTrue(rows.includes("100;2026-04-02;8,0;BD"), "AA-Werktag Folgetag");
+                        assertTrue(rows.includes("200;2026-04-01;3,0;BD"), "OA-Werktag Start");
+                        assertTrue(rows.includes("200;2026-04-02;8,0;BD"), "OA-Werktag Folgetag");
                     }
                 },
                 {
@@ -378,9 +381,58 @@
                             }
                         });
 
-                        assertTrue(rows.includes("100;2026-04-05;21"), "AA-WE");
-                        assertTrue(rows.includes("102;2026-04-05;6.5"), "VISITE-WE");
-                        assertTrue(rows.includes("200;2026-04-05;19.5"), "OA-WE");
+                        assertTrue(rows.includes("100;2026-04-05;13,0;BD"), "AA-WE Start");
+                        assertTrue(rows.includes("100;2026-04-06;8,0;BD"), "AA-WE Folgetag");
+                        assertTrue(rows.includes("102;2026-04-05;6,5;VIS"), "VISITE-WE");
+                        assertTrue(rows.includes("200;2026-04-05;11,5;BD"), "OA-WE Start");
+                        assertTrue(rows.includes("200;2026-04-06;8,0;BD"), "OA-WE Folgetag");
+                    }
+                },
+                {
+                    name: "B5: Multi-Rollen-Konflikt blockiert Export",
+                    fn() {
+                        const issues = api.getValidationIssues("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-05": { AA: "Anna", OA: "OA Mueller", VISITE: "Anna" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+                        const conflict = issues.find((i) => i.message.includes("Anna") && i.message.includes("mehrfach"));
+                        assertTrue(Boolean(conflict), "Konflikt vorhanden");
+                        assertEqual(conflict.severity, "error", "Schweregrad ist error");
+                        assertTrue(conflict.blocks.includes("ics"), "Blockiert ICS");
+                        assertTrue(conflict.blocks.includes("atoss"), "Blockiert Atoss");
+                    }
+                },
+                {
+                    name: "B5: Ruhezeit-Verletzung an aufeinanderfolgenden Tagen blockiert Export",
+                    fn() {
+                        const issues = api.getValidationIssues("2026-04", {
+                            staff: [
+                                { name: "Anna", id: "100", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {
+                                "2026-04-01": { AA: "Anna", OA: "OA Mueller", VISITE: "" },
+                                "2026-04-02": { AA: "Anna", OA: "OA Mueller", VISITE: "" }
+                            },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        });
+                        const restViolation = issues.find((i) => i.message.includes("aufeinanderfolgenden"));
+                        assertTrue(Boolean(restViolation), "Ruhezeit-Fehler vorhanden");
+                        assertEqual(restViolation.severity, "error", "Schweregrad ist error");
+                        assertTrue(restViolation.blocks.includes("ics"), "Blockiert ICS");
+                        assertTrue(restViolation.blocks.includes("atoss"), "Blockiert Atoss");
+                        assertTrue(restViolation.message.includes("2026-04-01"), "Datum des Vortags in Nachricht");
+                        assertTrue(restViolation.message.includes("2026-04-02"), "Datum des Folgetags in Nachricht");
                     }
                 },
                 {
@@ -791,6 +843,67 @@
 
                         assertTrue(/<td class="p-0 relative conflict-red"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(html) || /<td class="p-0 relative conflict-red border-2 border-red-500"><select data-action="savePlan" data-date="2026-04-01" data-role="AA"/.test(html), "AA-Zelle wird nach Stationsaenderung rot markiert");
                     }
+                },
+                {
+                    name: "B4: Sync-Storage liefert synchrones Ergebnis (kein Promise)",
+                    fn() {
+                        const result = api.runStorageFailureSimulation({
+                            staff: [{ name: "Anna", id: "100", role: "AA", work: 100 }],
+                            plan: { "2026-04-01": { AA: "Anna", OA: "", VISITE: "" } },
+                            wishes: {},
+                            stationPlan: {},
+                            holidaySeasonMode: false
+                        }, { failOnCall: 999 });
+                        assertEqual(result.result.ok, true, "Sync-Save erfolgreich");
+                        assertTrue(typeof result.result.then !== "function", "Ergebnis ist kein Promise");
+                        assertEqual(result.storageStatus.ok, true, "Status ok nach Sync-Save");
+                    }
+                },
+                {
+                    name: "B4: saveAsync wartet auf durable Persistierung und meldet Erfolg",
+                    async fn() {
+                        const result = await api.saveAsync({ suppressAlert: true });
+                        assertEqual(result.ok, true, "Durable Persistierung ok");
+                        assertEqual(typeof result.message, "string", "Statusmeldung vorhanden");
+                    }
+                },
+                {
+                    name: "B4: persistAppStateToStorageAsync gibt awaitbares Ergebnis zurueck",
+                    async fn() {
+                        const promise = api.persistAppStateToStorageAsync();
+                        assertTrue(typeof promise.then === "function", "Rueckgabe ist awaitbar");
+                        const result = await promise;
+                        assertEqual(result.ok, true, "Persistierung ok");
+                    }
+                },
+                {
+                    name: "B8: Weihnachts-Mode erkennt Januar-Tage der Saison",
+                    fn() {
+                        assertEqual(api.getHolidayName(new Date(2026, 0, 3), true), "Winterplan", "Jan 3 2026");
+                        assertEqual(api.getHolidayName(new Date(2027, 0, 3), true), "Winterplan", "Jan 3 2027");
+                    }
+                },
+                {
+                    name: "B8: Weihnachts-Mode deckt Dezember-Tage ab",
+                    fn() {
+                        assertEqual(api.getHolidayName(new Date(2025, 11, 24), true), "Winterplan", "24.12.2025");
+                        assertEqual(api.getHolidayName(new Date(2025, 11, 26), true), "Winterplan", "26.12.2025");
+                    }
+                },
+                {
+                    name: "B8: Weihnachts-Mode grenzt Tage ausserhalb der Saison korrekt ab",
+                    fn() {
+                        assertEqual(api.getHolidayName(new Date(2025, 11, 1), true), null, "1.12.2025 vor Saisonstart");
+                        assertEqual(api.getHolidayName(new Date(2026, 0, 31), true), null, "31.1.2026 nach Saisonende");
+                        assertEqual(api.getHolidayName(new Date(2026, 0, 3), false), null, "Jan 3 ohne Mode");
+                    }
+                },
+                {
+                    name: "B8: Buss- & Bettag wird mathematisch korrekt bestimmt",
+                    fn() {
+                        assertEqual(api.getHolidayName(new Date(2025, 10, 19), false), "Buss- & Bettag", "19.11.2025");
+                        assertEqual(api.getHolidayName(new Date(2026, 10, 18), false), "Buss- & Bettag", "18.11.2026");
+                    }
                 }
             ];
 
@@ -798,15 +911,17 @@
             const summaryEl = document.getElementById("summary");
             let passed = 0;
 
-            resultsEl.innerHTML = tests.map((test) => {
+            const rows = [];
+            for (const test of tests) {
                 try {
-                    test.fn();
+                    await test.fn();
                     passed += 1;
-                    return `<tr><td>${test.name}</td><td class="ok">OK</td><td>Bestanden</td></tr>`;
+                    rows.push(`<tr><td>${test.name}</td><td class="ok">OK</td><td>Bestanden</td></tr>`);
                 } catch (error) {
-                    return `<tr><td>${test.name}</td><td class="fail">Fehler</td><td>${error.message}</td></tr>`;
+                    rows.push(`<tr><td>${test.name}</td><td class="fail">Fehler</td><td>${error.message}</td></tr>`);
                 }
-            }).join("");
+            }
+            resultsEl.innerHTML = rows.join("");
 
             const failed = tests.length - passed;
             summaryEl.className = `summary ${failed ? "fail" : "ok"}`;

@@ -202,12 +202,12 @@ export function getHolidayName(date, holidayMode = appState.holidaySeasonMode) {
     };
 
     if (holidayMode) {
-        const start = new Date(year, 11, 24);
-        while (start.getDay() !== 6) start.setDate(start.getDate() - 1);
-
-        const end = month === 1 && day <= 15 ? new Date(year, 0, 6) : new Date(year + 1, 0, 6);
-        while (end.getDay() !== 0) end.setDate(end.getDate() + 1);
-
+        // A date can belong to the season anchored on its own December
+        // (Nov/Dec dates) or to the season that started the previous December
+        // (January dates). Pick the correct anchor year to avoid the boundary
+        // bug where Jan dates were checked against a same-year start > end.
+        const seasonYear = month === 1 ? year - 1 : year;
+        const { start, end } = getWinterPlanRange(seasonYear);
         if (date >= start && date <= end) return "Winterplan";
     }
 
@@ -222,11 +222,30 @@ export function getHolidayName(date, holidayMode = appState.holidaySeasonMode) {
     if (diff === 50) return "Pfingstmontag";
     if (diff === 60) return "Fronleichnam";
 
-    const bussUndBettag = new Date(year, 10, 22);
-    while (bussUndBettag.getDay() !== 3) bussUndBettag.setDate(bussUndBettag.getDate() - 1);
-    if (day === bussUndBettag.getDate() && month === 11) return "Buss- & Bettag";
+    // Buss- & Bettag: the Wednesday on or before Nov 22 (i.e. before Nov 23).
+    const bussRef = new Date(year, 10, 22);
+    const bussDay = bussRef.getDate() - ((bussRef.getDay() - 3 + 7) % 7);
+    if (month === 11 && day === bussDay) return "Buss- & Bettag";
 
     return null;
+}
+
+// Computes the "Winterplan" interval for a season anchored in December of
+// seasonYear: from the Saturday on/before Dec 24 to the Sunday on/after Jan 6
+// of the following year. Uses pure weekday arithmetic (no while loops, no
+// endless-loop risk) and is robust for every calendar year.
+export function getWinterPlanRange(seasonYear) {
+    const dec24 = new Date(seasonYear, 11, 24);
+    const start = new Date(dec24);
+    start.setDate(dec24.getDate() - ((dec24.getDay() - 6 + 7) % 7));
+    start.setHours(0, 0, 0, 0);
+
+    const jan6 = new Date(seasonYear + 1, 0, 6);
+    const end = new Date(jan6);
+    end.setDate(jan6.getDate() + ((7 - jan6.getDay()) % 7));
+    end.setHours(23, 59, 59, 999);
+
+    return { start, end };
 }
 
 export function isHoliday(date) {
@@ -249,9 +268,78 @@ export function isRoleActiveOnDateKey(role, dateKey, holidayMode = appState.holi
     return isRoleActiveOnDate(role, getDateFromKey(dateKey), holidayMode);
 }
 
+// Shift time windows (start + duration) per role and day type.
+// durationMinutes describes the real shift length so that Atoss hours can be
+// split correctly across midnight and ICS end times land on the right day.
+//   Mo-Do  15:00 - 08:00 (17h)
+//   Fr     15:00 - 09:00 (18h)
+//   Sa     09:00 - 08:30 (23.5h, 24h-Dienst)
+//   So/FT  08:30 - 08:00 (23.5h, 24h-Dienst)
+//   Visite 09:00 - 14:00 (5h, kein Mitternachtsübergang)
+export function getShiftWindow(dateKey, role, holidayMode = appState.holidaySeasonMode) {
+    if (role === "VISITE") return { startMinutes: 9 * 60, durationMinutes: 5 * 60 };
+
+    const date = getDateFromKey(dateKey);
+    const day = date.getDay();
+    const isHolidayDay = Boolean(getHolidayName(date, holidayMode));
+
+    if (isHolidayDay || day === 0) return { startMinutes: 8 * 60 + 30, durationMinutes: 23.5 * 60 };
+    if (day === 6) return { startMinutes: 9 * 60, durationMinutes: 23.5 * 60 };
+    if (day === 5) return { startMinutes: 15 * 60, durationMinutes: 18 * 60 };
+    return { startMinutes: 15 * 60, durationMinutes: 17 * 60 };
+}
+
+export function minutesToICSTime(totalMinutes) {
+    const normalized = ((totalMinutes % 1440) + 1440) % 1440;
+    const hours = Math.floor(normalized / 60);
+    const minutes = normalized % 60;
+    return `${String(hours).padStart(2, "0")}${String(minutes).padStart(2, "0")}00`;
+}
+
 export function getICSStartTime(dateKey, role, holidayMode = appState.holidaySeasonMode) {
-    if (role === "VISITE") return "090000";
-    return isWeekendOrHoliday(getDateFromKey(dateKey), holidayMode) ? "090000" : "150000";
+    return minutesToICSTime(getShiftWindow(dateKey, role, holidayMode).startMinutes);
+}
+
+// Returns the ICS end timestamp { dateKey, time } accounting for shifts that
+// cross midnight (the end then lands on the following calendar day).
+export function getICSEnd(dateKey, role, holidayMode = appState.holidaySeasonMode) {
+    const { startMinutes, durationMinutes } = getShiftWindow(dateKey, role, holidayMode);
+    const endTotal = startMinutes + durationMinutes;
+    const dayOffset = Math.floor(endTotal / 1440);
+    return {
+        dateKey: dayOffset ? shiftDateKey(dateKey, dayOffset) : dateKey,
+        time: minutesToICSTime(endTotal)
+    };
+}
+
+// Splits a shift's configured total hours across the midnight boundary so each
+// calendar day gets its own record. The portion after midnight is fixed by the
+// shift's clock end time (e.g. shift ending 08:00 -> 8.0h on the next day); the
+// remainder stays on the start date. This matches the Atoss spec examples:
+//   Werktag  15:00-08:00 (17h)   -> 9.0 + 8.0
+//   WE/FT    08:30-08:00 (23.5h) -> 15.5 + 8.0
+//   Sa       09:00-08:30 (23.5h) -> 15.0 + 8.5
+// Shifts that do not cross midnight (e.g. Visite) yield a single record.
+// Returns [{ dateKey, hours }] (one or two entries).
+export function getAtossHourSegments(dateKey, role, settingsHours, holidayMode = appState.holidaySeasonMode) {
+    const { startMinutes, durationMinutes } = getShiftWindow(dateKey, role, holidayMode);
+    const total = Number(settingsHours) || 0;
+    if (total <= 0) return [];
+
+    const roundHours = (value) => Math.round(value * 100) / 100;
+    const afterMidnightMinutes = startMinutes + durationMinutes - 1440;
+
+    if (afterMidnightMinutes <= 0) {
+        // Shift stays within the same calendar day.
+        return [{ dateKey, hours: roundHours(total) }];
+    }
+
+    const hoursAfter = roundHours(Math.min(total, afterMidnightMinutes / 60));
+    const hoursBefore = roundHours(total - hoursAfter);
+    const segments = [];
+    if (hoursBefore > 0) segments.push({ dateKey, hours: hoursBefore });
+    if (hoursAfter > 0) segments.push({ dateKey: shiftDateKey(dateKey, 1), hours: hoursAfter });
+    return segments;
 }
 
 export function escapeICSText(value) {

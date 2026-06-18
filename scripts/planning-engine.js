@@ -133,12 +133,14 @@ export function autoPlan() {
 
     showLoading();
     // Yield to let browser render the loading overlay
-    setTimeout(() => {
+    setTimeout(async () => {
         createUndoSnapshot(`Vor Autoplaner ${monthValue}`);
         fillPlanMonth(monthValue);
-        const saveResult = saveAndRenderPlanningViews();
+        // Wait for durable persistence before confirming success to the user.
+        const saveResult = await saveAndRenderPlanningViews();
         hideLoading();
         if (saveResult.ok) alert("Planung ergaenzt. Bestehende Eingaben wurden beibehalten.");
+        else alert(`${saveResult.message} Die Planung wurde angezeigt, aber nicht dauerhaft gespeichert.`);
     }, 50);
 }
 
@@ -221,12 +223,14 @@ export function autoStationPlan() {
 
     showLoading();
     // Yield to let browser render the loading overlay
-    setTimeout(() => {
+    setTimeout(async () => {
         createUndoSnapshot(`Vor Auto-Stationsplan ${monthValue}`);
         fillStationPlanMonth(monthValue);
-        const saveResult = saveAndRenderStationView();
+        // Wait for durable persistence before confirming success to the user.
+        const saveResult = await saveAndRenderStationView();
         hideLoading();
         if (saveResult.ok) alert("Stationsplan erfolgreich, soweit moeglich, ergaenzt.");
+        else alert(`${saveResult.message} Der Stationsplan wurde angezeigt, aber nicht dauerhaft gespeichert.`);
     }, 50);
 }
 
