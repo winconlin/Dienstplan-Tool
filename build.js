@@ -39,12 +39,14 @@ async function build() {
     scriptTag.textContent = jsContent;
     document.body.appendChild(scriptTag);
 
-    fs.writeFileSync('Dienstplan.html', dom.serialize());
+    const outputHtml = dom.serialize();
+    fs.writeFileSync('Dienstplan.html', outputHtml);
+    fs.writeFileSync('index.html', outputHtml);
 
     // Clean up
     fs.unlinkSync('dist.css');
 
-    console.log('Build complete: Dienstplan.html generated.');
+    console.log('Build complete: Dienstplan.html and index.html generated.');
 }
 
 build().catch(err => {
