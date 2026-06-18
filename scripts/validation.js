@@ -53,10 +53,22 @@ export function validateBackupPayload(data) {
         return { ok: false, error: "Backup enthaelt doppelte Personennamen." };
     }
 
-    // const duplicateAtossAssignments = getDuplicateAtossAssignments(normalized.staff);
-    // if (duplicateAtossAssignments.length) {
-    //     return { ok: false, error: `Backup enthaelt doppelte Atoss-ID ${duplicateAtossAssignments[0].id}.` };
-    // }
+    const duplicateAtossAssignments = getDuplicateAtossAssignments(normalized.staff);
+    if (duplicateAtossAssignments.length) {
+        return { ok: false, error: `Backup enthaelt doppelte Atoss-ID "${duplicateAtossAssignments[0].id}" (vergeben an: ${duplicateAtossAssignments[0].names.join(", ")}).` };
+    }
+
+    const dateKeyRegex = /^\d{4}-\d{2}-\d{2}$/;
+    for (const key of Object.keys(normalized.plan)) {
+        if (!dateKeyRegex.test(key)) {
+            return { ok: false, error: `Backup enthaelt ungueltigen Datenschluessel im Dienstplan: "${key}". Erwartet wird das Format YYYY-MM-DD.` };
+        }
+    }
+    for (const key of Object.keys(normalized.wishes)) {
+        if (!dateKeyRegex.test(key)) {
+            return { ok: false, error: `Backup enthaelt ungueltigen Datenschluessel in den Wuenschen: "${key}". Erwartet wird das Format YYYY-MM-DD.` };
+        }
+    }
 
     return { ok: true, normalized };
 }

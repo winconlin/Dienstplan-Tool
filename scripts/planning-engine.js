@@ -5,6 +5,20 @@ import { getSelectedMonthValue, saveAndRenderPlanningViews, saveAndRenderStation
 
 // Planning engine and automatic allocation rules.
 
+// Returns names that must be excluded from `targetRole` on `dateKey` to avoid
+// same-day multi-role conflicts. Structured as a standalone function so
+// department-specific rule sets can override or extend it in the future.
+function getSameDayConflictExclusions(dateKey, targetRole, plan = appState.plan) {
+    const entry = plan[dateKey] || {};
+    const conflicting = {
+        AA: ["VISITE"],
+        VISITE: ["AA"],
+        OA: []
+    };
+    const rivalRoles = conflicting[targetRole] || [];
+    return rivalRoles.map((r) => entry[r]).filter(Boolean);
+}
+
 export function fillPlanMonth(monthValue) {
     const [year, month] = monthValue.split("-").map(Number);
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -109,17 +123,22 @@ export function fillPlanMonth(monthValue) {
 
         if (isVisitDay(date)) {
             if (!appState.plan[dateKey].AA && !blockedSplitAAKeys.has(dateKey)) {
-                assignRoleIfEmpty(dateKey, "AA", getBest("AA", dateKey));
+                const excludeFromAA = getSameDayConflictExclusions(dateKey, "AA");
+                assignRoleIfEmpty(dateKey, "AA", getBest("AA", dateKey, excludeFromAA));
             }
 
             if (!appState.plan[dateKey].VISITE) {
-                const excludedNames = appState.plan[dateKey].AA ? [appState.plan[dateKey].AA] : [];
-                assignRoleIfEmpty(dateKey, "VISITE", getBest("VISITE", dateKey, excludedNames));
+                const excludeFromVisite = getSameDayConflictExclusions(dateKey, "VISITE");
+                assignRoleIfEmpty(dateKey, "VISITE", getBest("VISITE", dateKey, excludeFromVisite));
             }
         }
 
+        // Fallback AA assignment for non-visit days (and visit days where the
+        // visit-branch couldn't fill AA). Always exclude anyone already in VISITE
+        // to prevent the autoplaner from creating AA+VISITE conflicts.
         if (!appState.plan[dateKey].AA && !blockedSplitAAKeys.has(dateKey)) {
-            assignRoleIfEmpty(dateKey, "AA", getBest("AA", dateKey));
+            const excludeFromAA = getSameDayConflictExclusions(dateKey, "AA");
+            assignRoleIfEmpty(dateKey, "AA", getBest("AA", dateKey, excludeFromAA));
         }
     }
 

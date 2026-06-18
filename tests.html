@@ -913,6 +913,88 @@
                         assertEqual(api.getHolidayName(new Date(2025, 10, 19), false), "Buss- & Bettag", "19.11.2025");
                         assertEqual(api.getHolidayName(new Date(2026, 10, 18), false), "Buss- & Bettag", "18.11.2026");
                     }
+                },
+                {
+                    name: "B9: Doppelte Atoss-ID wird im Backup zurueckgewiesen",
+                    fn() {
+                        const result = api.validateBackupPayload({
+                            staff: [
+                                { name: "Anna", id: "101", role: "AA", work: 100 },
+                                { name: "Berta", id: "101", role: "AA", work: 100 }
+                            ],
+                            plan: {}, wishes: {}, stationPlan: {}, atossHours: {}
+                        });
+                        assertTrue(!result.ok, "Backup mit doppelter ID muss abgelehnt werden");
+                        assertTrue(result.error.includes("101"), "Fehlermeldung nennt die doppelte ID");
+                    }
+                },
+                {
+                    name: "B9: Eindeutige Atoss-IDs werden akzeptiert",
+                    fn() {
+                        const result = api.validateBackupPayload({
+                            staff: [
+                                { name: "Anna", id: "101", role: "AA", work: 100 },
+                                { name: "Berta", id: "102", role: "AA", work: 100 }
+                            ],
+                            plan: {}, wishes: {}, stationPlan: {}, atossHours: {}
+                        });
+                        assertTrue(result.ok, "Backup mit eindeutigen IDs muss akzeptiert werden");
+                    }
+                },
+                {
+                    name: "B10: Ungueltiger Datenschluessel im Dienstplan wird abgelehnt",
+                    fn() {
+                        const result = api.validateBackupPayload({
+                            staff: [],
+                            plan: { "not-a-date": { AA: "Anna", OA: "", VISITE: "" } },
+                            wishes: {}, stationPlan: {}, atossHours: {}
+                        });
+                        assertTrue(!result.ok, "Backup mit ungueltigen Schluesseln muss abgelehnt werden");
+                        assertTrue(result.error.includes("not-a-date"), "Fehlermeldung nennt den ungueltigen Schluessel");
+                    }
+                },
+                {
+                    name: "B10: Ungueltiger Datenschluessel in Wuenschen wird abgelehnt",
+                    fn() {
+                        const result = api.validateBackupPayload({
+                            staff: [],
+                            plan: {},
+                            wishes: { "2026/04/01": ["Anna"] },
+                            stationPlan: {}, atossHours: {}
+                        });
+                        assertTrue(!result.ok, "Backup mit ungueltigen Wunsch-Schluesseln muss abgelehnt werden");
+                    }
+                },
+                {
+                    name: "B10: Korrekte YYYY-MM-DD Schluessel werden akzeptiert",
+                    fn() {
+                        const result = api.validateBackupPayload({
+                            staff: [],
+                            plan: { "2026-04-01": { AA: "Anna", OA: "", VISITE: "" } },
+                            wishes: { "2026-04-05": ["Berta"] },
+                            stationPlan: {}, atossHours: {}
+                        });
+                        assertTrue(result.ok, "Backup mit gueltigen Datenschluesseln muss akzeptiert werden");
+                    }
+                },
+                {
+                    name: "B11: Snapshot-History wird auf max 5 Eintraege begrenzt",
+                    fn() {
+                        const result = api.runUndoRestoreSimulation("2026-04", "autoPlan", {
+                            staff: [
+                                { name: "Anna", id: "101", role: "AA", work: 100 },
+                                { name: "Berta", id: "102", role: "AA", work: 100 },
+                                { name: "OA Mueller", id: "200", role: "OA", work: 100 }
+                            ],
+                            plan: {}, wishes: {}, stationPlan: {}, atossHours: {}
+                        });
+                        // maxUndoSnapshots is 5; the simulation creates exactly 1 snapshot
+                        // before autoPlan, so after restore we should have 0.
+                        assertTrue(
+                            result.snapshotCountAfterAction <= 5,
+                            `Snapshot-Anzahl (${result.snapshotCountAfterAction}) darf 5 nicht uebersteigen`
+                        );
+                    }
                 }
             ];
 

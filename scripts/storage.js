@@ -7,7 +7,22 @@ import { saveAndRenderAllDataViews } from './ui-common.js';
 
 
 
-export const maxUndoSnapshots = 10;
+export const maxUndoSnapshots = 5;
+
+// Approximate byte size of the serialized snapshot array.
+function estimateSnapshotBytes(snapshots) {
+    try { return JSON.stringify(snapshots).length; } catch { return Infinity; }
+}
+
+// Trim oldest snapshots until the array fits within maxBytes or only one
+// entry remains (we never discard the most recent snapshot entirely).
+function pruneSnapshotsToFit(snapshots, maxBytes = 1_500_000) {
+    let pruned = snapshots.slice();
+    while (pruned.length > 1 && estimateSnapshotBytes(pruned) > maxBytes) {
+        pruned = pruned.slice(0, -1);
+    }
+    return pruned;
+}
 
 export function buildStorageEntries(payload = buildAppStatePayload(), snapshots = appState.undoSnapshots) {
     return [
@@ -106,11 +121,30 @@ function persistToSyncStorage(storage, entries) {
 // transaction has committed, so callers can rely on durable persistence before
 // giving positive feedback or running follow-up actions. Never throws.
 export async function persistAppStateToStorageAsync(payload = buildAppStatePayload(), snapshots = appState.undoSnapshots) {
-    const entries = buildStorageEntries(payload, snapshots);
+    // Proactively trim snapshot history if it's already large so we stay well
+    // under the IndexedDB quota before even attempting the write.
+    let snapshotsToSave = pruneSnapshotsToFit(snapshots);
+
+    const entries = buildStorageEntries(payload, snapshotsToSave);
     try {
         await idbSetMany(entries);
+        // Sync pruned list back so in-memory state stays consistent.
+        if (snapshotsToSave.length < snapshots.length) {
+            appState.undoSnapshots = snapshotsToSave;
+        }
         return { ok: true, message: "Lokale Speicherung aktiv. (IndexedDB)" };
     } catch (error) {
+        const isQuota = error && (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED" || error.code === 22 || error.code === 1014 || /quota/i.test(String(error.message)));
+        if (isQuota && snapshotsToSave.length > 0) {
+            // Retry once without any snapshots to salvage the core plan data.
+            try {
+                await idbSetMany(buildStorageEntries(payload, []));
+                appState.undoSnapshots = [];
+                return { ok: true, message: "Lokale Speicherung aktiv. Snapshot-Verlauf wurde geleert, um Speicherplatz freizugeben." };
+            } catch {
+                // Fall through to the original error.
+            }
+        }
         return { ok: false, message: getStorageErrorMessage(error) };
     }
 }
@@ -293,7 +327,7 @@ export function renderSnapshotInfo() {
 }
 
 export function createUndoSnapshot(label, payload = buildAppStatePayload()) {
-    appState.undoSnapshots = [
+    const candidate = [
         {
             id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             label: String(label || "Snapshot"),
@@ -302,6 +336,7 @@ export function createUndoSnapshot(label, payload = buildAppStatePayload()) {
         },
         ...appState.undoSnapshots
     ].slice(0, maxUndoSnapshots);
+    appState.undoSnapshots = pruneSnapshotsToFit(candidate);
 
     save({ suppressAlert: true });
     renderSnapshotInfo();
