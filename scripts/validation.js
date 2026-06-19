@@ -1,5 +1,5 @@
 import { appState } from './state.js';
-import { getWorkPercent, normalizeAtossId, normalizeAtossHours, getDuplicateAtossAssignments, getMonthDayKeys, getDateFromKey, formatDateKey, isRoleActiveOnDate, isPlainObject, getAssignedNamesForDates, getUniqueAssignedName, getVacationDoctorsForDate, roleLabels, stationLayout, shiftDateKey } from './core.js';
+import { getWorkPercent, normalizeAtossId, normalizeAtossHours, normalizeConfig, getDuplicateAtossAssignments, getMonthDayKeys, getDateFromKey, formatDateKey, isRoleActiveOnDate, isPlainObject, getAssignedNamesForDates, getUniqueAssignedName, getVacationDoctorsForDate, roleLabels, stationLayout, shiftDateKey, getConfigRoles, getConfigRoleIds, getConfigConflicts } from './core.js';
 
 import { getSelectedMonthValue } from './ui-common.js';
 import { getWeeksInMonth } from './planning-engine.js';
@@ -38,7 +38,8 @@ export function validateBackupPayload(data) {
         wishes: isPlainObject(data.wishes) ? data.wishes : {},
         stationPlan: isPlainObject(data.stationPlan) ? data.stationPlan : {},
         holidaySeasonMode: Boolean(data.holidaySeasonMode),
-        atossHours: normalizeAtossHours(data.atossHours)
+        atossHours: normalizeAtossHours(data.atossHours),
+        config: data.config ? (normalizeConfig(data.config).ok ? normalizeConfig(data.config).config : null) : null
     };
 
     const invalidPerson = normalized.staff.find((person) => !person.name);
@@ -53,10 +54,22 @@ export function validateBackupPayload(data) {
         return { ok: false, error: "Backup enthaelt doppelte Personennamen." };
     }
 
-    // const duplicateAtossAssignments = getDuplicateAtossAssignments(normalized.staff);
-    // if (duplicateAtossAssignments.length) {
-    //     return { ok: false, error: `Backup enthaelt doppelte Atoss-ID ${duplicateAtossAssignments[0].id}.` };
-    // }
+    const duplicateAtossAssignments = getDuplicateAtossAssignments(normalized.staff);
+    if (duplicateAtossAssignments.length) {
+        return { ok: false, error: `Backup enthaelt doppelte Atoss-ID "${duplicateAtossAssignments[0].id}" (vergeben an: ${duplicateAtossAssignments[0].names.join(", ")}).` };
+    }
+
+    const dateKeyRegex = /^\d{4}-\d{2}-\d{2}$/;
+    for (const key of Object.keys(normalized.plan)) {
+        if (!dateKeyRegex.test(key)) {
+            return { ok: false, error: `Backup enthaelt ungueltigen Datenschluessel im Dienstplan: "${key}". Erwartet wird das Format YYYY-MM-DD.` };
+        }
+    }
+    for (const key of Object.keys(normalized.wishes)) {
+        if (!dateKeyRegex.test(key)) {
+            return { ok: false, error: `Backup enthaelt ungueltigen Datenschluessel in den Wuenschen: "${key}". Erwartet wird das Format YYYY-MM-DD.` };
+        }
+    }
 
     return { ok: true, normalized };
 }
@@ -89,11 +102,12 @@ export function getValidationIssues(monthValue, source = {}) {
         const date = getDateFromKey(dateKey);
         const entry = dataPlan[dateKey] || {};
         const vacationDoctors = getVacationDoctorsForDate(dateKey, weeks, dataStationPlan);
-        const roles = [
-            { key: "AA", label: roleLabels.AA, required: true, blocks: ["ics", "atoss"] },
-            { key: "OA", label: roleLabels.OA, required: true, blocks: ["ics", "atoss"] },
-            { key: "VISITE", label: roleLabels.VISITE, required: isRoleActiveOnDate("VISITE", date, holidayMode), blocks: ["ics", "atoss"] }
-        ];
+        const roles = getConfigRoles().map((cfg) => ({
+            key: cfg.id,
+            label: cfg.label,
+            required: cfg.required && isRoleActiveOnDate(cfg.id, date, holidayMode),
+            blocks: ["ics", "atoss"]
+        }));
 
         roles.forEach((role) => {
             const assignedName = entry[role.key];
@@ -154,15 +168,13 @@ export function getValidationIssues(monthValue, source = {}) {
             }
         });
 
-        // Hard conflict: same person in multiple roles on the same day.
-        // AA + VISITE is physically impossible (doctor can't be on-site for
-        // 24h duty and simultaneously run visit rounds). Blocks export.
+        // Hard conflict: same person in multiple roles on the same day. Blocks export.
         const assignmentsByName = {};
-        ["AA", "VISITE", "OA"].forEach((roleKey) => {
+        getConfigRoleIds().forEach((roleKey) => {
             const assignedName = entry[roleKey];
             if (!assignedName) return;
             if (!assignmentsByName[assignedName]) assignmentsByName[assignedName] = [];
-            assignmentsByName[assignedName].push(roleLabels[roleKey]);
+            assignmentsByName[assignedName].push(roleLabels[roleKey] || roleKey);
         });
 
         Object.entries(assignmentsByName).forEach(([name, rolesForPerson]) => {
@@ -176,17 +188,16 @@ export function getValidationIssues(monthValue, source = {}) {
             });
         });
 
-        // Hard conflict: person assigned to a 24h shift on consecutive days
-        // violates mandatory rest time. Check if the same person who held
-        // the AA or OA slot yesterday appears in AA or OA today.
-        const [prevDateKey] = [shiftDateKey(dateKey, -1)];
+        // Hard conflict: person assigned on consecutive days violates mandatory rest.
+        // Derive blocking role pairs from config.conflicts nextDay rules.
+        const prevDateKey = shiftDateKey(dateKey, -1);
         const prevEntry = dataPlan[prevDateKey] || {};
-        const todayDutyNames = new Set(
-            ["AA", "OA"].map((r) => entry[r]).filter(Boolean)
-        );
-        ["AA", "OA"].forEach((r) => {
-            const prevName = prevEntry[r];
-            if (prevName && todayDutyNames.has(prevName)) {
+        const nextDayConflicts = getConfigConflicts("nextDay");
+        nextDayConflicts.forEach(({ roleA, blocksRoleB }) => {
+            const prevName = prevEntry[roleA];
+            if (!prevName) return;
+            const todayName = entry[blocksRoleB];
+            if (prevName === todayName) {
                 issues.push({
                     severity: "error",
                     area: "Planung",

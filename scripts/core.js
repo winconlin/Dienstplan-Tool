@@ -1,6 +1,7 @@
 import { appState } from './state.js';
 import { normalizeUndoSnapshots } from './storage.js';
 import { getWeeksInMonth } from './planning-engine.js';
+import { defaultConfig } from './config-defaults.js';
 
 
 export function readStorage(key, fallback) {
@@ -12,6 +13,66 @@ export function readStorage(key, fallback) {
     }
 }
 
+// Returns the live config, falling back to the built-in default when config
+// has not been loaded yet (e.g. during module-level initialisation or tests).
+export function getActiveConfig() {
+    return appState.config || defaultConfig;
+}
+
+// Config accessors — always read the live runtime config so the entire app
+// stays consistent with any user-defined role/shift/conflict customisations.
+export function getConfigRoles()              { return getActiveConfig().roles; }
+export function getConfigRoleIds()            { return getActiveConfig().roles.map((r) => r.id); }
+export function getConfigRole(id)             { return getActiveConfig().roles.find((r) => r.id === id) || null; }
+export function getConfigConflicts(scope)     { return getActiveConfig().conflicts.filter((c) => !scope || c.scope === scope); }
+
+// Validates and normalises an untrusted config payload from backup/storage.
+// Returns { ok, config } or { ok: false, error }.
+export function normalizeConfig(raw) {
+    if (!isPlainObject(raw)) return { ok: false, error: "Konfiguration muss ein JSON-Objekt sein." };
+    if (!Array.isArray(raw.roles) || !raw.roles.length) return { ok: false, error: "Konfiguration enthaelt keine Rollen." };
+    if (!isPlainObject(raw.shifts)) return { ok: false, error: "Konfiguration enthaelt keine Schichtzeiten." };
+    if (!Array.isArray(raw.conflicts)) return { ok: false, error: "Konfiguration enthaelt keine Konfliktregeln." };
+
+    const roles = raw.roles.map((r) => ({
+        id: String(r.id || "").trim(),
+        label: String(r.label || r.id || "").trim(),
+        required: Boolean(r.required),
+        showInStats: Boolean(r.showInStats),
+        activeOnWeekendHolidayOnly: Boolean(r.activeOnWeekendHolidayOnly),
+        lohnart: String(r.lohnart || "BD").trim(),
+        icsLabel: String(r.icsLabel || r.label || r.id || "").trim()
+    })).filter((r) => r.id);
+
+    if (!roles.length) return { ok: false, error: "Konfiguration enthaelt keine gueltigen Rollen." };
+
+    const shifts = {};
+    Object.entries(raw.shifts).forEach(([roleId, slots]) => {
+        if (!isPlainObject(slots)) return;
+        shifts[roleId] = {};
+        Object.entries(slots).forEach(([slotKey, slot]) => {
+            if (!isPlainObject(slot)) return;
+            shifts[roleId][slotKey] = {
+                startH: Number(slot.startH) || 0,
+                startM: Number(slot.startM) || 0,
+                endH: Number(slot.endH) || 0,
+                endM: Number(slot.endM) || 0,
+                nextDay: Boolean(slot.nextDay)
+            };
+        });
+    });
+
+    const conflicts = raw.conflicts
+        .filter((c) => isPlainObject(c) && c.roleA && c.blocksRoleB && c.scope)
+        .map((c) => ({
+            roleA: String(c.roleA),
+            blocksRoleB: String(c.blocksRoleB),
+            scope: c.scope === "nextDay" ? "nextDay" : "sameDay"
+        }));
+
+    return { ok: true, config: { roles, shifts, conflicts } };
+}
+
 export function initializeState(readStorageFn) {
     appState.staff = readStorageFn("mp_staff", []);
     appState.plan = readStorageFn("mp_plan", {});
@@ -21,6 +82,16 @@ export function initializeState(readStorageFn) {
     appState.holidaySeasonMode = readStorageFn("mp_holiday_mode", false);
     appState.atossHours = readStorageFn("mp_atoss_hours", appState.atossHours);
     appState.undoSnapshots = readStorageFn("mp_undo_snapshots", []);
+
+    // Load config; migrate from legacy atossHours if config not yet stored.
+    const storedConfig = readStorageFn("mp_config", null);
+    if (storedConfig) {
+        const result = normalizeConfig(storedConfig);
+        appState.config = result.ok ? result.config : cloneStateValue(defaultConfig);
+    } else {
+        appState.config = cloneStateValue(defaultConfig);
+    }
+
     if (appState.stationLayout && Array.isArray(appState.stationLayout)) {
         updateStationLayout(appState.stationLayout);
     }
@@ -99,12 +170,17 @@ export function normalizeHourValue(value, fallback) {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
-export function normalizeAtossHours(source = {}) {
+// Normalise an atossHours map for all currently configured roles.
+// Accepts an optional `roles` array override so it can be called before
+// appState.config is populated (e.g. in validateBackupPayload).
+export function normalizeAtossHours(source = {}, roles = null) {
+    const roleIds = roles || getConfigRoleIds();
     const normalized = {};
 
-    Object.entries(defaultAtossHours).forEach(([role, defaults]) => {
-        const roleSource = isPlainObject(source?.[role]) ? source[role] : {};
-        normalized[role] = {
+    roleIds.forEach((roleId) => {
+        const defaults = defaultAtossHours[roleId] || { weekday: 0, weekendHoliday: 0 };
+        const roleSource = isPlainObject(source?.[roleId]) ? source[roleId] : {};
+        normalized[roleId] = {
             weekday: normalizeHourValue(roleSource.weekday, defaults.weekday),
             weekendHoliday: normalizeHourValue(roleSource.weekendHoliday, defaults.weekendHoliday)
         };
@@ -261,6 +337,9 @@ export function isWeekendOrHoliday(date, holidayMode = appState.holidaySeasonMod
 }
 
 export function isRoleActiveOnDate(role, date, holidayMode = appState.holidaySeasonMode) {
+    const configRole = getConfigRole(role);
+    if (configRole) return !configRole.activeOnWeekendHolidayOnly || isWeekendOrHoliday(date, holidayMode);
+    // Fallback for unknown roles: VISITE-like pattern
     return role !== "VISITE" || isVisitDay(date, holidayMode);
 }
 
@@ -269,24 +348,49 @@ export function isRoleActiveOnDateKey(role, dateKey, holidayMode = appState.holi
 }
 
 // Shift time windows (start + duration) per role and day type.
-// durationMinutes describes the real shift length so that Atoss hours can be
-// split correctly across midnight and ICS end times land on the right day.
-//   Mo-Do  15:00 - 08:00 (17h)
-//   Fr     15:00 - 09:00 (18h)
-//   Sa     09:00 - 08:30 (23.5h, 24h-Dienst)
-//   So/FT  08:30 - 08:00 (23.5h, 24h-Dienst)
-//   Visite 09:00 - 14:00 (5h, kein Mitternachtsübergang)
+// Reads from appState.config.shifts so departments can adjust shift start/end
+// times without touching JavaScript. Falls back to hardcoded values when the
+// role has no config entry (backward compatibility).
 export function getShiftWindow(dateKey, role, holidayMode = appState.holidaySeasonMode) {
-    if (role === "VISITE") return { startMinutes: 9 * 60, durationMinutes: 5 * 60 };
+    const shiftDef = getActiveConfig().shifts[role];
 
+    if (!shiftDef) {
+        // Hardcoded fallback for un-configured roles (AA/OA legacy behaviour).
+        const date = getDateFromKey(dateKey);
+        const day = date.getDay();
+        const isHolidayDay = Boolean(getHolidayName(date, holidayMode));
+        if (isHolidayDay || day === 0) return { startMinutes: 8 * 60 + 30, durationMinutes: 23.5 * 60 };
+        if (day === 6) return { startMinutes: 9 * 60, durationMinutes: 23.5 * 60 };
+        if (day === 5) return { startMinutes: 15 * 60, durationMinutes: 18 * 60 };
+        return { startMinutes: 15 * 60, durationMinutes: 17 * 60 };
+    }
+
+    // Select the most specific slot key for this date/day.
     const date = getDateFromKey(dateKey);
     const day = date.getDay();
     const isHolidayDay = Boolean(getHolidayName(date, holidayMode));
+    let slot;
+    if (shiftDef.all) {
+        slot = shiftDef.all;
+    } else if (isHolidayDay || day === 0) {
+        slot = shiftDef.sundayHoliday || shiftDef.weekday;
+    } else if (day === 6) {
+        slot = shiftDef.saturday || shiftDef.weekday;
+    } else if (day === 5) {
+        slot = shiftDef.friday || shiftDef.weekday;
+    } else {
+        slot = shiftDef.weekday;
+    }
 
-    if (isHolidayDay || day === 0) return { startMinutes: 8 * 60 + 30, durationMinutes: 23.5 * 60 };
-    if (day === 6) return { startMinutes: 9 * 60, durationMinutes: 23.5 * 60 };
-    if (day === 5) return { startMinutes: 15 * 60, durationMinutes: 18 * 60 };
-    return { startMinutes: 15 * 60, durationMinutes: 17 * 60 };
+    if (!slot) return { startMinutes: 0, durationMinutes: 0 };
+
+    const startMinutes = slot.startH * 60 + slot.startM;
+    const endMinutes = slot.endH * 60 + slot.endM;
+    const durationMinutes = slot.nextDay
+        ? (endMinutes + 1440 - startMinutes)
+        : (endMinutes - startMinutes);
+
+    return { startMinutes, durationMinutes };
 }
 
 export function minutesToICSTime(totalMinutes) {
@@ -378,11 +482,11 @@ export function shiftDateKey(dateKey, offset) {
 }
 
 export function createPlanEntry(existing = {}) {
-    return {
-        AA: existing.AA || "",
-        VISITE: existing.VISITE || "",
-        OA: existing.OA || ""
-    };
+    const entry = {};
+    getConfigRoleIds().forEach((id) => {
+        entry[id] = existing[id] || "";
+    });
+    return entry;
 }
 
 export function ensurePlanEntry(dateKey) {
@@ -435,14 +539,33 @@ export function hasVacationDutyConflict(personName, dateKey, weeks, dataStationP
 }
 
 export function hasSameDayRoleConflict(personName, dateKey, role, dataPlan = appState.plan) {
-    return planRoles.some((roleKey) => roleKey !== role && dataPlan[dateKey]?.[roleKey] === personName);
+    return getConfigRoleIds().some((roleKey) => roleKey !== role && dataPlan[dateKey]?.[roleKey] === personName);
 }
 
-export function hasAdjacentDayConflict(personName, dateKey, dataPlan = appState.plan, roleKeys = planRoles) {
-    return [-1, 1].some((offset) => {
-        const adjacentEntry = dataPlan[shiftDateKey(dateKey, offset)];
-        return adjacentEntry && roleKeys.some((roleKey) => adjacentEntry[roleKey] === personName);
-    });
+// Config-driven adjacent-day conflict check.
+// Returns true if assigning `personName` to `targetRole` on `dateKey` would
+// violate a nextDay conflict rule (person did a conflicting role the day before
+// or will do a conflicting role the day after).
+export function hasAdjacentDayConflict(personName, dateKey, targetRole, dataPlan = appState.plan) {
+    const nextDayConflicts = getConfigConflicts("nextDay");
+
+    // Roles whose presence yesterday would block targetRole today.
+    const blockingYesterday = nextDayConflicts
+        .filter((c) => c.blocksRoleB === targetRole)
+        .map((c) => c.roleA);
+
+    // Roles that targetRole would block tomorrow.
+    const blockingTomorrow = nextDayConflicts
+        .filter((c) => c.roleA === targetRole)
+        .map((c) => c.blocksRoleB);
+
+    const prevEntry = dataPlan[shiftDateKey(dateKey, -1)] || {};
+    if (blockingYesterday.some((r) => prevEntry[r] === personName)) return true;
+
+    const nextEntry = dataPlan[shiftDateKey(dateKey, 1)] || {};
+    if (blockingTomorrow.some((r) => nextEntry[r] === personName)) return true;
+
+    return false;
 }
 
 export function canAssignPersonToRole(
@@ -462,7 +585,7 @@ export function canAssignPersonToRole(
     const currentValue = dataPlan[dateKey]?.[role] || "";
     if (currentValue && currentValue !== person.name) return false;
     if (hasSameDayRoleConflict(person.name, dateKey, role, dataPlan)) return false;
-    if (autoAdjacentDayBlockRoles.includes(role) && hasAdjacentDayConflict(person.name, dateKey, dataPlan, autoAdjacentDayBlockRoles)) return false;
+    if (hasAdjacentDayConflict(person.name, dateKey, role, dataPlan)) return false;
 
     return true;
 }
@@ -481,8 +604,7 @@ export function getBestDoctorForDates(role, dateKeys, counters, weeks, excludedN
             if (!fillableCount) return null;
 
             const adjacencyPenalty = normalizedDateKeys.reduce((penalty, dateKey) => {
-                const roleKeys = role === "OA" ? planRoles : autoAdjacentDayBlockRoles;
-                return penalty + (hasAdjacentDayConflict(person.name, dateKey, appState.plan, roleKeys) ? 1 : 0);
+                return penalty + (hasAdjacentDayConflict(person.name, dateKey, role, appState.plan) ? 1 : 0);
             }, 0);
 
             return {
@@ -593,7 +715,8 @@ export function withTemporaryState(source, callback) {
         stationPlan: appState.stationPlan,
         holidaySeasonMode: appState.holidaySeasonMode,
         atossHours: appState.atossHours,
-        undoSnapshots: appState.undoSnapshots
+        undoSnapshots: appState.undoSnapshots,
+        config: appState.config
     };
 
     try {
@@ -604,6 +727,10 @@ export function withTemporaryState(source, callback) {
         if (Object.prototype.hasOwnProperty.call(source, "holidaySeasonMode")) appState.holidaySeasonMode = Boolean(source.holidaySeasonMode);
         if (Object.prototype.hasOwnProperty.call(source, "atossHours")) appState.atossHours = normalizeAtossHours(source.atossHours);
         if (Object.prototype.hasOwnProperty.call(source, "undoSnapshots")) appState.undoSnapshots = normalizeUndoSnapshots(source.undoSnapshots);
+        if (Object.prototype.hasOwnProperty.call(source, "config")) {
+            const cfgResult = normalizeConfig(source.config);
+            appState.config = cfgResult.ok ? cfgResult.config : cloneStateValue(defaultConfig);
+        }
 
         return callback();
     } finally {
@@ -614,5 +741,6 @@ export function withTemporaryState(source, callback) {
         appState.holidaySeasonMode = previousState.holidaySeasonMode;
         appState.atossHours = previousState.atossHours;
         appState.undoSnapshots = previousState.undoSnapshots;
+        appState.config = previousState.config;
     }
 }

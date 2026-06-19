@@ -1,4 +1,5 @@
-import { normalizeAtossHours, getDateFromKey, isWeekendOrHoliday, cloneStateValue, isPlainObject, defaultAtossHours } from './core.js';
+import { normalizeAtossHours, normalizeConfig, getConfigRoleIds, defaultAtossHours, getDateFromKey, isWeekendOrHoliday, cloneStateValue, isPlainObject } from './core.js';
+import { defaultConfig } from './config-defaults.js';
 import { appState } from './state.js';
 import { validateBackupPayload } from './validation.js';
 import { saveAndRenderAllDataViews } from './ui-common.js';
@@ -7,7 +8,22 @@ import { saveAndRenderAllDataViews } from './ui-common.js';
 
 
 
-export const maxUndoSnapshots = 10;
+export const maxUndoSnapshots = 5;
+
+// Approximate byte size of the serialized snapshot array.
+function estimateSnapshotBytes(snapshots) {
+    try { return JSON.stringify(snapshots).length; } catch { return Infinity; }
+}
+
+// Trim oldest snapshots until the array fits within maxBytes or only one
+// entry remains (we never discard the most recent snapshot entirely).
+function pruneSnapshotsToFit(snapshots, maxBytes = 1_500_000) {
+    let pruned = snapshots.slice();
+    while (pruned.length > 1 && estimateSnapshotBytes(pruned) > maxBytes) {
+        pruned = pruned.slice(0, -1);
+    }
+    return pruned;
+}
 
 export function buildStorageEntries(payload = buildAppStatePayload(), snapshots = appState.undoSnapshots) {
     return [
@@ -18,7 +34,8 @@ export function buildStorageEntries(payload = buildAppStatePayload(), snapshots 
         ["mp_station_layout", JSON.stringify(payload.stationLayout)],
         ["mp_holiday_mode", JSON.stringify(payload.holidaySeasonMode)],
         ["mp_atoss_hours", JSON.stringify(payload.atossHours)],
-        ["mp_undo_snapshots", JSON.stringify(snapshots)]
+        ["mp_undo_snapshots", JSON.stringify(snapshots)],
+        ["mp_config", JSON.stringify(payload.config)]
     ];
 }
 
@@ -106,11 +123,26 @@ function persistToSyncStorage(storage, entries) {
 // transaction has committed, so callers can rely on durable persistence before
 // giving positive feedback or running follow-up actions. Never throws.
 export async function persistAppStateToStorageAsync(payload = buildAppStatePayload(), snapshots = appState.undoSnapshots) {
-    const entries = buildStorageEntries(payload, snapshots);
+    let snapshotsToSave = pruneSnapshotsToFit(snapshots);
+
+    const entries = buildStorageEntries(payload, snapshotsToSave);
     try {
         await idbSetMany(entries);
+        if (snapshotsToSave.length < snapshots.length) {
+            appState.undoSnapshots = snapshotsToSave;
+        }
         return { ok: true, message: "Lokale Speicherung aktiv. (IndexedDB)" };
     } catch (error) {
+        const isQuota = error && (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED" || error.code === 22 || error.code === 1014 || /quota/i.test(String(error.message)));
+        if (isQuota && snapshotsToSave.length > 0) {
+            try {
+                await idbSetMany(buildStorageEntries(payload, []));
+                appState.undoSnapshots = [];
+                return { ok: true, message: "Lokale Speicherung aktiv. Snapshot-Verlauf wurde geleert, um Speicherplatz freizugeben." };
+            } catch {
+                // Fall through to the original error.
+            }
+        }
         return { ok: false, message: getStorageErrorMessage(error) };
     }
 }
@@ -191,6 +223,7 @@ export function saveHolidaySeasonMode() {
 export function syncConfigControls() {
     const holidayCheckbox = document.getElementById("holidaySeasonMode");
     if (holidayCheckbox) holidayCheckbox.checked = appState.holidaySeasonMode;
+    renderAtossHoursUI();
     syncAtossHoursInputs();
     renderStorageStatus();
 }
@@ -203,8 +236,24 @@ export function getAtossHoursForDate(dateKey, role, holidayMode = appState.holid
         : roleSettings.weekday;
 }
 
+export function renderAtossHoursUI() {
+    const container = document.getElementById("atossHoursContainer");
+    if (!container) return;
+
+    const roles = getConfigRoleIds();
+    let html = `<div class="font-bold text-slate-500">Rolle</div><div class="font-bold text-slate-500">Werktag</div><div class="font-bold text-slate-500">WE/FT</div>`;
+    roles.forEach((id) => {
+        const values = appState.atossHours[id] || { weekday: 0, weekendHoliday: 0 };
+        html += `<div>${id}</div>
+            <input type="number" step="0.5" min="0" id="atoss-${id}-weekday" data-action="saveAtossHours" value="${values.weekday}" class="border rounded p-1 text-right">
+            <input type="number" step="0.5" min="0" id="atoss-${id}-weekendHoliday" data-action="saveAtossHours" value="${values.weekendHoliday}" class="border rounded p-1 text-right">`;
+    });
+    container.innerHTML = html;
+}
+
 export function syncAtossHoursInputs() {
-    Object.entries(appState.atossHours).forEach(([role, values]) => {
+    getConfigRoleIds().forEach((role) => {
+        const values = appState.atossHours[role] || { weekday: 0, weekendHoliday: 0 };
         const weekdayInput = document.getElementById(`atoss-${role}-weekday`);
         const weekendInput = document.getElementById(`atoss-${role}-weekendHoliday`);
         if (weekdayInput) weekdayInput.value = String(values.weekday);
@@ -213,20 +262,14 @@ export function syncAtossHoursInputs() {
 }
 
 export function saveAtossHours() {
-    appState.atossHours = normalizeAtossHours({
-        AA: {
-            weekday: document.getElementById("atoss-AA-weekday")?.value,
-            weekendHoliday: document.getElementById("atoss-AA-weekendHoliday")?.value
-        },
-        VISITE: {
-            weekday: document.getElementById("atoss-VISITE-weekday")?.value,
-            weekendHoliday: document.getElementById("atoss-VISITE-weekendHoliday")?.value
-        },
-        OA: {
-            weekday: document.getElementById("atoss-OA-weekday")?.value,
-            weekendHoliday: document.getElementById("atoss-OA-weekendHoliday")?.value
-        }
+    const source = {};
+    getConfigRoleIds().forEach((id) => {
+        source[id] = {
+            weekday: document.getElementById(`atoss-${id}-weekday`)?.value,
+            weekendHoliday: document.getElementById(`atoss-${id}-weekendHoliday`)?.value
+        };
     });
+    appState.atossHours = normalizeAtossHours(source);
     syncAtossHoursInputs();
     save();
 }
@@ -239,7 +282,8 @@ export function buildAppStatePayload() {
         stationPlan: cloneStateValue(appState.stationPlan) || {},
         stationLayout: cloneStateValue(appState.stationLayout) || null,
         holidaySeasonMode: appState.holidaySeasonMode,
-        atossHours: cloneStateValue(appState.atossHours) || cloneStateValue(defaultAtossHours)
+        atossHours: cloneStateValue(appState.atossHours) || cloneStateValue(defaultAtossHours),
+        config: cloneStateValue(appState.config) || cloneStateValue(defaultConfig)
     };
 }
 
@@ -250,6 +294,15 @@ export function applyNormalizedAppState(normalized) {
     appState.stationPlan = cloneStateValue(normalized.stationPlan) || {};
     appState.holidaySeasonMode = Boolean(normalized.holidaySeasonMode);
     appState.atossHours = normalizeAtossHours(normalized.atossHours);
+    if (normalized.config) {
+        const cfgResult = normalizeConfig(normalized.config);
+        appState.config = cfgResult.ok ? cfgResult.config : cloneStateValue(defaultConfig);
+    }
+}
+
+export async function saveConfig(config) {
+    appState.config = config;
+    return saveAsync();
 }
 
 export function normalizeUndoSnapshots(source = []) {
@@ -293,7 +346,7 @@ export function renderSnapshotInfo() {
 }
 
 export function createUndoSnapshot(label, payload = buildAppStatePayload()) {
-    appState.undoSnapshots = [
+    const candidate = [
         {
             id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             label: String(label || "Snapshot"),
@@ -302,6 +355,7 @@ export function createUndoSnapshot(label, payload = buildAppStatePayload()) {
         },
         ...appState.undoSnapshots
     ].slice(0, maxUndoSnapshots);
+    appState.undoSnapshots = pruneSnapshotsToFit(candidate);
 
     save({ suppressAlert: true });
     renderSnapshotInfo();
@@ -375,6 +429,10 @@ Promise.all(buildStorageEntries().map(([key]) => idbGet(key))).then(results => {
         appState.holidaySeasonMode = results[5] ? JSON.parse(results[5]) : false;
         appState.atossHours = results[6] ? JSON.parse(results[6]) : appState.atossHours;
         appState.undoSnapshots = results[7] ? JSON.parse(results[7]) : [];
+        if (results[8]) {
+            const cfgResult = normalizeConfig(JSON.parse(results[8]));
+            appState.config = cfgResult.ok ? cfgResult.config : cloneStateValue(defaultConfig);
+        }
 
         if (appState.stationLayout && Array.isArray(appState.stationLayout)) {
             // Assume updateStationLayout is available globally or we mutate state

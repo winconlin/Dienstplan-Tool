@@ -21,6 +21,7 @@
             <button data-action="showSection" data-section="validation" class="hover:text-blue-300 transition">Validierung</button>
             <button data-action="showSection" data-section="wishes" class="hover:text-blue-300 transition">Wünsche</button>
             <button data-action="showSection" data-section="personal" class="hover:text-blue-300 transition">System</button>
+            <button data-action="showSection" data-section="config" class="hover:text-blue-300 transition">Konfiguration</button>
         </nav>
     </header>
 
@@ -45,7 +46,7 @@
                 <h2 id="printHeaderTitle" class="hidden print:block text-2xl font-bold mb-4">Dienstplan</h2>
                 <table class="w-full border-collapse text-sm">
                     <thead>
-                        <tr class="bg-slate-800 text-white text-left">
+                        <tr id="calendarHeaderRow" class="bg-slate-800 text-white text-left">
                             <th class="p-2 border border-slate-700 col-day">Tag</th>
                             <th class="p-2 border border-slate-700 col-date">Dat.</th>
                             <th class="p-2 border border-slate-700 w-1/4">24h Dienst (AA)</th>
@@ -85,16 +86,7 @@
         </section>
 
         <section id="section-stats" class="section-content hidden no-print">
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-white p-4 rounded shadow border">
-                    <h3 class="font-bold border-b mb-2 text-blue-700 uppercase">Assistenten (AA)</h3>
-                    <div id="statsTableAA"></div>
-                </div>
-                <div class="bg-white p-4 rounded shadow border">
-                    <h3 class="font-bold border-b mb-2 text-purple-700 uppercase">Oberaerzte (OA)</h3>
-                    <div id="statsTableOA"></div>
-                </div>
-            </div>
+            <div id="statsContainer" class="grid grid-cols-2 gap-4"></div>
         </section>
 
         <section id="section-validation" class="section-content hidden no-print">
@@ -144,7 +136,7 @@
                     </label>
                     <div class="mb-6 rounded border bg-slate-50 p-3 text-left">
                         <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-slate-600">Atoss-Stunden</h4>
-                        <div class="grid grid-cols-[1.2fr_1fr_1fr] gap-2 text-[11px] items-center">
+                        <div id="atossHoursContainer" class="grid grid-cols-[1.2fr_1fr_1fr] gap-2 text-[11px] items-center">
                             <div class="font-bold text-slate-500">Rolle</div>
                             <div class="font-bold text-slate-500">Werktag</div>
                             <div class="font-bold text-slate-500">WE/FT</div>
@@ -215,6 +207,18 @@
                     <button data-action="clearWishes" class="bg-red-500 text-white px-4 py-2 rounded font-bold shadow hover:bg-red-600 transition">Wünsche leeren (Monat)</button>
                 </div>
                 <div class="overflow-x-auto" id="wishTableContainer"></div>
+            </div>
+        </section>
+
+        <section id="section-config" class="section-content hidden no-print">
+            <div class="bg-white p-6 rounded shadow border">
+                <div class="flex justify-between items-center border-b mb-4 pb-2">
+                    <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Konfiguration (Rule Engine)</h2>
+                    <div class="flex gap-2">
+                        <button data-action="resetConfig" class="bg-slate-200 text-slate-700 px-3 py-1 rounded text-xs font-bold hover:bg-slate-300 transition">Auf Standard zurücksetzen</button>
+                    </div>
+                </div>
+                <div id="configEditorContainer"></div>
             </div>
         </section>
     </main>

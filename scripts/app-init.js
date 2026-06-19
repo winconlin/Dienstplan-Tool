@@ -1,5 +1,6 @@
 
 import { showSection, removePerson, savePerson, toggleWish, loadPerson, saveStationNode, loadStationNode, moveStationNodeUp, moveStationNodeDown, deleteStationNode, resetStationLayout } from './management-ui.js';
+import { renderConfigEditor, saveConfigFromUI, resetConfig, addConfigRole, removeConfigRole, addConfigConflict, removeConfigConflict } from './config-ui.js';
 import { clearMonth, clearWishes, clearStationPlan } from './planning-actions.js';
 import { exportAllICS, backupExport, backupImport, exportAtossCSV } from './export.js';
 import { saveHolidaySeasonMode, saveAtossHours, createUndoSnapshot, restoreLatestSnapshot } from './storage.js';
@@ -69,7 +70,8 @@ window.MediPlanTestApi = {
     runPlanEditSimulation,
     runStationPlanEditSimulation,
     runUndoRestoreSimulation,
-    runStorageFailureSimulation
+    runStorageFailureSimulation,
+    renderConfigEditor
 };
 
 document.addEventListener("DOMContentLoaded", bootstrap);
@@ -83,7 +85,10 @@ export function setupEventListeners() {
         const action = target.dataset.action;
         if (!action) return;
 
-        if (action === "showSection") showSection(target.dataset.section);
+        if (action === "showSection") {
+            showSection(target.dataset.section);
+            if (target.dataset.section === "config") renderConfigEditor();
+        }
         else if (action === "clearMonth") clearMonth();
         else if (action === "runAutoPlaner") autoPlan();
         else if (action === "runAutoStationPlaner") autoStationPlan();
@@ -95,6 +100,12 @@ export function setupEventListeners() {
         else if (action === "exportAllICS") exportAllICS();
         else if (action === "exportAtossCSV") exportAtossCSV();
         else if (action === "restoreLatestSnapshot") restoreLatestSnapshot();
+        else if (action === "saveConfigFromUI") saveConfigFromUI();
+        else if (action === "resetConfig") resetConfig();
+        else if (action === "addConfigRole") addConfigRole();
+        else if (action === "removeConfigRole") removeConfigRole(target.dataset.index);
+        else if (action === "addConfigConflict") addConfigConflict();
+        else if (action === "removeConfigConflict") removeConfigConflict(target.dataset.index);
         else if (action === "printWindow") window.print();
         else if (action === "printStations") {
             document.body.classList.add('print-only-stations');

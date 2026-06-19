@@ -1,5 +1,5 @@
 import { appState } from './state.js';
-import { matchesRole, isHoliday, isRoleActiveOnDateKey, shiftDateKey, createPlanEntry, hasVacationDutyConflict, syncDienstRowsFromPlan } from './core.js';
+import { matchesRole, isHoliday, isRoleActiveOnDateKey, shiftDateKey, createPlanEntry, hasVacationDutyConflict, syncDienstRowsFromPlan, getConfigRoles, getConfigRoleIds } from './core.js';
 import { renderValidation, getValidationIssues } from './validation.js';
 
 import { getSelectedMonthValue, saveAndRenderPlanningViews } from './ui-common.js';
@@ -63,10 +63,14 @@ export function renderCalendar() {
             <tr class="${isSpecialDay ? "holiday-bg" : ""} border-b text-xs hover:bg-slate-50" ${checkRowIssue()}>
                 <td class="p-1 text-center font-bold text-slate-500">${date.toLocaleDateString("de-DE", { weekday: "short" })}</td>
                 <td class="p-1 text-center font-bold border-l border-r">${day}.${holidayName ? `<br><span class="text-[7px] text-red-600 font-normal leading-tight">${holidayName}</span>` : ""}</td>
-                <td class="p-0 relative ${checkCellClass("AA")}">${createSelect(dateKey, "AA")}</td>
-                <td class="p-0 relative ${checkCellClass("VISITE")}">${createSelect(dateKey, "VISITE")}</td>
-                <td class="p-0 relative ${checkCellClass("OA")}">${createSelect(dateKey, "OA")}</td>
+                ${getConfigRoleIds().map((role) => `<td class="p-0 relative ${checkCellClass(role)}">${createSelect(dateKey, role)}</td>`).join("")}
             </tr>`;
+    }
+
+    const headerRow = document.getElementById("calendarHeaderRow");
+    if (headerRow) {
+        const roleCols = getConfigRoles().map((cfg) => `<th class="p-2 border border-slate-700 w-1/4">${cfg.label}</th>`).join("");
+        headerRow.innerHTML = `<th class="p-2 border border-slate-700 col-day">Tag</th><th class="p-2 border border-slate-700 col-date">Dat.</th>${roleCols}`;
     }
 
     calendarBody.innerHTML = html;
@@ -77,78 +81,61 @@ export function renderCalendar() {
 
 export function renderStats() {
     const monthValue = getSelectedMonthValue();
-    const statsTableAA = document.getElementById("statsTableAA");
-    const statsTableOA = document.getElementById("statsTableOA");
-    if (!monthValue || !statsTableAA || !statsTableOA) return;
+    const statsContainer = document.getElementById("statsContainer");
+    if (!monthValue || !statsContainer) return;
 
     const [year, month] = monthValue.split("-").map(Number);
+    const statsRoles = getConfigRoles().filter((cfg) => cfg.showInStats);
 
-    ["AA", "OA"].forEach((role) => {
+    const panels = statsRoles.map((cfg) => {
+        const role = cfg.id;
         const data = appState.staff.filter((person) => matchesRole(person, role)).map((person) => {
             let monthDuty = 0;
-            let monthVisit = 0;
             let sixMonthDuty = 0;
-            let sixMonthVisit = 0;
 
             for (let offset = 0; offset < 6; offset += 1) {
-                // JavaScript's Date constructor rolls negative months into the
-                // previous year correctly (e.g. new Date(2026,-1,1) = Dec 2025).
                 const currentMonth = new Date(year, month - 1 - offset, 1);
                 const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}`;
 
                 Object.keys(appState.plan).forEach((dateKey) => {
                     if (!dateKey.startsWith(monthKey)) return;
                     const entry = appState.plan[dateKey];
-
-                    // Count 24h-Dienst only against the matching slot for this
-                    // role to avoid double-counting when corrupted data has the
-                    // same person in both AA and OA on the same day.
-                    const hasDuty = entry[role] === person.name;
-                    if (hasDuty) {
+                    if (entry[role] === person.name) {
                         sixMonthDuty += 1;
                         if (offset === 0) monthDuty += 1;
-                    }
-
-                    if (isRoleActiveOnDateKey("VISITE", dateKey) && entry.VISITE === person.name) {
-                        sixMonthVisit += 1;
-                        if (offset === 0) monthVisit += 1;
                     }
                 });
             }
 
-            return { name: person.name, monthDuty, monthVisit, sixMonthDuty, sixMonthVisit };
+            return { name: person.name, monthDuty, sixMonthDuty };
         });
 
-        const container = document.getElementById(`statsTable${role}`);
+        let body;
         if (!data.length) {
-            container.innerHTML = '<p class="text-sm text-slate-500">Keine Mitarbeiter in dieser Rolle angelegt.</p>';
-            return;
+            body = '<p class="text-sm text-slate-500">Keine Mitarbeiter in dieser Rolle angelegt.</p>';
+        } else {
+            const extremes = (key) => ({
+                max: Math.max(...data.map((row) => row[key]), 1),
+                min: Math.min(...data.map((row) => row[key]))
+            });
+            const monthRange = extremes("monthDuty");
+            const sixRange = extremes("sixMonthDuty");
+
+            let table = '<table class="w-full border-collapse border text-xs text-center"><thead><tr class="bg-slate-100"><th class="p-2 border text-left">Arzt</th><th class="p-2 border">Dienste (M)</th><th class="p-2 border">Dienste (6M)</th></tr></thead><tbody>';
+            data.forEach((row) => {
+                table += `<tr>
+                    <td class="p-2 border text-left font-bold">${row.name}</td>
+                    <td class="p-2 border" style="background:${getHeatmapColor(row.monthDuty, monthRange.min, monthRange.max)}">${row.monthDuty}</td>
+                    <td class="p-2 border" style="background:${getHeatmapColor(row.sixMonthDuty, sixRange.min, sixRange.max)}">${row.sixMonthDuty}</td>
+                </tr>`;
+            });
+            body = `${table}</tbody></table>`;
         }
 
-        const extremes = (key) => ({
-            max: Math.max(...data.map((row) => row[key]), 1),
-            min: Math.min(...data.map((row) => row[key]))
-        });
+        return `<div class="bg-white p-4 rounded shadow border"><h3 class="font-bold border-b mb-2 text-blue-700 uppercase">${cfg.label}</h3>${body}</div>`;
+    }).join("");
 
-        const monthDutyRange = extremes("monthDuty");
-        const monthVisitRange = extremes("monthVisit");
-        const sixMonthDutyRange = extremes("sixMonthDuty");
-        const sixMonthVisitRange = extremes("sixMonthVisit");
-
-        let table = '<table class="w-full border-collapse border text-xs text-center"><thead><tr class="bg-slate-100"><th class="p-2 border text-left">Arzt</th><th class="p-2 border">24h (M)</th><th class="p-2 border">Visite (M)</th><th class="p-2 border">24h (6M)</th><th class="p-2 border">Visite (6M)</th></tr></thead><tbody>';
-
-        data.forEach((row) => {
-            table += `<tr>
-                <td class="p-2 border text-left font-bold">${row.name}</td>
-                <td class="p-2 border" style="background:${getHeatmapColor(row.monthDuty, monthDutyRange.min, monthDutyRange.max)}">${row.monthDuty}</td>
-                <td class="p-2 border" style="background:${getHeatmapColor(row.monthVisit, monthVisitRange.min, monthVisitRange.max)}">${row.monthVisit}</td>
-                <td class="p-2 border" style="background:${getHeatmapColor(row.sixMonthDuty, sixMonthDutyRange.min, sixMonthDutyRange.max)}">${row.sixMonthDuty}</td>
-                <td class="p-2 border" style="background:${getHeatmapColor(row.sixMonthVisit, sixMonthVisitRange.min, sixMonthVisitRange.max)}">${row.sixMonthVisit}</td>
-            </tr>`;
-        });
-
-        container.innerHTML = `${table}</tbody></table>`;
-    });
+    statsContainer.innerHTML = panels || '<p class="text-sm text-slate-500">Keine Rollen mit Statistik konfiguriert.</p>';
 }
 
 export function createSelect(dateKey, role) {

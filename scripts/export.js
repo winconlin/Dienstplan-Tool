@@ -1,5 +1,5 @@
 import { appState } from './state.js';
-import { normalizeAtossId, isRoleActiveOnDateKey, getICSStartTime, getICSEnd, getAtossHourSegments, escapeICSText, withTemporaryState } from './core.js';
+import { normalizeAtossId, isRoleActiveOnDateKey, getICSStartTime, getICSEnd, getAtossHourSegments, escapeICSText, withTemporaryState, getConfigRoles, getConfigRoleIds, getConfigRole } from './core.js';
 import { validateBackupPayload, getValidationIssues, renderValidation } from './validation.js';
 import { syncConfigControls, getAtossHoursForDate, applyNormalizedAppState, createUndoSnapshot } from './storage.js';
 import { getSelectedMonthValue, saveAndRenderAllDataViews } from './ui-common.js';
@@ -8,7 +8,7 @@ import { showSection } from './management-ui.js';
 // Backup, ICS and Atoss export flows.
 
 export function backupExport() {
-    const payload = JSON.stringify({ staff: appState.staff, plan: appState.plan, wishes: appState.wishes, stationPlan: appState.stationPlan, holidaySeasonMode: appState.holidaySeasonMode, atossHours: appState.atossHours });
+    const payload = JSON.stringify({ staff: appState.staff, plan: appState.plan, wishes: appState.wishes, stationPlan: appState.stationPlan, holidaySeasonMode: appState.holidaySeasonMode, atossHours: appState.atossHours, config: appState.config });
     const anchor = document.createElement("a");
     anchor.href = URL.createObjectURL(new Blob([payload], { type: "application/json" }));
     anchor.download = "MediPlan_Backup.json";
@@ -89,11 +89,9 @@ function buildICSFiles(monthValue) {
         const events = [];
 
         monthEntries.forEach((dateKey) => {
-            [
-                ["AA", "24h Dienst"],
-                ["VISITE", "Visite"],
-                ["OA", "Hintergrund"]
-            ].forEach(([role, label]) => {
+            getConfigRoles().forEach((cfg) => {
+                const role = cfg.id;
+                const label = cfg.icsLabel || cfg.label;
                 if (!isRoleActiveOnDateKey(role, dateKey)) return;
                 if (appState.plan[dateKey]?.[role] !== person.name) return;
 
@@ -186,7 +184,7 @@ function formatAtossHours(hours, config) {
 }
 
 function getAtossLohnart(role, config) {
-    return config.lohnart[role] || config.lohnart.default;
+    return getConfigRole(role)?.lohnart || config.lohnart[role] || config.lohnart.default;
 }
 
 export function buildAtossExportRows(monthValue, source = {}, config = atossExportConfig) {
@@ -196,7 +194,7 @@ export function buildAtossExportRows(monthValue, source = {}, config = atossExpo
         const rows = [];
         Object.keys(appState.plan).sort().forEach((dateKey) => {
             if (!dateKey.startsWith(monthValue)) return;
-            ["AA", "VISITE", "OA"].forEach((role) => {
+            getConfigRoleIds().forEach((role) => {
                 if (!isRoleActiveOnDateKey(role, dateKey)) return;
                 const person = appState.staff.find((entry) => entry.name === appState.plan[dateKey]?.[role]);
                 const normalizedId = normalizeAtossId(person?.id);

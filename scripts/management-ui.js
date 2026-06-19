@@ -1,5 +1,5 @@
 import { appState } from './state.js';
-import { getWorkPercent, normalizeAtossId, getPersonValidationError, getDuplicateAtossAssignments, matchesRole } from './core.js';
+import { getWorkPercent, normalizeAtossId, getPersonValidationError, getDuplicateAtossAssignments, matchesRole, getConfigRoleIds } from './core.js';
 import { renderValidation } from './validation.js';
 
 import { getSelectedMonthValue, saveAndRenderCalendarView, saveAndRenderAllDataViews, showToast } from './ui-common.js';
@@ -99,7 +99,7 @@ export function removePerson(index) {
     appState.staff.splice(index, 1);
 
     Object.keys(appState.plan).forEach((dateKey) => {
-        ["AA", "VISITE", "OA"].forEach((role) => {
+        getConfigRoleIds().forEach((role) => {
             if (appState.plan[dateKey]?.[role] === person.name) appState.plan[dateKey][role] = "";
         });
     });

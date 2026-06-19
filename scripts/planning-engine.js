@@ -1,10 +1,20 @@
 import { appState } from './state.js';
-import { matchesRole, getWorkPercent, getMonthDayKeys, isVisitDay, getDateKey, dateToKey, shiftDate, ensurePlanEntry, isVacationRow, getUniqueAssignedName, getRoleWeight, getVacationDoctorsForWeek, canAssignPersonToRole, getBestDoctorForDates, buildStationLoadCounters, syncDienstRowsFromPlan, planRoles, stationLayout } from './core.js';
+import { matchesRole, getWorkPercent, getMonthDayKeys, isVisitDay, getDateKey, dateToKey, shiftDate, ensurePlanEntry, isVacationRow, getUniqueAssignedName, getRoleWeight, getVacationDoctorsForWeek, canAssignPersonToRole, getBestDoctorForDates, buildStationLoadCounters, syncDienstRowsFromPlan, planRoles, stationLayout, getConfigRoleIds, getConfigConflicts } from './core.js';
 import { createUndoSnapshot } from './storage.js';
 import { getSelectedMonthValue, saveAndRenderPlanningViews, saveAndRenderStationView, showLoading, hideLoading } from './ui-common.js';
 
 // Planning engine and automatic allocation rules.
 
+// Returns names that must be excluded from `targetRole` on `dateKey` to avoid
+// same-day multi-role conflicts. Structured as a standalone function so
+// department-specific rule sets can override or extend it in the future.
+function getSameDayConflictExclusions(dateKey, targetRole, plan = appState.plan) {
+    const entry = plan[dateKey] || {};
+    const rivalRoles = getConfigConflicts("sameDay")
+        .filter((c) => c.roleA === targetRole)
+        .map((c) => c.blocksRoleB);
+    return rivalRoles.map((r) => entry[r]).filter(Boolean);
+}
 export function fillPlanMonth(monthValue) {
     const [year, month] = monthValue.split("-").map(Number);
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -23,7 +33,7 @@ export function fillPlanMonth(monthValue) {
     });
 
     monthDayKeys.forEach((dateKey) => {
-        planRoles.forEach((role) => {
+        getConfigRoleIds().forEach((role) => {
             const assignedName = appState.plan[dateKey]?.[role];
             if (!assignedName) return;
             if (!Object.prototype.hasOwnProperty.call(counters, assignedName)) counters[assignedName] = 0;
