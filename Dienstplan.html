@@ -87,6 +87,95 @@
     -webkit-print-color-adjust: exact;
 }
 
+/* ============================================================
+   Dark Mode – durchgaengig lesbarer Kontrast in allen Tabellen
+   ------------------------------------------------------------
+   Der 🌙-Schalter setzt die Klasse `dark` auf <html>. Ohne diese
+   Regeln blieben die Inhaltskarten hell (bg-white/bg-slate-*),
+   waehrend der Text durch `dark:text-slate-200` am <body> hell
+   wurde -> heller Text auf hellem Grund = unlesbar. Diese Sektion
+   dunkelt die Flaechen ab und haelt den Text kontrastreich.
+   Im Druck (@media print) greift sie bewusst nicht.
+   ============================================================ */
+@media screen {
+    html.dark body {
+        background-color: #0f172a;
+        color: #e5e7eb;
+    }
+
+    /* Inhaltsflaechen abdunkeln */
+    html.dark .bg-white { background-color: #1e293b; }
+    html.dark .bg-slate-50 { background-color: #1f2a3b; }
+    html.dark .bg-slate-100 { background-color: #273449; }
+    html.dark .bg-slate-200 { background-color: #334155; color: #e5e7eb; }
+    html.dark .bg-slate-300 { background-color: #3a4a61; color: #e5e7eb; }
+
+    /* Standardtext aufhellen */
+    html.dark .text-slate-800,
+    html.dark .text-slate-700,
+    html.dark .text-slate-600 { color: #e5e7eb; }
+    html.dark .text-slate-500 { color: #cbd5e1; }
+    html.dark .text-slate-400,
+    html.dark .text-slate-300 { color: #94a3b8; }
+    html.dark .text-gray-500,
+    html.dark .text-gray-400 { color: #94a3b8; }
+
+    /* Helle Info-Boxen (bg-red-50/bg-amber-50) behalten ihren hellen Farbgrund;
+       hier nur den geerbten Text dunkel halten, damit er lesbar bleibt
+       (gleiche Logik wie beim Speicherstatus, der bereits dunklen Text setzt). */
+    html.dark .bg-red-50,
+    html.dark .bg-red-50 small,
+    html.dark .bg-red-50 .text-gray-500 { color: #b91c1c; }
+
+    /* Raender dezent statt grell */
+    html.dark .border,
+    html.dark .border-t, html.dark .border-b,
+    html.dark .border-l, html.dark .border-r,
+    html.dark .border-slate-200,
+    html.dark .border-slate-300,
+    html.dark .border-slate-400 { border-color: #334155; }
+
+    /* Hover-Zustaende */
+    html.dark .hover\:bg-slate-50:hover,
+    html.dark .hover\:bg-slate-100:hover { background-color: #334155; }
+    html.dark .hover\:bg-slate-300:hover { background-color: #475569; }
+
+    /* Eingabefelder (Text/Zahl/Monat/Datei) und das Rollen-Select */
+    html.dark input:not([type="checkbox"]):not([type="radio"]),
+    html.dark #pRole,
+    html.dark textarea {
+        background-color: #0f172a;
+        color: #e5e7eb;
+        border-color: #334155;
+    }
+    html.dark input::placeholder { color: #94a3b8; }
+
+    /* Dropdown-Eintraege (Plan-Selects sind transparent und erben die
+       helle Schrift der Zeile; nur die aufklappende Liste braucht Farbe) */
+    html.dark select option { background-color: #1e293b; color: #e5e7eb; }
+
+    /* Stations-Dropzonen */
+    html.dark .droppable-cell { background-color: #1e293b; }
+    html.dark .droppable-cell.bg-blue-50 { background-color: #1e3a5f; }
+
+    /* Semantische Status-Zellen behalten ihren hellen Farbgrund mit dunklem
+       Text (in beiden Modi gut lesbar). Hier nur sicherstellen, dass die
+       obigen Aufhell-Regeln den Text in diesen Zellen NICHT hell faerben. */
+    html.dark .holiday-bg { background-color: #2b3a52 !important; }
+    html.dark .conflict-red,
+    html.dark .conflict-red select,
+    html.dark .conflict-red div { color: #7f1d1d; }
+    html.dark .wish-conflict,
+    html.dark .wish-conflict select,
+    html.dark .wish-conflict div { color: #7c2d12; }
+
+    /* Validierungs-Tabelle */
+    html.dark .validation-table th { background: #243044; color: #cbd5e1; }
+    html.dark .validation-table th,
+    html.dark .validation-table td { border-bottom-color: #334155; }
+    html.dark .validation-meta { color: #94a3b8; }
+}
+
 .wish-conflict {
     background-color: #fef08a !important;
     color: #b45309;
