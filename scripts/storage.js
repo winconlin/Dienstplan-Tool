@@ -54,6 +54,8 @@ export function getStorageErrorMessage(error) {
 // Simple IndexedDB wrapper
 function openDB() {
     return new Promise((resolve, reject) => {
+        // Interner IndexedDB-Name bleibt bewusst unveraendert, damit bestehende
+        // Nutzerdaten nach der Umbenennung des Produkts erhalten bleiben.
         const request = indexedDB.open('MediPlanDB', 1);
         request.onupgradeneeded = (e) => {
             const db = e.target.result;

@@ -1,9 +1,12 @@
 {
-  "name": "app",
+  "name": "dienstplantool",
   "version": "1.0.0",
-  "description": "MediPlan ist eine rein im Browser lauffähige Webanwendung zur Erstellung, Verwaltung und Validierung von ärztlichen Dienstplänen.  Das Tool verzichtet komplett auf ein serverseitiges Backend und speichert alle Daten lokal im Browser, wodurch es sofort, unabhängig und datenschutzfreundlich einsetzbar ist.",
-  "main": "app.js",
+  "description": "Dienstplantool ist eine rein im Browser lauffähige Webanwendung zur Erstellung, Verwaltung und Validierung von ärztlichen Dienstplänen.  Das Tool verzichtet komplett auf ein serverseitiges Backend und speichert alle Daten lokal im Browser, wodurch es sofort, unabhängig und datenschutzfreundlich einsetzbar ist.",
+  "main": "Dienstplan.html",
   "scripts": {
+    "build": "node build.js",
+    "verify-build": "node build.js && git diff --exit-code -- Dienstplan.html",
+    "prepare": "git config core.hooksPath .githooks || true",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

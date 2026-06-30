@@ -1,0 +1,35 @@
+name: Build-Check
+
+# Stellt sicher, dass das ausgelieferte Bundle Dienstplan.html exakt aus den
+# aktuellen Quellen (scripts/, template.html, CSS) erzeugt wurde. So kann ein
+# veraltetes Bundle – die Ursache des "Wird berechnet..."-Hangs – nicht mehr
+# unbemerkt nach main gelangen.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Dependencies installieren
+        run: npm ci
+
+      - name: Dienstplan.html neu bauen
+        run: node build.js
+
+      - name: Prüfen, ob das committete Bundle aktuell ist
+        run: |
+          if ! git diff --exit-code -- Dienstplan.html; then
+            echo "::error::Dienstplan.html ist nicht aktuell. Bitte 'npm run build' ausführen und das Ergebnis committen."
+            exit 1
+          fi

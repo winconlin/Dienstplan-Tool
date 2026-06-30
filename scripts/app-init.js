@@ -50,7 +50,7 @@ function bootstrap() {
     setTimeout(checkBackupReminder, 1000);
 }
 
-window.MediPlanTestApi = {
+window.DienstplanTestApi = {
     getEasterSunday,
     getHolidayName,
     getWeeksInMonth,

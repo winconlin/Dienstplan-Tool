@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# Pre-commit hook: hält das gebündelte Dienstplan.html mit den Quellen synchron.
+#
+# Hintergrund: Dienstplan.html wird per `node build.js` aus scripts/,
+# template.html und den CSS-Dateien erzeugt. Wird die Quelle geändert, ohne
+# neu zu bauen, läuft die ausgelieferte App auf veraltetem Code (das war die
+# Ursache des "Wird berechnet..."-Hangs). Dieser Hook baut bei jeder relevanten
+# Änderung automatisch neu und nimmt das Ergebnis in den Commit auf.
+#
+# Aktivierung (einmalig, geschieht auch automatisch via `npm install`):
+#   git config core.hooksPath .githooks
+
+# Nur bauen, wenn build-relevante Dateien im Commit stehen.
+if git diff --cached --name-only | grep -qE '^(scripts/|template\.html$|styles\.css$|input\.css$|tailwind\.config\.js$|build\.js$)'; then
+    echo "[pre-commit] Build-relevante Änderung erkannt – baue Dienstplan.html neu..."
+
+    if ! command -v node >/dev/null 2>&1; then
+        echo "[pre-commit] FEHLER: node ist nicht installiert. Bitte 'node build.js' manuell ausführen." >&2
+        exit 1
+    fi
+
+    if [ ! -d node_modules ]; then
+        echo "[pre-commit] FEHLER: node_modules fehlt. Bitte zuerst 'npm install' ausführen." >&2
+        exit 1
+    fi
+
+    if ! node build.js; then
+        echo "[pre-commit] FEHLER: Build fehlgeschlagen. Commit abgebrochen." >&2
+        exit 1
+    fi
+
+    git add Dienstplan.html
+    echo "[pre-commit] Dienstplan.html neu gebaut und dem Commit hinzugefügt."
+fi
+
+exit 0

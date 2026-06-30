@@ -11,7 +11,7 @@ export function backupExport() {
     const payload = JSON.stringify({ staff: appState.staff, plan: appState.plan, wishes: appState.wishes, stationPlan: appState.stationPlan, holidaySeasonMode: appState.holidaySeasonMode, atossHours: appState.atossHours });
     const anchor = document.createElement("a");
     anchor.href = URL.createObjectURL(new Blob([payload], { type: "application/json" }));
-    anchor.download = "MediPlan_Backup.json";
+    anchor.download = "Dienstplantool_Backup.json";
     anchor.click();
 
     // Save last backup timestamp
@@ -102,7 +102,7 @@ function buildICSFiles(monthValue) {
                 const uid = `${dateKey}-${role}-${person.name}`.replace(/\s+/g, "-");
                 events.push([
                     "BEGIN:VEVENT",
-                    `UID:${uid}@mediplan`,
+                    `UID:${uid}@dienstplantool`,
                     `DTSTAMP:${timestamp}`,
                     `SUMMARY:${escapeICSText(label)}`,
                     `DTSTART;TZID=${ICS_TIMEZONE}:${dateKey.replace(/-/g, "")}T${startTime}`,
@@ -117,7 +117,7 @@ function buildICSFiles(monthValue) {
         const lines = [
             "BEGIN:VCALENDAR",
             "VERSION:2.0",
-            "PRODID:-//MediPlan Pro//Dienstplan//DE",
+            "PRODID:-//Dienstplantool//Dienstplan//DE",
             ...events,
             "END:VCALENDAR"
         ];
